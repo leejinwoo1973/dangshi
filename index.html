@@ -169,7 +169,7 @@
         .license-btn { background-color: #6f42c1; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
         .license-btn:hover { background-color: #59359a; }
 
-        /* [v12.0] 오디오 버튼 (주황색) */
+        /* 오디오 버튼 (주황색) */
         .audio-btn { background-color: #fd7e14; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
         .audio-btn:hover { background-color: #e36a05; }
 
@@ -512,6 +512,12 @@
             input.value = text.substring(0, start) + insertText + text.substring(end);
         }
 
+        // --- [v12.2] 태그 정리 함수 (Clean Title) ---
+        function cleanTitle(text) {
+            if (!text) return "";
+            return text.replace(/\[.*?\]/g, '').trim();
+        }
+
         // --- 렌더링 (관리자 모드 반영) ---
         function render(query = "", eraFilter = "all") {
             const root = document.getElementById('timeline-root'); root.innerHTML = '';
@@ -549,7 +555,8 @@
                     
                     const btns = isAdmin ? `<div class="action-btns" style="display:block;"><span class="btn-text btn-edit" onclick="editItem(${item.id})">[수정]</span><span class="btn-text btn-del" onclick="deleteItem(${item.id})">[삭제]</span></div>` : '';
 
-                    div.innerHTML = `<div class="year-bubble" onclick="openContextModal(${item.id})">${item.year}</div><div class="content clearfix" style="background-color:${cardBg};">${imgTag} <span class="era-tag">${item.era}</span><div class="title-text" onclick="openModal(${item.id})">${item.name}</div>${tagHtml} <small>${item.desc.substring(0, 30)}...</small>${btns}</div>`;
+                    // [v12.2] 카드 제목에도 cleanTitle 적용
+                    div.innerHTML = `<div class="year-bubble" onclick="openContextModal(${item.id})">${item.year}</div><div class="content clearfix" style="background-color:${cardBg};">${imgTag} <span class="era-tag">${item.era}</span><div class="title-text" onclick="openModal(${item.id})">${cleanTitle(item.name)}</div>${tagHtml} <small>${item.desc.substring(0, 30)}...</small>${btns}</div>`;
                     root.appendChild(div);
                 } else {
                     const div = document.createElement('div'); div.className = 'minor-row';
@@ -569,7 +576,7 @@
         }
         function filterData() { render(document.getElementById('searchInput').value.toLowerCase(), document.getElementById('eraFilter').value); }
         
-        // --- [v12.0] 텍스트 렌더링 함수 ---
+        // --- [v12.1] 텍스트 렌더링 함수 (오디오 태그 전역 인식) ---
         function parseText(text, isPoetMode = false) {
             if (!text) return "";
             
@@ -578,6 +585,9 @@
                 text = text.replace(/([\u2E80-\u2EFF\u31C0-\u31EF\u3200-\u32FF\u3400-\u4DBF\u4E00-\u9FBF\uF900-\uFAFF])\(([^)]+)\)/g, "<ruby>$1<rt>$2</rt></ruby>"); 
             }
             
+            // [v12.1] 오디오 태그 {{오디오|...}} 변환 (위치 상관없이)
+            text = text.replace(/\{\{오디오\|(.*?)\}\}/g, '<div style="margin-top:10px;"><audio controls src="$1" style="width:100%; border-radius:20px;"></audio></div>');
+
             // [v11.0] ### 내용 ### 패턴을 찾아서 source-credit 클래스로 변환
             text = text.replace(/###(.*?)###/g, '<div class="source-credit">$1</div>');
             
@@ -762,7 +772,8 @@
             const query = document.getElementById('searchInput').value.trim().toLowerCase();
 
             const editBtnHtml = isAdmin ? `<div style="text-align:right; margin-bottom:10px;"><span class="btn-text btn-edit" onclick="editItem(${item.id}); closeModal('detailModal');">[수정]</span></div>` : '';
-            document.getElementById('mName').innerHTML = `${item.name} <span style='font-size:0.7em; color:#888;'>(${item.year})</span>`;
+            // [v12.2] 모달 제목에도 cleanTitle 적용
+            document.getElementById('mName').innerHTML = `${cleanTitle(item.name)} <span style='font-size:0.7em; color:#888;'>(${item.year})</span>`;
             document.getElementById('mDesc').innerHTML = editBtnHtml + parseText(item.desc, false);
             const tagsHtml = item.tags ? item.tags.map(t => `<span class="tag-badge">#${t}</span>`).join('') : "";
             document.getElementById('mTags').innerHTML = tagsHtml;
@@ -791,34 +802,22 @@
                         if (query) details.open = true;
                     }
 
-                    // [v12.0] 오디오 주소 추출 및 태그 제거 ( {{오디오|...}} )
-                    let audioUrl = "";
-                    let displayContent = p.content.replace(/\{\{오디오\|(.*?)\}\}/g, function(match, url) {
-                        audioUrl = url;
-                        return ""; // 화면 텍스트에서는 제거
-                    });
-
                     // 본문 렌더링 (병음 또는 평측이 루비로 포함된 텍스트)
-                    let body = `<div class="hanja-text">${parseText(displayContent, true)}</div>`; 
+                    let body = `<div class="hanja-text">${parseText(p.content, true)}</div>`; 
                     
                     if (p.simplified) {
                         const simpId = `simp_${item.id}_${index}`;
+                        // 버튼 누르기 전엔 절대 안 보임 (display:none)
                         body += `<span class="simp-btn" onclick="toggleSimplified('${simpId}')">🇨🇳 간체자 보기</span>`;
                         body += `<div id="${simpId}" class="simplified-box"><div style="margin-top:5px;">${parseText(p.simplified, true)}</div></div>`;
-                    }
-
-                    // [v12.0] 오디오 플레이어 삽입 (평측/간체 아래, 해설 위)
-                    if (audioUrl) {
-                        body += `<div style="margin-top:15px; margin-bottom:10px;">
-                            <audio controls src="${audioUrl}" style="width:100%; height:40px; border-radius: 20px; background-color:#f1f3f4;"></audio>
-                        </div>`;
                     }
 
                     if(p.desc) { 
                         body += `<details class="inner-details"><summary class="inner-summary">[해설 보기]</summary><div class="explain-text">${parseText(p.desc, false)}</div></details>`; 
                     }
                     
-                    details.innerHTML = `<summary class="outer-summary">${p.title}</summary><div class="poem-body">${body}</div>`;
+                    // [v12.2] 시 제목(아코디언 헤더)에도 cleanTitle 적용
+                    details.innerHTML = `<summary class="outer-summary">${cleanTitle(p.title)}</summary><div class="poem-body">${body}</div>`;
                     area.appendChild(details);
                 });
             } else if (item.historyDetail) { area.innerHTML = `<div class="poem-body">${parseText(item.historyDetail, false)}</div>`; }
