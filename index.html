@@ -157,15 +157,21 @@
         .config-toggle { width: 100%; text-align: left; background: none; border: none; cursor: pointer; font-weight: bold; padding: 0; }
         .syntax-guide { font-size: 11px; color: #555; background: #f8f9fa; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 5px; line-height: 1.5; letter-spacing: -0.5px; }
         .syntax-guide code { background: #fff; border: 1px solid #ccc; padding: 1px 4px; border-radius: 3px; color: #d63384; font-family: monospace; font-weight: bold; }
-        .pinyin-btn { background-color: #28a745; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 10px; }
+        
+        .pinyin-btn { background-color: #28a745; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
         .pinyin-btn:hover { background-color: #218838; }
+        
         /* 평측 버튼 스타일 (파란색) */
         .tone-btn-input { background-color: #007bff; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
         .tone-btn-input:hover { background-color: #0056b3; }
         
-        /* [v11.0] 라이선스 버튼 (보라색) */
+        /* 라이선스 버튼 (보라색) */
         .license-btn { background-color: #6f42c1; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
         .license-btn:hover { background-color: #59359a; }
+
+        /* [v12.0] 오디오 버튼 (주황색) */
+        .audio-btn { background-color: #fd7e14; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
+        .audio-btn:hover { background-color: #e36a05; }
 
         /* --- 모달 --- */
         .modal { display: none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); }
@@ -226,7 +232,7 @@
             .year-bubble { border-color: #333; color: #333; }
         }
         
-        /* [v11.0] 선택형 라이선스 스타일 (### ... ###) */
+        /* 선택형 라이선스 스타일 */
         .source-credit { margin-top: 20px; text-align: right; border-top: 1px dashed #ddd; padding-top: 10px; font-size: 0.8rem; color: #888; display: block; }
         .source-credit:hover { opacity: 1; color: #333; }
         .source-credit a { color: #555; text-decoration: none; border-bottom: 1px dotted #888; }
@@ -294,9 +300,10 @@
             <div style="margin-bottom:5px;">
                 <button type="button" class="pinyin-btn" onclick="autoPinyin()">🔠 선택구간 병음</button>
                 <button type="button" class="tone-btn-input" onclick="autoTone()">🔲 선택구간 평측</button>
+                <button type="button" class="audio-btn" onclick="insertAudio()">🎵 오디오 연결</button>
                 <button type="button" class="license-btn" onclick="insertLicense()">📜 라이선스 삽입</button>
             </div>
-            <div class="syntax-guide"><code>[글자](주소)</code> (링크) &nbsp; <code>{{이미지|주소|설명}}</code> &nbsp; <code>[[내부링크]]</code><br><code>제목 | 내용</code> (첫줄) &nbsp; <code>---</code> (해설) &nbsp; <code>===</code> (구분) &nbsp; <code>+++</code> (간체) <br><code>### 내용 ###</code> (저작권/출처 표기)</div>
+            <div class="syntax-guide"><code>[글자](주소)</code> (링크) &nbsp; <code>{{이미지|주소|설명}}</code> &nbsp; <code>{{오디오|주소}}</code><br><code>제목 | 내용</code> (첫줄) &nbsp; <code>---</code> (해설) &nbsp; <code>===</code> (구분) &nbsp; <code>+++</code> (간체) <br><code>### 내용 ###</code> (저작권/출처 표기)</div>
             <textarea id="inContent" rows="15"></textarea>
         </div>
         <div class="btn-group"><button id="btnSave" class="btn-save" onclick="saveData()">저장</button><button class="btn-reset" onclick="clearForm()">취소</button></div>
@@ -475,12 +482,32 @@
                 return;
             }
 
-            // 커서 위치에 삽입
+            // 커서 위치에 삽입 (줄바꿈 포함)
             const input = document.getElementById('inContent');
             const start = input.selectionStart;
             const end = input.selectionEnd;
             const text = input.value;
-            const insertText = `\n\n### ${creditHtml} ###`;
+            const insertText = `\n### ${creditHtml} ###`;
+            
+            input.value = text.substring(0, start) + insertText + text.substring(end);
+        }
+
+        // --- [v12.0] 오디오 간편 삽입기 ---
+        function insertAudio() {
+            let url = prompt("오디오 파일명(예: song.mp3) 또는 전체 주소를 입력하세요.\n(파일명만 입력하면 'https://tangshi.kr/mp3/'가 자동으로 붙습니다.)");
+            if (!url) return;
+
+            // http로 시작하지 않으면 자동으로 경로 완성
+            if (!url.startsWith('http')) {
+                url = 'https://tangshi.kr/mp3/' + url;
+            }
+
+            const input = document.getElementById('inContent');
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const text = input.value;
+            // 문법: {{오디오|주소}}
+            const insertText = `{{오디오|${url}}}`;
             
             input.value = text.substring(0, start) + insertText + text.substring(end);
         }
@@ -542,7 +569,7 @@
         }
         function filterData() { render(document.getElementById('searchInput').value.toLowerCase(), document.getElementById('eraFilter').value); }
         
-        // --- [v11.0] 텍스트 렌더링 함수 (###...###을 라이선스 박스로 변환) ---
+        // --- [v12.0] 텍스트 렌더링 함수 ---
         function parseText(text, isPoetMode = false) {
             if (!text) return "";
             
@@ -551,7 +578,7 @@
                 text = text.replace(/([\u2E80-\u2EFF\u31C0-\u31EF\u3200-\u32FF\u3400-\u4DBF\u4E00-\u9FBF\uF900-\uFAFF])\(([^)]+)\)/g, "<ruby>$1<rt>$2</rt></ruby>"); 
             }
             
-            // [NEW] ### 내용 ### 패턴을 찾아서 source-credit 클래스로 변환
+            // [v11.0] ### 내용 ### 패턴을 찾아서 source-credit 클래스로 변환
             text = text.replace(/###(.*?)###/g, '<div class="source-credit">$1</div>');
             
             // 2. 다른 마크다운 처리
@@ -764,14 +791,27 @@
                         if (query) details.open = true;
                     }
 
+                    // [v12.0] 오디오 주소 추출 및 태그 제거 ( {{오디오|...}} )
+                    let audioUrl = "";
+                    let displayContent = p.content.replace(/\{\{오디오\|(.*?)\}\}/g, function(match, url) {
+                        audioUrl = url;
+                        return ""; // 화면 텍스트에서는 제거
+                    });
+
                     // 본문 렌더링 (병음 또는 평측이 루비로 포함된 텍스트)
-                    let body = `<div class="hanja-text">${parseText(p.content, true)}</div>`; 
+                    let body = `<div class="hanja-text">${parseText(displayContent, true)}</div>`; 
                     
                     if (p.simplified) {
                         const simpId = `simp_${item.id}_${index}`;
-                        // 버튼 누르기 전엔 절대 안 보임 (display:none)
                         body += `<span class="simp-btn" onclick="toggleSimplified('${simpId}')">🇨🇳 간체자 보기</span>`;
                         body += `<div id="${simpId}" class="simplified-box"><div style="margin-top:5px;">${parseText(p.simplified, true)}</div></div>`;
+                    }
+
+                    // [v12.0] 오디오 플레이어 삽입 (평측/간체 아래, 해설 위)
+                    if (audioUrl) {
+                        body += `<div style="margin-top:15px; margin-bottom:10px;">
+                            <audio controls src="${audioUrl}" style="width:100%; height:40px; border-radius: 20px; background-color:#f1f3f4;"></audio>
+                        </div>`;
                     }
 
                     if(p.desc) { 
