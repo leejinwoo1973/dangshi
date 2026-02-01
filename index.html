@@ -162,6 +162,10 @@
         /* 평측 버튼 스타일 (파란색) */
         .tone-btn-input { background-color: #007bff; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
         .tone-btn-input:hover { background-color: #0056b3; }
+        
+        /* [v11.0] 라이선스 버튼 (보라색) */
+        .license-btn { background-color: #6f42c1; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
+        .license-btn:hover { background-color: #59359a; }
 
         /* --- 모달 --- */
         .modal { display: none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); }
@@ -222,10 +226,11 @@
             .year-bubble { border-color: #333; color: #333; }
         }
         
-        /* [v10.5] 출처 크레딧 스타일 */
-        .source-credit { margin-top: 20px; text-align: right; border-top: 1px dashed #ddd; padding-top: 10px; opacity: 0.8; font-size: 0.8rem; color: #666; }
-        .source-credit:hover { opacity: 1; }
-        .source-credit a { color: #555; text-decoration: underline; }
+        /* [v11.0] 선택형 라이선스 스타일 (### ... ###) */
+        .source-credit { margin-top: 20px; text-align: right; border-top: 1px dashed #ddd; padding-top: 10px; font-size: 0.8rem; color: #888; display: block; }
+        .source-credit:hover { opacity: 1; color: #333; }
+        .source-credit a { color: #555; text-decoration: none; border-bottom: 1px dotted #888; }
+        .source-credit img { vertical-align: middle; margin-right: 3px; max-height: 20px; }
     </style>
 </head>
 <body>
@@ -289,8 +294,9 @@
             <div style="margin-bottom:5px;">
                 <button type="button" class="pinyin-btn" onclick="autoPinyin()">🔠 선택구간 병음</button>
                 <button type="button" class="tone-btn-input" onclick="autoTone()">🔲 선택구간 평측</button>
+                <button type="button" class="license-btn" onclick="insertLicense()">📜 라이선스 삽입</button>
             </div>
-            <div class="syntax-guide"><code>[글자](주소)</code> (링크) &nbsp; <code>{{이미지|주소|설명}}</code> &nbsp; <code>[[내부링크]]</code><br><code>제목 | 내용</code> (첫줄) &nbsp; <code>---</code> (해설숨김) &nbsp; <code>===</code> (구분)<br><code>+++</code> (간체자 구분)</div>
+            <div class="syntax-guide"><code>[글자](주소)</code> (링크) &nbsp; <code>{{이미지|주소|설명}}</code> &nbsp; <code>[[내부링크]]</code><br><code>제목 | 내용</code> (첫줄) &nbsp; <code>---</code> (해설) &nbsp; <code>===</code> (구분) &nbsp; <code>+++</code> (간체) <br><code>### 내용 ###</code> (저작권/출처 표기)</div>
             <textarea id="inContent" rows="15"></textarea>
         </div>
         <div class="btn-group"><button id="btnSave" class="btn-save" onclick="saveData()">저장</button><button class="btn-reset" onclick="clearForm()">취소</button></div>
@@ -451,6 +457,33 @@
 
             input.setRangeText(converted);
         }
+        
+        // --- [v11.0] 라이선스 삽입기 ---
+        function insertLicense() {
+            const choice = prompt("삽입할 라이선스를 선택하세요 (번호 입력):\n1. 동양고전종합DB\n2. 나무위키\n3. 위키백과");
+            if (!choice) return;
+
+            let creditHtml = "";
+            if (choice === '1') {
+                creditHtml = "자료출처: <a href='http://db.cyberseodang.or.kr' target='_blank'><img src='http://db.cyberseodang.or.kr/images/front/logo_b.png'> 동양고전종합DB</a>";
+            } else if (choice === '2') {
+                creditHtml = "출처: <a href='https://namu.wiki' target='_blank'>나무위키</a> (CC BY-NC-SA 2.0 KR)";
+            } else if (choice === '3') {
+                creditHtml = "출처: <a href='https://ko.wikipedia.org' target='_blank'>위키백과</a> (CC BY-SA 3.0)";
+            } else {
+                alert("잘못된 입력입니다.");
+                return;
+            }
+
+            // 커서 위치에 삽입
+            const input = document.getElementById('inContent');
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const text = input.value;
+            const insertText = `\n\n### ${creditHtml} ###`;
+            
+            input.value = text.substring(0, start) + insertText + text.substring(end);
+        }
 
         // --- 렌더링 (관리자 모드 반영) ---
         function render(query = "", eraFilter = "all") {
@@ -509,15 +542,17 @@
         }
         function filterData() { render(document.getElementById('searchInput').value.toLowerCase(), document.getElementById('eraFilter').value); }
         
-        // --- [v10.3] 텍스트 렌더링 함수 (여기서 '한자(기호)'를 <ruby>로 변환) ---
+        // --- [v11.0] 텍스트 렌더링 함수 (###...###을 라이선스 박스로 변환) ---
         function parseText(text, isPoetMode = false) {
             if (!text) return "";
             
-            // 1. '한자(기호/병음)' 패턴을 찾아서 <ruby> 태그로 자동 변환 (가장 먼저 실행)
-            // (한자 한 글자) + (괄호 안의 내용)
+            // 1. '한자(기호/병음)' 패턴을 찾아서 <ruby> 태그로 자동 변환 
             if (isPoetMode) { 
                 text = text.replace(/([\u2E80-\u2EFF\u31C0-\u31EF\u3200-\u32FF\u3400-\u4DBF\u4E00-\u9FBF\uF900-\uFAFF])\(([^)]+)\)/g, "<ruby>$1<rt>$2</rt></ruby>"); 
             }
+            
+            // [NEW] ### 내용 ### 패턴을 찾아서 source-credit 클래스로 변환
+            text = text.replace(/###(.*?)###/g, '<div class="source-credit">$1</div>');
             
             // 2. 다른 마크다운 처리
             text = text.replace(/\[\[(.+?)\]\]/g, '<span class="wiki-link" onclick="openModalByName(\'$1\')">$1</span>');
@@ -739,37 +774,14 @@
                         body += `<div id="${simpId}" class="simplified-box"><div style="margin-top:5px;">${parseText(p.simplified, true)}</div></div>`;
                     }
 
-                    // [v10.5] 시인 카드: 동양고전종합DB 출처
                     if(p.desc) { 
-                        body += `<details class="inner-details"><summary class="inner-summary">[해설 보기]</summary><div class="explain-text">
-                            ${parseText(p.desc, false)}
-                            <div class="source-credit">
-                                <span style="font-size: 0.8em; color: #666; margin-right: 5px;">자료출처:</span>
-                                <a href='http://db.cyberseodang.or.kr' target='_blank'>
-                                    <img src='http://db.cyberseodang.or.kr/images/front/logo_b.png' align='absmiddle' border='0' title='동양고전종합DB' style="max-height: 25px;">
-                                </a>
-                            </div>
-                        </div></details>`; 
+                        body += `<details class="inner-details"><summary class="inner-summary">[해설 보기]</summary><div class="explain-text">${parseText(p.desc, false)}</div></details>`; 
                     }
                     
                     details.innerHTML = `<summary class="outer-summary">${p.title}</summary><div class="poem-body">${body}</div>`;
                     area.appendChild(details);
                 });
-            } else if (item.historyDetail) { 
-                // [v10.5] 역사 카드: 위키/나무위키 라이선스 표기
-                let historyBody = `<div class="poem-body">${parseText(item.historyDetail, false)}`;
-                
-                historyBody += `
-                    <div class="source-credit">
-                        <span>📜 자료 출처 및 라이선스:</span><br>
-                        본 역사 기록은 <a href="https://ko.wikipedia.org" target="_blank">위키백과</a> 및 
-                        <a href="https://namu.wiki" target="_blank">나무위키</a>의 내용을 바탕으로 재구성되었습니다.<br>
-                        (CC BY-NC-SA / CC BY-SA 라이선스 적용)
-                    </div>`;
-                
-                historyBody += `</div>`;
-                area.innerHTML = historyBody;
-            }
+            } else if (item.historyDetail) { area.innerHTML = `<div class="poem-body">${parseText(item.historyDetail, false)}</div>`; }
             
             document.getElementById('detailModal').style.display = "block";
         }
