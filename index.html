@@ -221,6 +221,11 @@
             .timeline::after { background-color: #ccc; }
             .year-bubble { border-color: #333; color: #333; }
         }
+        
+        /* [v10.5] 출처 크레딧 스타일 */
+        .source-credit { margin-top: 20px; text-align: right; border-top: 1px dashed #ddd; padding-top: 10px; opacity: 0.8; font-size: 0.8rem; color: #666; }
+        .source-credit:hover { opacity: 1; }
+        .source-credit a { color: #555; text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -734,14 +739,37 @@
                         body += `<div id="${simpId}" class="simplified-box"><div style="margin-top:5px;">${parseText(p.simplified, true)}</div></div>`;
                     }
 
+                    // [v10.5] 시인 카드: 동양고전종합DB 출처
                     if(p.desc) { 
-                        body += `<details class="inner-details"><summary class="inner-summary">[해설 보기]</summary><div class="explain-text">${parseText(p.desc, false)}</div></details>`; 
+                        body += `<details class="inner-details"><summary class="inner-summary">[해설 보기]</summary><div class="explain-text">
+                            ${parseText(p.desc, false)}
+                            <div class="source-credit">
+                                <span style="font-size: 0.8em; color: #666; margin-right: 5px;">자료출처:</span>
+                                <a href='http://db.cyberseodang.or.kr' target='_blank'>
+                                    <img src='http://db.cyberseodang.or.kr/images/front/logo_b.png' align='absmiddle' border='0' title='동양고전종합DB' style="max-height: 25px;">
+                                </a>
+                            </div>
+                        </div></details>`; 
                     }
                     
                     details.innerHTML = `<summary class="outer-summary">${p.title}</summary><div class="poem-body">${body}</div>`;
                     area.appendChild(details);
                 });
-            } else if (item.historyDetail) { area.innerHTML = `<div class="poem-body">${parseText(item.historyDetail, false)}</div>`; }
+            } else if (item.historyDetail) { 
+                // [v10.5] 역사 카드: 위키/나무위키 라이선스 표기
+                let historyBody = `<div class="poem-body">${parseText(item.historyDetail, false)}`;
+                
+                historyBody += `
+                    <div class="source-credit">
+                        <span>📜 자료 출처 및 라이선스:</span><br>
+                        본 역사 기록은 <a href="https://ko.wikipedia.org" target="_blank">위키백과</a> 및 
+                        <a href="https://namu.wiki" target="_blank">나무위키</a>의 내용을 바탕으로 재구성되었습니다.<br>
+                        (CC BY-NC-SA / CC BY-SA 라이선스 적용)
+                    </div>`;
+                
+                historyBody += `</div>`;
+                area.innerHTML = historyBody;
+            }
             
             document.getElementById('detailModal').style.display = "block";
         }
