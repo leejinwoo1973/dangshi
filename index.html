@@ -161,15 +161,12 @@
         .pinyin-btn { background-color: #28a745; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
         .pinyin-btn:hover { background-color: #218838; }
         
-        /* 평측 버튼 스타일 (파란색) */
         .tone-btn-input { background-color: #007bff; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
         .tone-btn-input:hover { background-color: #0056b3; }
         
-        /* 라이선스 버튼 (보라색) */
         .license-btn { background-color: #6f42c1; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
         .license-btn:hover { background-color: #59359a; }
 
-        /* 오디오 버튼 (주황색) */
         .audio-btn { background-color: #fd7e14; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
         .audio-btn:hover { background-color: #e36a05; }
 
@@ -179,7 +176,6 @@
         .close { color: #aaa; float: right; font-size: 32px; font-weight: bold; cursor: pointer; position: sticky; top: 0; right: 0; z-index: 10; background: rgba(255,255,255,0.9); padding: 0 10px; border-radius: 5px;}
         .close:hover { color: #000; }
         
-        /* 하단 고정 닫기 버튼 스타일 */
         #floatingCloseBtn {
             display: none;
             position: fixed;
@@ -204,7 +200,6 @@
         .back-btn { display: none; float: left; background: #eee; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; color: #333; }
         .back-btn:hover { background: #ddd; }
         
-        /* [v12.4] 통계 모달 스타일 */
         .stat-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem;}
         .stat-table th, .stat-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         .stat-table th { background-color: #f2f2f2; font-weight: bold; }
@@ -245,14 +240,12 @@
         
         .simplified-box { display: none; font-family: 'Noto Serif SC', serif; color: #555; background: #f9f9f9; padding: 15px; border-radius: 5px; margin-top: 10px; border-left: 4px solid #d63384; line-height: 1.8; }
         
-        /* 루비 태그 스타일 (글자 아래에 표시) */
         ruby { display: inline-block; text-align: center; margin: 0 2px; ruby-position: under; }
         rt { font-size: 0.6em; color: #777; font-family: sans-serif; display: block; line-height: 1.2; user-select: none; }
         
         .qtfm-btn { display: inline-block; background-color: #E60026; color: white; padding: 5px 12px; border-radius: 20px; text-decoration: none; font-size: 0.9rem; font-weight: bold; margin-top: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s; }
         .qtfm-btn:hover { transform: scale(1.05); background-color: #cc0022; text-decoration: none; color: white; }
 
-        /* 바닥글 */
         footer { text-align: center; padding: 20px; border-top: 1px solid #ddd; color: #888; font-size: 0.9rem; font-family: 'Noto Serif KR', serif; background-color: #fdfbf7; }
 
         @media print {
@@ -264,7 +257,6 @@
             .year-bubble { border-color: #333; color: #333; }
         }
         
-        /* 선택형 라이선스 스타일 */
         .source-credit { margin-top: 20px; text-align: right; border-top: 1px dashed #ddd; padding-top: 10px; font-size: 0.8rem; color: #888; display: block; }
         .source-credit:hover { opacity: 1; color: #333; }
         .source-credit a { color: #555; text-decoration: none; border-bottom: 1px dotted #888; }
@@ -551,6 +543,21 @@
             if (!text) return "";
             return text.replace(/\[.*?\]/g, '').trim();
         }
+        
+        // --- [v12.5] 카드 미리보기용 텍스트 클리너 ---
+        function cleanTextForCard(text) {
+            if (!text) return "";
+            // 오디오/이미지 태그 제거
+            text = text.replace(/\{\{.*?\}\}/g, '');
+            // 라이선스 태그 제거
+            text = text.replace(/###.*?###/g, '');
+            // 강조 구문 기호 제거 (글자는 남김)
+            text = text.replace(/%%(.*?)%%/g, '$1');
+            text = text.replace(/\$\$(.*?)\$\$/g, '$1');
+            text = text.replace(/\[\[(.*?)\]\]/g, '$1');
+            
+            return text.substring(0, 40) + (text.length > 40 ? "..." : "");
+        }
 
         // --- 렌더링 (관리자 모드 반영) ---
         function render(query = "", eraFilter = "all") {
@@ -589,8 +596,8 @@
                     
                     const btns = isAdmin ? `<div class="action-btns" style="display:block;"><span class="btn-text btn-edit" onclick="editItem(${item.id})">[수정]</span><span class="btn-text btn-del" onclick="deleteItem(${item.id})">[삭제]</span></div>` : '';
 
-                    // [v12.2] 카드 제목에도 cleanTitle 적용
-                    div.innerHTML = `<div class="year-bubble" onclick="openContextModal(${item.id})">${item.year}</div><div class="content clearfix" style="background-color:${cardBg};">${imgTag} <span class="era-tag">${item.era}</span><div class="title-text" onclick="openModal(${item.id})">${cleanTitle(item.name)}</div>${tagHtml} <small>${item.desc.substring(0, 30)}...</small>${btns}</div>`;
+                    // [v12.5] 카드 미리보기 클리너 적용
+                    div.innerHTML = `<div class="year-bubble" onclick="openContextModal(${item.id})">${item.year}</div><div class="content clearfix" style="background-color:${cardBg};">${imgTag} <span class="era-tag">${item.era}</span><div class="title-text" onclick="openModal(${item.id})">${cleanTitle(item.name)}</div>${tagHtml} <small>${cleanTextForCard(item.desc)}</small>${btns}</div>`;
                     root.appendChild(div);
                 } else {
                     const div = document.createElement('div'); div.className = 'minor-row';
@@ -812,7 +819,13 @@
             
             const query = document.getElementById('searchInput').value.trim().toLowerCase();
 
-            const editBtnHtml = isAdmin ? `<div style="text-align:right; margin-bottom:10px;"><span class="btn-text btn-edit" onclick="editItem(${item.id}); closeModal('detailModal');">[수정]</span></div>` : '';
+            // [v12.5] 모달 내 삭제 버튼 추가
+            const editBtnHtml = isAdmin ? `
+                <div style="text-align:right; margin-bottom:10px;">
+                    <span class="btn-text btn-edit" onclick="editItem(${item.id}); closeModal('detailModal');">[수정]</span>
+                    <span class="btn-text btn-del" onclick="deleteItem(${item.id}); closeModal('detailModal');">[삭제]</span>
+                </div>` : '';
+                
             // [v12.2] 모달 제목에도 cleanTitle 적용
             document.getElementById('mName').innerHTML = `${cleanTitle(item.name)} <span style='font-size:0.7em; color:#888;'>(${item.year})</span>`;
             document.getElementById('mDesc').innerHTML = editBtnHtml + parseText(item.desc, false);
