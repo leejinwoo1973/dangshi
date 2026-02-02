@@ -174,14 +174,46 @@
         .audio-btn:hover { background-color: #e36a05; }
 
         /* --- 모달 --- */
-        .modal { display: none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); }
-        .modal-content { background-color: #fff; margin: 3% auto; padding: 30px; border: 1px solid #888; width: 85%; max-width: 800px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; position: relative; }
-        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .modal { display: none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
+        .modal-content { background-color: #fff; margin: 2% auto; padding: 30px; border: 1px solid #888; width: 90%; max-width: 800px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; position: relative; }
+        .close { color: #aaa; float: right; font-size: 32px; font-weight: bold; cursor: pointer; position: sticky; top: 0; right: 0; z-index: 10; background: rgba(255,255,255,0.9); padding: 0 10px; border-radius: 5px;}
+        .close:hover { color: #000; }
+        
+        /* 하단 고정 닫기 버튼 스타일 */
+        #floatingCloseBtn {
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 300;
+            background-color: rgba(0, 0, 0, 0.75);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            transition: all 0.2s;
+        }
+        #floatingCloseBtn:active { transform: translateX(-50%) scale(0.95); background-color: black; }
+
         .back-btn { display: none; float: left; background: #eee; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; color: #333; }
         .back-btn:hover { background: #ddd; }
+        
+        /* [v12.4] 통계 모달 스타일 */
         .stat-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem;}
         .stat-table th, .stat-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         .stat-table th { background-color: #f2f2f2; font-weight: bold; }
+        .stat-scroll-box { max-height: 300px; overflow-y: auto; border: 1px solid #eee; margin-top: 10px; }
+        .stat-rank-table { width: 100%; border-collapse: collapse; }
+        .stat-rank-table td { padding: 8px; border-bottom: 1px solid #f0f0f0; }
+        .stat-rank-table tr:hover { background-color: #f9f9f9; }
+        .rank-num { font-weight: bold; color: #8B0000; width: 30px; text-align: center; }
+        
         #contextModal .modal-content { max-width: 600px; background: #fdfdfd; }
         .ctx-list { list-style: none; padding: 0; margin-top: 20px; }
         .ctx-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; align-items: center; }
@@ -224,7 +256,7 @@
         footer { text-align: center; padding: 20px; border-top: 1px solid #ddd; color: #888; font-size: 0.9rem; font-family: 'Noto Serif KR', serif; background-color: #fdfbf7; }
 
         @media print {
-            .admin-btn, .search-bar, .action-btns, .config-section, .btn-group, .help-trigger, .modal, .simp-btn, .pinyin-btn, .tts-btn, .login-trigger { display: none !important; }
+            .admin-btn, .search-bar, .action-btns, .config-section, .btn-group, .help-trigger, .modal, .simp-btn, .pinyin-btn, .tts-btn, .login-trigger, #floatingCloseBtn { display: none !important; }
             #stickyHeader { position: static; box-shadow: none; }
             body { background: white !important; color: black; padding-top: 0 !important; }
             .content { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
@@ -257,6 +289,8 @@
             <span class="header-badge" id="badgeRight">Label Right</span>
         </div>
     </div>
+
+    <button id="floatingCloseBtn" onclick="closeModal('detailModal')">❌ 닫기</button>
 
     <button id="adminToggle" class="admin-btn" onclick="toggleAdmin()">⚙️ 관리/설정</button>
 
@@ -303,7 +337,7 @@
                 <button type="button" class="audio-btn" onclick="insertAudio()">🎵 오디오 연결</button>
                 <button type="button" class="license-btn" onclick="insertLicense()">📜 라이선스 삽입</button>
             </div>
-            <div class="syntax-guide"><code>[글자](주소)</code> (링크) &nbsp; <code>{{이미지|주소|설명}}</code> &nbsp; <code>{{오디오|주소}}</code><br><code>제목 | 내용</code> (첫줄) &nbsp; <code>---</code> (해설) &nbsp; <code>===</code> (구분) &nbsp; <code>+++</code> (간체) <br><code>### 내용 ###</code> (저작권/출처 표기)</div>
+            <div class="syntax-guide"><code>[글자](주소)</code> (링크) &nbsp; <code>{{이미지|주소|설명}}</code> &nbsp; <code>{{오디오|주소}}</code><br><code>제목 | 내용</code> (첫줄) &nbsp; <code>---</code> (해설) &nbsp; <code>===</code> (구분) &nbsp; <code>+++</code> (간체) <br><code>### 내용 ###</code> (저작권/출처 표기) <br><code>%%강조%%</code> (굵게) &nbsp; <code>$$회색기울임$$</code></div>
             <textarea id="inContent" rows="15"></textarea>
         </div>
         <div class="btn-group"><button id="btnSave" class="btn-save" onclick="saveData()">저장</button><button class="btn-reset" onclick="clearForm()">취소</button></div>
@@ -576,7 +610,7 @@
         }
         function filterData() { render(document.getElementById('searchInput').value.toLowerCase(), document.getElementById('eraFilter').value); }
         
-        // --- [v12.1] 텍스트 렌더링 함수 (오디오 태그 전역 인식) ---
+        // --- [v12.4] 텍스트 렌더링 함수 (강조, 이탤릭 추가) ---
         function parseText(text, isPoetMode = false) {
             if (!text) return "";
             
@@ -585,6 +619,10 @@
                 text = text.replace(/([\u2E80-\u2EFF\u31C0-\u31EF\u3200-\u32FF\u3400-\u4DBF\u4E00-\u9FBF\uF900-\uFAFF])\(([^)]+)\)/g, "<ruby>$1<rt>$2</rt></ruby>"); 
             }
             
+            // [v12.4] 텍스트 강조 기능
+            text = text.replace(/%%(.*?)%%/g, '<b>$1</b>'); // %%강조%% -> Bold
+            text = text.replace(/\$\$(.*?)\$\$/g, '<span style="color:#888; font-style:italic;">$1</span>'); // $$독백$$ -> Gray Italic
+
             // [v12.1] 오디오 태그 {{오디오|...}} 변환 (위치 상관없이)
             text = text.replace(/\{\{오디오\|(.*?)\}\}/g, '<div style="margin-top:10px;"><audio controls src="$1" style="width:100%; border-radius:20px;"></audio></div>');
 
@@ -769,6 +807,9 @@
             if (!keepHistory) { modalHistory = []; document.getElementById('backBtn').style.display = 'none'; }
             currentOpenId = id;
             
+            // [v12.3] 모달 열 때 플로팅 닫기 버튼 보이기
+            document.getElementById('floatingCloseBtn').style.display = 'block';
+            
             const query = document.getElementById('searchInput').value.trim().toLowerCase();
 
             const editBtnHtml = isAdmin ? `<div style="text-align:right; margin-bottom:10px;"><span class="btn-text btn-edit" onclick="editItem(${item.id}); closeModal('detailModal');">[수정]</span></div>` : '';
@@ -825,14 +866,54 @@
             document.getElementById('detailModal').style.display = "block";
         }
 
+        // [v12.4] 통계 모달 개편 (인물별 작품 수 랭킹)
         function openStatModal() {
-            const total = db.length; const leftCount = db.filter(d=>d.type==='poet').length; const rightCount = db.filter(d=>d.type==='history').length;
-            const eras = {}; db.forEach(d => { eras[d.era] = (eras[d.era] || 0) + 1; });
-            let html = `<table class="stat-table"><tr><th>총 데이터</th><td>${total}개</td></tr><tr><th>${config.leftLabel}</th><td>${leftCount}개</td></tr><tr><th>${config.rightLabel}</th><td>${rightCount}개</td></tr><tr><th colspan="2" style="text-align:center;">시대별 분포</th></tr>`;
-            for (const [key, val] of Object.entries(eras)) { html += `<tr><th>${key}</th><td>${val}개</td></tr>`; }
-            html += `</table>`;
-            document.getElementById('statContent').innerHTML = html; document.getElementById('statModal').style.display = 'block';
+            const totalCards = db.length; 
+            const leftCount = db.filter(d=>d.type==='poet').length; 
+            const rightCount = db.filter(d=>d.type==='history').length;
+            
+            // 작품 수 집계
+            const stats = {};
+            let totalPoems = 0;
+
+            db.forEach(item => {
+                if (item.type === 'poet' && item.poems) {
+                    const key = cleanTitle(item.name); // 태그 제거한 이름 사용 (이백 [성당] -> 이백)
+                    const count = item.poems.length;
+                    stats[key] = (stats[key] || 0) + count;
+                    totalPoems += count;
+                } else if (item.type === 'history') {
+                    // 역사는 그냥 1개로 칠지 말지 선택. 여기선 인물 랭킹이므로 제외하거나 따로 표시
+                }
+            });
+
+            // 정렬 (내림차순)
+            const sortedStats = Object.entries(stats).sort((a, b) => b[1] - a[1]);
+
+            let html = `
+                <table class="stat-table">
+                    <tr><th>총 데이터(카드)</th><td>${totalCards}개</td></tr>
+                    <tr><th>수록된 작품 수</th><td>${totalPoems}수</td></tr>
+                    <tr><th colspan="2" style="text-align:center; background:#eee;">🏆 인물별 작품 수 랭킹</th></tr>
+                </table>
+                <div class="stat-scroll-box">
+                    <table class="stat-rank-table">
+            `;
+            
+            sortedStats.forEach((entry, index) => {
+                html += `<tr><td class="rank-num">${index + 1}</td><td>${entry[0]}</td><td style="text-align:right; font-weight:bold;">${entry[1]}수</td></tr>`;
+            });
+
+            if (sortedStats.length === 0) {
+                html += `<tr><td colspan="3" style="text-align:center; padding:20px;">집계된 작품이 없습니다.</td></tr>`;
+            }
+
+            html += `</table></div>`;
+            
+            document.getElementById('statContent').innerHTML = html; 
+            document.getElementById('statModal').style.display = 'block';
         }
+
         function openContextModal(targetId) {
             const targetItem = db.find(d => d.id === targetId); if (!targetItem) return;
             const idx = db.findIndex(d => d.id === targetId);
@@ -848,8 +929,19 @@
             });
             document.getElementById('contextModal').style.display = "block";
         }
-        function closeModal(id) { document.getElementById(id).style.display = "none"; }
-        window.onclick = function(e) { if(e.target.classList.contains('modal')) e.target.style.display="none"; }
+        
+        function closeModal(id) { 
+            document.getElementById(id).style.display = "none"; 
+            // [v12.3] 닫을 때 플로팅 버튼도 숨기기
+            document.getElementById('floatingCloseBtn').style.display = 'none';
+        }
+        
+        window.onclick = function(e) { 
+            if(e.target.classList.contains('modal')) {
+                e.target.style.display="none"; 
+                document.getElementById('floatingCloseBtn').style.display = 'none';
+            }
+        }
         
         init();
     </script>
