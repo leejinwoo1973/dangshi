@@ -1,1 +1,171 @@
 
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>당시(唐詩) 데이터 변환 도우미</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Noto Serif KR', serif; background-color: #f0f2f5; padding: 20px; color: #333; margin: 0; }
+        h1 { text-align: center; color: #8B0000; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+        
+        .container { display: flex; gap: 20px; max-width: 1400px; margin: 0 auto; height: 85vh; }
+        .input-panel { flex: 1; display: flex; flex-direction: column; gap: 10px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .output-panel { flex: 1; display: flex; flex-direction: column; gap: 10px; background: #fff8e1; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 2px solid #8B0000; }
+        
+        label { font-weight: bold; font-size: 0.9rem; color: #555; display: flex; justify-content: space-between; align-items: center; }
+        input[type="text"] { padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 100%; font-size: 1rem; }
+        textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.95rem; resize: none; font-family: 'Noto Serif KR', serif; line-height: 1.6; }
+        
+        .btn { padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: background 0.2s; }
+        .btn-convert { background: #8B0000; color: white; margin-top: auto; }
+        .btn-convert:hover { background: #a00000; }
+        .btn-copy { background: #28a745; color: white; height: 50px; font-size: 1.2rem; }
+        .btn-copy:hover { background: #218838; }
+        .btn-clear { background: #666; color: white; font-size: 0.8rem; padding: 5px 10px; }
+
+        .guide-box { background: #e3f2fd; padding: 10px; border-radius: 5px; font-size: 0.85rem; color: #0d47a1; margin-bottom: 10px; }
+        
+        /* 주석 감지 하이라이트 */
+        .highlight { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>📜 당시(唐詩) 데이터 변환 도우미</h1>
+
+    <div class="container">
+        <div class="input-panel">
+            <div style="display:flex; justify-content:space-between;">
+                <h3>1. 데이터 입력</h3>
+                <button class="btn btn-clear" onclick="clearInputs()">새로 작성 (초기화)</button>
+            </div>
+            
+            <div class="guide-box">
+                <b>💡 팁:</b> 동양고전종합DB에서 각 구역을 복사해서 붙여넣으세요.<br>
+                주석은 "1. 설명" 또는 "[1] 설명" 형식의 목록을 인식합니다.
+            </div>
+
+            <div>
+                <label>제목 (한자)</label>
+                <input type="text" id="inTitle" placeholder="예: 春望">
+            </div>
+
+            <div style="flex:1; display:flex; flex-direction:column;">
+                <label>원문 (한자만)</label>
+                <textarea id="inHanja" style="flex:1;" placeholder="國破山河在..."></textarea>
+            </div>
+
+            <div style="flex:2; display:flex; flex-direction:column;">
+                <label>번역문 + 주석 목록 (통째로 붙여넣기)</label>
+                <textarea id="inDesc" style="flex:1;" placeholder="나라는 망했으나 산하는 그대로여서...&#13;&#10;1. 國破(국파): 도성인 장안이 함락됨.&#13;&#10;2. 城(성): 장안성."></textarea>
+            </div>
+
+            <button class="btn btn-convert" onclick="convertData()">⚡ 변환하기 (주석 자동 합체)</button>
+        </div>
+
+        <div class="output-panel">
+            <h3>2. 변환 결과</h3>
+            <div class="guide-box" style="background:#e8f5e9; color:#1b5e20;">
+                이 내용을 복사해서 관리자 페이지 <b>[상세 내용]</b>에 붙여넣으세요.<br>
+                그 후 <b>+++ (간체)</b>, <b>{{오디오}}</b> 등을 추가하면 됩니다.
+            </div>
+            <textarea id="outResult" style="flex:1; background:#fff;"></textarea>
+            <button class="btn btn-copy" onclick="copyResult()">📋 결과 복사하기</button>
+        </div>
+    </div>
+
+    <script>
+        function convertData() {
+            const title = document.getElementById('inTitle').value.trim();
+            const hanja = document.getElementById('inHanja').value.trim();
+            let descRaw = document.getElementById('inDesc').value;
+
+            if (!title) { alert('제목을 입력하세요.'); return; }
+
+            // 1. 주석 목록 추출 및 분리
+            // 패턴: 줄 시작이 숫자+점(1.) 또는 괄호숫자((1)) 또는 대괄호숫자([1])
+            const footnoteRegex = /^(\d+|\[\d+\]|\(\d+\))[\.\s]+(.*)$/gm;
+            let footnotes = {};
+            let descBody = [];
+            
+            // 본문과 주석 목록을 줄 단위로 분리
+            const lines = descRaw.split('\n');
+            let isFootnoteSection = false;
+
+            lines.forEach(line => {
+                const cleanLine = line.trim();
+                if (!cleanLine) return;
+
+                // 주석 라인인지 확인
+                // (보통 주석 목록은 본문 아래에 몰려 있으므로, 한 번 주석이 나오기 시작하면 그 뒤는 다 주석으로 간주)
+                const match = /^(\d+|\[\d+\]|\(\d+\))[\.\)]\s*(.*)/.exec(cleanLine);
+                
+                if (match) {
+                    isFootnoteSection = true; // 주석 구간 진입
+                    let num = match[1].replace(/[\[\]\(\)]/g, ''); // 숫자만 추출
+                    footnotes[num] = match[2]; // 내용 저장
+                } else {
+                    if (!isFootnoteSection) {
+                        descBody.push(cleanLine); // 아직 주석 구간 아니면 본문
+                    } else {
+                        // 주석 구간에 들어왔는데 숫자로 시작 안 하면? 앞 주석의 연장선일 수 있음
+                        // 여기선 단순하게 본문으로 처리하거나 무시 (상황에 따라 다름)
+                        // 일단은 주석의 연장선으로 보고 마지막 주석에 붙임
+                        /* 복잡도 줄이기 위해 패스 */
+                    }
+                }
+            });
+
+            // 2. 본문 내 번호 치환 ( 1 -> [* 내용] )
+            let finalDesc = descBody.join('\n');
+            
+            // 번호 매칭 (역순으로 처리해야 11이 1로 오인되는 것 방지. 근데 여기선 괄호나 공백으로 구분)
+            // 보통 본문에는 "단어1)" 또는 "단어(1)" 또는 "단어[1]" 형태로 옴.
+            // 동양고전DB 특성상 그냥 작은 숫자가 붙어있거나 괄호가 있음.
+            
+            Object.keys(footnotes).sort((a, b) => b - a).forEach(num => {
+                const noteContent = footnotes[num];
+                const replacement = `[* ${noteContent}]`;
+                
+                // 패턴 1: 괄호 있는 숫자 (1) -> [* 내용]
+                finalDesc = finalDesc.split(`(${num})`).join(replacement);
+                finalDesc = finalDesc.split(`[${num}]`).join(replacement);
+                
+                // 패턴 2: 그냥 숫자 (단, 뒤에 한글이나 문자가 바로 붙지 않는 경우 등 제약 필요)
+                // 너무 위험하므로 괄호 없는 숫자는 수동 검수 권장하거나,
+                // 사용자가 복사해올 때 괄호가 있는 경우가 많음.
+                
+                // (선택) 동양고전DB는 원문 한자에 어깨번호가 붙는데, 텍스트 복사시 숫자로 나옴.
+                // 예: 國破1) -> 이 경우 1)을 찾음
+                finalDesc = finalDesc.split(`${num})`).join(replacement);
+            });
+
+            // 3. 최종 조립
+            // 형식: 제목 | 한자원문 --- 해석
+            const result = `${title} | ${hanja}\n\n---\n${finalDesc}`;
+
+            document.getElementById('outResult').value = result;
+        }
+
+        function copyResult() {
+            const copyText = document.getElementById("outResult");
+            copyText.select();
+            document.execCommand("copy");
+            alert("복사되었습니다! 관리자 페이지 [상세 내용]에 붙여넣으세요.");
+        }
+
+        function clearInputs() {
+            if(confirm('모든 내용을 지우시겠습니까?')) {
+                document.getElementById('inTitle').value = '';
+                document.getElementById('inHanja').value = '';
+                document.getElementById('inDesc').value = '';
+                document.getElementById('outResult').value = '';
+            }
+        }
+    </script>
+
+</body>
+</html>
