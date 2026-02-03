@@ -107,7 +107,7 @@
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
         .modal-content { background-color: #fff; margin: 2% auto; padding: 30px; border: 1px solid #888; width: 90%; max-width: 800px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; position: relative; }
         .close { color: #aaa; float: right; font-size: 32px; font-weight: bold; cursor: pointer; position: sticky; top: 0; right: 0; z-index: 10; background: rgba(255,255,255,0.9); padding: 0 10px; border-radius: 5px;}
-        #floatingCloseBtn { display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 3000; background-color: rgba(0, 0, 0, 0.75); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        #floatingCloseBtn { display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 3000; background-color: rgba(0, 0, 0, 0.75); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; backdrop-filter: blur(4px); transition: all 0.2s; }
         .back-btn { display: none; float: left; background: #eee; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; color: #333; }
         
         /* [개선된 타임라인 문맥 팝업 스타일] */
@@ -336,9 +336,8 @@
                 document.getElementById('pageDesc').innerText = config.desc; document.getElementById('adminToggle').style.display = 'none';
                 adjustPadding(); window.addEventListener('resize', adjustPadding);
             } catch (e) { 
-                // 에러 발생시에도 최소한의 렌더링 시도
                 console.error(e);
-                render(); 
+                render(); // 에러 나도 렌더링 시도
             }
         }
 
@@ -670,62 +669,99 @@
         function resetAllData() { if(confirm('전체 삭제?')) { localStorage.removeItem('tangTimelineDB'); location.reload(); } }
 
         function openModal(id, keepHistory = false) {
-            document.getElementById('miniMapCaption').innerText = ''; document.getElementById('miniMap').innerHTML = '';
-            const item = db.find(d => d.id == id); if (!item) return;
-            if (!keepHistory) { modalHistory = []; document.getElementById('backBtn').style.display = 'none'; }
-            currentOpenId = id; document.getElementById('floatingCloseBtn').style.display = 'block';
-            
-            let dateStr = formatDate(item.year); if (item.type === 'poet') dateStr += ` ~ ${formatDate(item.deathYear)}`;
-            
-            let nameHtml = `${cleanTitle(item.name)}`;
-            if (item.type === 'poet') {
-                let subInfo = [];
-                if (item.hanja) subInfo.push(item.hanja);
-                subInfo.push(dateStr);
-                nameHtml += ` <span style='font-size:0.7em; color:#888;'>(${subInfo.join(', ')})</span>`;
-            } else { nameHtml += ` <span style='font-size:0.7em; color:#888;'>(${item.year})</span>`; }
-            document.getElementById('mName').innerHTML = nameHtml;
-            
-            const editBtn = isAdmin ? `<div style="text-align:right; margin-bottom:10px;"><span class="btn-text btn-edit" onclick="editItem(${item.id}); closeModal('detailModal');">[수정]</span><span class="btn-text btn-del" onclick="deleteItem(${item.id}); closeModal('detailModal');">[삭제]</span></div>` : '';
-            document.getElementById('mDesc').innerHTML = editBtn + parseText(item.desc, false);
-            document.getElementById('mTags').innerHTML = item.tags ? item.tags.map(t => `<span class="tag-badge">#${t}</span>`).join('') : "";
-            const mImg = document.getElementById('mImg'); if(item.img) { mImg.src = item.img; mImg.style.display = 'block'; } else { mImg.style.display = 'none'; }
-            
-            const area = document.getElementById('mContentArea'); area.innerHTML = '';
-            if (item.type === 'poet' && item.poems) {
-                item.poems.forEach((p, index) => {
-                    let body = `<div class="hanja-text">${parseText(p.content, true)}</div>`; 
-                    if (p.simplified) body += `<div style="margin-top:5px; padding:10px; background:#f9f9f9; border-left:4px solid #d63384;">${parseText(p.simplified, true)}</div>`;
-                    if(p.desc) body += `<details class="inner-details"><summary class="inner-summary">[해설]</summary><div class="explain-text">${parseText(p.desc, false)}</div></details>`; 
-                    const details = document.createElement('details'); details.className = 'outer-details';
-                    details.innerHTML = `<summary class="outer-summary">${cleanTitle(p.title)}</summary><div class="poem-body">${body}</div>`;
-                    area.appendChild(details);
-                });
-            } else if (item.historyDetail) { area.innerHTML = `<div class="poem-body">${parseText(item.historyDetail, false)}</div>`; }
-            
-            const miniMapWrapper = document.getElementById('miniMapWrapper');
-            const relContainer = document.getElementById('relContainer');
-            relContainer.innerHTML = '';
-            if(item.relations) {
-                item.relations.split(',').forEach(r => {
-                    const p = r.split(':');
-                    const badge = document.createElement('span'); badge.className = 'rel-badge';
-                    badge.innerHTML = `${p[0]} <small>${p[1]||''}</small>`; badge.onclick = () => openModalByName(p[0]);
-                    relContainer.appendChild(badge);
-                });
+            // [FIX] 안전장치 추가: 에러가 나도 기본 UI는 뜨도록 try-catch 감싸기
+            try {
+                // UI 초기화
+                document.getElementById('miniMapCaption').innerText = ''; 
+                document.getElementById('miniMap').innerHTML = '';
+                document.getElementById('relContainer').innerHTML = '';
+
+                const item = db.find(d => d.id == id); // 느슨한 비교
+                if (!item) { console.error("Item not found:", id); return; }
+
+                if (!keepHistory) { 
+                    modalHistory = []; 
+                    document.getElementById('backBtn').style.display = 'none'; 
+                }
+                currentOpenId = id;
+
+                // 타이틀 생성
+                let dateStr = formatDate(item.year); 
+                if (item.type === 'poet') dateStr += ` ~ ${formatDate(item.deathYear)}`;
+                
+                let nameHtml = `${cleanTitle(item.name)}`;
+                if (item.type === 'poet') {
+                    let subInfo = [];
+                    if (item.hanja) subInfo.push(item.hanja);
+                    subInfo.push(dateStr);
+                    nameHtml += ` <span style='font-size:0.7em; color:#888;'>(${subInfo.join(', ')})</span>`;
+                } else { 
+                    nameHtml += ` <span style='font-size:0.7em; color:#888;'>(${item.year})</span>`; 
+                }
+                document.getElementById('mName').innerHTML = nameHtml;
+                
+                // 설명 및 태그
+                const editBtn = isAdmin ? `<div style="text-align:right; margin-bottom:10px;"><span class="btn-text btn-edit" onclick="editItem(${item.id}); closeModal('detailModal');">[수정]</span></div>` : '';
+                document.getElementById('mDesc').innerHTML = editBtn + parseText(item.desc, false);
+                document.getElementById('mTags').innerHTML = item.tags ? item.tags.map(t => `<span class="tag-badge">#${t}</span>`).join('') : "";
+                
+                const mImg = document.getElementById('mImg'); 
+                if(item.img) { mImg.src = item.img; mImg.style.display = 'block'; } 
+                else { mImg.style.display = 'none'; }
+                
+                // 본문 렌더링 (안전장치)
+                const area = document.getElementById('mContentArea'); area.innerHTML = '';
+                if (item.type === 'poet' && Array.isArray(item.poems)) {
+                    item.poems.forEach((p, index) => {
+                        let body = `<div class="hanja-text">${parseText(p.content, true)}</div>`; 
+                        if (p.simplified) body += `<div style="margin-top:5px; padding:10px; background:#f9f9f9; border-left:4px solid #d63384;">${parseText(p.simplified, true)}</div>`;
+                        if(p.desc) body += `<details class="inner-details"><summary class="inner-summary">[해설]</summary><div class="explain-text">${parseText(p.desc, false)}</div></details>`; 
+                        const details = document.createElement('details'); details.className = 'outer-details';
+                        details.innerHTML = `<summary class="outer-summary">${cleanTitle(p.title)}</summary><div class="poem-body">${body}</div>`;
+                        area.appendChild(details);
+                    });
+                } else if (item.historyDetail) { 
+                    area.innerHTML = `<div class="poem-body">${parseText(item.historyDetail, false)}</div>`; 
+                }
+                
+                // 관계 배지
+                const relContainer = document.getElementById('relContainer');
+                if(item.relations) {
+                    item.relations.split(',').forEach(r => {
+                        const p = r.split(':');
+                        if(p.length > 0) {
+                            const badge = document.createElement('span'); badge.className = 'rel-badge';
+                            badge.innerHTML = `${p[0]} <small>${p[1]||''}</small>`; 
+                            badge.onclick = () => openModalByName(p[0]);
+                            relContainer.appendChild(badge);
+                        }
+                    });
+                }
+
+                // 지도
+                const miniMapWrapper = document.getElementById('miniMapWrapper');
+                if(item.lat && item.lng) {
+                    miniMapWrapper.style.display = 'block'; 
+                    document.getElementById('miniMapCaption').innerText = item.geoDesc || "";
+                    setTimeout(() => {
+                        if (miniMap) miniMap.remove();
+                        miniMap = L.map('miniMap').setView([item.lat, item.lng], 6);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(miniMap);
+                        L.marker([item.lat, item.lng]).addTo(miniMap).bindPopup(`<b>${item.geoName||item.name}</b>`).openPopup();
+                    }, 200);
+                } else { 
+                    miniMapWrapper.style.display = (relContainer.innerHTML ? 'block' : 'none'); 
+                    if(!item.lat) document.getElementById('miniMap').style.display='none'; 
+                }
+
+                // [중요] 모든 준비가 끝난 후 모달 표시 (맨 뒤로 이동)
+                document.getElementById('detailModal').style.display = "block";
+                document.getElementById('floatingCloseBtn').style.display = 'block';
+
+            } catch (err) {
+                console.error("Modal Open Error:", err);
+                alert("상세 정보를 불러오는 중 오류가 발생했습니다.");
             }
-
-            if(item.lat && item.lng) {
-                miniMapWrapper.style.display = 'block'; document.getElementById('miniMapCaption').innerText = item.geoDesc || "";
-                setTimeout(() => {
-                    if (miniMap) miniMap.remove();
-                    miniMap = L.map('miniMap').setView([item.lat, item.lng], 6);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(miniMap);
-                    L.marker([item.lat, item.lng]).addTo(miniMap).bindPopup(`<b>${item.geoName||item.name}</b>`).openPopup();
-                }, 200);
-            } else { miniMapWrapper.style.display = (relContainer.innerHTML ? 'block' : 'none'); if(!item.lat) document.getElementById('miniMap').style.display='none'; }
-
-            document.getElementById('detailModal').style.display = "block";
         }
 
         function openModalByName(name) {
@@ -767,7 +803,7 @@
                     if(item.lat && item.lng) {
                         const marker = L.marker([item.lat, item.lng]);
                         const txt = item.geoName || cleanTitle(item.name);
-                        marker.bindPopup(`<div style="text-align:center;"><b>${txt}</b><br><span style="color:#666">${item.era}</span><br><button onclick="closeModal('mapModal');openModal(${item.id})">이동</button></div>`);
+                        marker.bindPopup(`<div style="text-align:center;"><b>${txt}</b><br><span style="color:#666">${item.era}</span><br><button onclick="closeModal('mapModal');openModal('${item.id}')">이동</button></div>`);
                         markersLayer.addLayer(marker);
                     }
                 });
