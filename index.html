@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>나만의 타임라인 DB</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=KoPub+Batang:wght@400;700&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/pinyin-pro"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <style>
         /* 레이아웃 오차 제거 */
         * { box-sizing: border-box !important; }
@@ -20,7 +23,7 @@
             position: -webkit-sticky;
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 1000; /* 지도보다 위에 오도록 높임 */
             background-color: #fdfbf7;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             padding-top: 20px;
@@ -34,8 +37,9 @@
         .search-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
         .search-input { padding: 8px; border: 2px solid var(--line-color); border-radius: 20px; width: 250px; outline: none; }
         .filter-select { padding: 8px; border: 1px solid #ccc; border-radius: 5px; }
-        .stat-btn, .print-btn { background: #555; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; }
+        .stat-btn, .print-btn, .map-btn { background: #555; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; }
         .print-btn { background: #333; }
+        .map-btn { background: #007bff; } /* 지도 버튼 파란색 */
 
         /* --- 헤더 절대 좌표 고정 --- */
         .timeline-headers { 
@@ -47,11 +51,9 @@
             padding-bottom: 15px;
         }
         
-        #badgeLeft {
+        #badgeLeft, #badgeRight {
             position: absolute;
-            right: 50%; 
             top: 0;
-            margin-right: 50px; 
             display: inline-block; 
             padding: 12px 0; 
             width: 160px; 
@@ -64,24 +66,8 @@
             text-align: center; 
             background-color: #fff;
         }
-
-        #badgeRight {
-            position: absolute;
-            left: 50%; 
-            top: 0;
-            margin-left: 50px; 
-            display: inline-block; 
-            padding: 12px 0; 
-            width: 160px; 
-            border-radius: 15px; 
-            font-weight: bold; 
-            font-size: 1.2rem; 
-            color: #333; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
-            border: 1px solid rgba(0,0,0,0.05); 
-            text-align: center; 
-            background-color: #fff;
-        }
+        #badgeLeft { right: 50%; margin-right: 50px; }
+        #badgeRight { left: 50%; margin-left: 50px; }
 
         /* --- 타임라인 본문 --- */
         .timeline { position: relative; max-width: 1000px; margin: 0 auto; padding-bottom: 80px; padding-top: 20px; }
@@ -117,8 +103,8 @@
         .tag-badge:hover { background: #dcebff; text-decoration: underline; }
         .wiki-link { color: #d63384; font-weight: bold; cursor: pointer; border-bottom: 1px dotted #d63384; }
         .wiki-link:hover { background-color: #ffeef5; }
-        a:not(.img-card) { color: var(--link-color); text-decoration: none; font-weight: bold; }
-        a:not(.img-card):hover { text-decoration: underline; background-color: #eee; border-radius: 3px;}
+        a:not(.img-card):not(.qtfm-btn):not(.source-credit a) { color: var(--link-color); text-decoration: none; font-weight: bold; }
+        a:not(.img-card):not(.qtfm-btn):not(.source-credit a):hover { text-decoration: underline; background-color: #eee; border-radius: 3px;}
 
         /* --- 모바일 최적화 --- */
         @media (max-width: 768px) {
@@ -141,10 +127,10 @@
         }
 
         /* --- 관리자 패널 --- */
-        .admin-btn { position: fixed; top: 20px; right: 20px; padding: 8px 12px; background: #333; color: white; border: none; cursor: pointer; z-index: 200; border-radius: 5px; display: none; }
-        .login-trigger { position: fixed; bottom: 10px; right: 10px; opacity: 0.3; font-size: 12px; cursor: pointer; z-index: 200;}
+        .admin-btn { position: fixed; top: 20px; right: 20px; padding: 8px 12px; background: #333; color: white; border: none; cursor: pointer; z-index: 2000; border-radius: 5px; display: none; }
+        .login-trigger { position: fixed; bottom: 10px; right: 10px; opacity: 0.3; font-size: 12px; cursor: pointer; z-index: 2000;}
         
-        #adminPanel { display: none; position: fixed; top: 60px; right: 20px; width: 500px; background: white; border: 2px solid #333; padding: 25px; z-index: 200; box-shadow: 0 5px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; font-family: sans-serif; }
+        #adminPanel { display: none; position: fixed; top: 60px; right: 20px; width: 500px; background: white; border: 2px solid #333; padding: 25px; z-index: 2100; box-shadow: 0 5px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; font-family: sans-serif; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-weight: bold; font-size: 13px; margin-bottom: 5px;}
         .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; font-size: 14px; }
@@ -158,20 +144,14 @@
         .syntax-guide { font-size: 11px; color: #555; background: #f8f9fa; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 5px; line-height: 1.5; letter-spacing: -0.5px; }
         .syntax-guide code { background: #fff; border: 1px solid #ccc; padding: 1px 4px; border-radius: 3px; color: #d63384; font-family: monospace; font-weight: bold; }
         
-        .pinyin-btn { background-color: #28a745; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
-        .pinyin-btn:hover { background-color: #218838; }
-        
-        .tone-btn-input { background-color: #007bff; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
-        .tone-btn-input:hover { background-color: #0056b3; }
-        
-        .license-btn { background-color: #6f42c1; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
-        .license-btn:hover { background-color: #59359a; }
-
-        .audio-btn { background-color: #fd7e14; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
-        .audio-btn:hover { background-color: #e36a05; }
+        .pinyin-btn, .tone-btn-input, .license-btn, .audio-btn { color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
+        .pinyin-btn { background-color: #28a745; } .pinyin-btn:hover { background-color: #218838; }
+        .tone-btn-input { background-color: #007bff; } .tone-btn-input:hover { background-color: #0056b3; }
+        .license-btn { background-color: #6f42c1; } .license-btn:hover { background-color: #59359a; }
+        .audio-btn { background-color: #fd7e14; } .audio-btn:hover { background-color: #e36a05; }
 
         /* --- 모달 --- */
-        .modal { display: none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
         .modal-content { background-color: #fff; margin: 2% auto; padding: 30px; border: 1px solid #888; width: 90%; max-width: 800px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; position: relative; }
         .close { color: #aaa; float: right; font-size: 32px; font-weight: bold; cursor: pointer; position: sticky; top: 0; right: 0; z-index: 10; background: rgba(255,255,255,0.9); padding: 0 10px; border-radius: 5px;}
         .close:hover { color: #000; }
@@ -182,7 +162,7 @@
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 300;
+            z-index: 3000;
             background-color: rgba(0, 0, 0, 0.75);
             color: white;
             border: none;
@@ -246,6 +226,11 @@
         .qtfm-btn { display: inline-block; background-color: #E60026; color: white; padding: 5px 12px; border-radius: 20px; text-decoration: none; font-size: 0.9rem; font-weight: bold; margin-top: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s; }
         .qtfm-btn:hover { transform: scale(1.05); background-color: #cc0022; text-decoration: none; color: white; }
 
+        /* 지도 스타일 */
+        #map { width: 100%; height: 500px; border-radius: 8px; border: 2px solid #333; }
+        /* Leaflet 모달 충돌 방지 */
+        .leaflet-container { font-family: sans-serif !important; z-index: 1; }
+
         footer { text-align: center; padding: 20px; border-top: 1px solid #ddd; color: #888; font-size: 0.9rem; font-family: 'Noto Serif KR', serif; background-color: #fdfbf7; }
 
         @media print {
@@ -271,6 +256,7 @@
             <div class="search-bar">
                 <input type="text" id="searchInput" class="search-input" placeholder="이름, 내용, 태그 검색..." onkeyup="filterData()">
                 <select id="eraFilter" class="filter-select" onchange="filterData()"> <option value="all">모든 시대</option> </select>
+                <button class="map-btn" onclick="openMapModal()">🗺️ 지도</button>
                 <button class="stat-btn" onclick="openStatModal()">📊 통계</button>
                 <button class="print-btn" onclick="window.print()">🖨️ 인쇄</button>
             </div>
@@ -315,6 +301,28 @@
         <div class="form-group" style="background:#f0f8ff; padding:10px; border-radius:5px; border:1px solid #cceeff;">
             <label style="margin-bottom:0;"><input type="checkbox" id="inShow" checked> <strong>크게 보이기</strong></label>
         </div>
+        
+        <div class="form-group" style="background:#e8f5e9; padding:10px; border-radius:5px; border:1px solid #c8e6c9;">
+             <label>📍 지도 좌표 (위치 표시용)</label>
+             <div style="margin-bottom:5px;">
+                 <select id="geoPreset" onchange="applyGeoPreset()" style="font-size:12px; padding:5px;">
+                     <option value="">-- 주요 좌표 선택 --</option>
+                     <option value="34.2655,108.9531">장안 (시안)</option>
+                     <option value="34.6181,112.4540">낙양 (뤄양)</option>
+                     <option value="30.6635,104.0367">성도 (두보초당)</option>
+                     <option value="32.3931,119.4210">양주 (양저우)</option>
+                     <option value="30.5471,114.2974">황학루 (우한)</option>
+                     <option value="31.0450,109.5760">백제성 (봉절)</option>
+                     <option value="29.5630,115.9860">여산 (루산)</option>
+                     <option value="30.2741,120.1551">항주 (항저우)</option>
+                 </select>
+             </div>
+             <div style="display:flex; gap:5px;">
+                 <input type="number" id="inLat" step="0.0001" placeholder="위도(Lat)" style="flex:1;">
+                 <input type="number" id="inLng" step="0.0001" placeholder="경도(Lng)" style="flex:1;">
+             </div>
+        </div>
+
         <div class="form-group"><label>위치</label> <select id="inType" onchange="updateFormUI()"><option value="poet" id="optLeft">왼쪽</option><option value="history" id="optRight">오른쪽</option></select></div>
         <div class="form-group"><label>연도 / 시대</label><div style="display:flex; gap:5px;"><input type="number" id="inYear" placeholder="연도" style="flex:1;"><input type="text" id="inEra" placeholder="시대" style="flex:1;"></div></div>
         <div class="form-group"><label>제목</label> <input type="text" id="inName"></div>
@@ -350,10 +358,23 @@
     <div id="contextModal" class="modal"><div class="modal-content"><span class="close" onclick="closeModal('contextModal')">&times;</span><h3 style="text-align:center; border-bottom:2px solid #8B0000; padding-bottom:10px;">⌛ <span id="ctxTargetYear"></span>년 전후 기록</h3><ul id="ctxList" class="ctx-list"></ul></div></div>
     <div id="statModal" class="modal"><div class="modal-content"><span class="close" onclick="closeModal('statModal')">&times;</span><h3>📊 데이터 통계</h3><div id="statContent"></div></div></div>
 
+    <div id="mapModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <span class="close" onclick="closeModal('mapModal')">&times;</span>
+            <h3>🗺️ 역사 지도</h3>
+            <p style="font-size:0.9rem; color:#666;">등록된 사건 및 인물의 위치를 보여줍니다. (마커를 클릭하면 정보가 나옵니다)</p>
+            <div id="map"></div>
+        </div>
+    </div>
+
     <script>
         const defaultConfig = { title: "당나라 역사와 시인 연표", desc: "나만의 역사 데이터베이스", leftLabel: "시인 / 작품", rightLabel: "역사 / 사건", bgColor: "#fdfbf7", bgImage: "", bgRepeat: "repeat", leftCardColor: "#ffffff", rightCardColor: "#ffffff", copyright: "" };
         let db=[], config={}, editingId=null, modalHistory=[], currentOpenId=null;
         let isAdmin = false; 
+        
+        // [NEW] 지도 관련 변수
+        let map = null;
+        let markersLayer = null;
 
         async function init() {
             try {
@@ -372,20 +393,17 @@
                 document.getElementById('pageDesc').innerText = config.desc;
                 document.getElementById('adminToggle').style.display = 'none';
                 
-                // [NEW] 창 크기 바뀔 때마다 상단 여백 재계산
                 adjustPadding();
                 window.addEventListener('resize', adjustPadding);
 
             } catch (e) { alert("초기화 오류: " + e.message); }
         }
 
-        // [NEW] 상단 헤더 높이에 맞춰 본문 여백 자동 조절
         function adjustPadding() {
             const headerHeight = document.getElementById('stickyHeader').offsetHeight;
             document.getElementById('timeline-root').style.paddingTop = '20px'; 
         }
 
-        // [보안 강화 버전] 관리자 로그인
         async function adminLogin() {
             if (isAdmin) return;
             const password = prompt("관리자 비밀번호를 입력하세요:");
@@ -408,7 +426,6 @@
             }
         }
 
-        // --- 데이터 저장/관리 ---
         function saveToLocal() {
             db.sort((a, b) => a.year - b.year);
             localStorage.setItem('tangTimelineDB', JSON.stringify(db));
@@ -435,20 +452,15 @@
             }; reader.readAsText(file);
         }
 
-        // --- 스마트 병음 변환기 (선택 영역 지원) ---
+        // --- 기능 함수들 (병음, 평측, 등) ---
         function autoPinyin() {
             const input = document.getElementById('inContent');
             const fullText = input.value;
-            
             if (!fullText) { alert('내용을 입력하세요.'); return; }
             if (typeof pinyinPro === 'undefined') { alert('인터넷 연결을 확인해주세요.'); return; }
-
             const { pinyin } = pinyinPro;
-            const start = input.selectionStart;
-            const end = input.selectionEnd;
-            
+            const start = input.selectionStart; const end = input.selectionEnd;
             if (start === end) { alert("변환할 글자를 드래그해서 선택해주세요."); return; }
-
             const selectedText = fullText.substring(start, end);
             const converted = convertToPinyinString(selectedText, pinyin);
             input.setRangeText(converted);
@@ -459,107 +471,81 @@
             return result.map(item => item.isZh ? `${item.origin}(${item.pinyin})` : item.origin).join('');
         }
 
-        // --- [v10.3] 선택 영역 평측 변환기 (입력창엔 단순 텍스트로) ---
         function autoTone() {
             const input = document.getElementById('inContent');
             const fullText = input.value;
-            
             if (!fullText) { alert('내용을 입력하세요.'); return; }
             if (typeof pinyinPro === 'undefined') { alert('인터넷 연결을 확인해주세요.'); return; }
-
             const { pinyin } = pinyinPro;
-            const start = input.selectionStart;
-            const end = input.selectionEnd;
-            
+            const start = input.selectionStart; const end = input.selectionEnd;
             if (start === end) { alert("평측을 적용할 글자를 드래그해서 선택해주세요."); return; }
-
             const selectedText = fullText.substring(start, end);
-            
-            // 1. type: 'all'로 토큰 분리
             const tokens = pinyin(selectedText, { type: 'all', toneType: 'num', nonZh: 'consecutive' });
-            
-            // [중요 수정] 태그(<ruby>) 대신 '한자(●)' 형태로 변환
             const converted = tokens.map(t => {
-                if (!t.isZh) return t.origin; // 한자 아니면 그대로
-                
+                if (!t.isZh) return t.origin;
                 const isZe = /[34]$/.test(t.pinyin); 
-                const symbol = isZe ? '●' : '○'; // 3,4성은 측성(●), 나머지는 평성(○)
-                
-                return `${t.origin}(${symbol})`; // HTML 태그 아님! 텍스트임!
+                const symbol = isZe ? '●' : '○';
+                return `${t.origin}(${symbol})`; 
             }).join('');
-
             input.setRangeText(converted);
         }
         
-        // --- [v11.0] 라이선스 삽입기 ---
         function insertLicense() {
             const choice = prompt("삽입할 라이선스를 선택하세요 (번호 입력):\n1. 동양고전종합DB\n2. 나무위키\n3. 위키백과");
             if (!choice) return;
-
             let creditHtml = "";
-            if (choice === '1') {
-                creditHtml = "자료출처: <a href='http://db.cyberseodang.or.kr' target='_blank'><img src='http://db.cyberseodang.or.kr/images/front/logo_b.png'> 동양고전종합DB</a>";
-            } else if (choice === '2') {
-                creditHtml = "출처: <a href='https://namu.wiki' target='_blank'>나무위키</a> (CC BY-NC-SA 2.0 KR)";
-            } else if (choice === '3') {
-                creditHtml = "출처: <a href='https://ko.wikipedia.org' target='_blank'>위키백과</a> (CC BY-SA 3.0)";
-            } else {
-                alert("잘못된 입력입니다.");
-                return;
-            }
-
-            // 커서 위치에 삽입 (줄바꿈 포함)
+            if (choice === '1') creditHtml = "자료출처: <a href='http://db.cyberseodang.or.kr' target='_blank'><img src='http://db.cyberseodang.or.kr/images/front/logo_b.png'> 동양고전종합DB</a>";
+            else if (choice === '2') creditHtml = "출처: <a href='https://namu.wiki' target='_blank'>나무위키</a> (CC BY-NC-SA 2.0 KR)";
+            else if (choice === '3') creditHtml = "출처: <a href='https://ko.wikipedia.org' target='_blank'>위키백과</a> (CC BY-SA 3.0)";
+            else { alert("잘못된 입력입니다."); return; }
             const input = document.getElementById('inContent');
-            const start = input.selectionStart;
-            const end = input.selectionEnd;
-            const text = input.value;
-            const insertText = `\n### ${creditHtml} ###`;
-            
+            const start = input.selectionStart; const end = input.selectionEnd;
+            const text = input.value; const insertText = `\n### ${creditHtml} ###`;
             input.value = text.substring(0, start) + insertText + text.substring(end);
         }
 
-        // --- [v12.0] 오디오 간편 삽입기 ---
         function insertAudio() {
             let url = prompt("오디오 파일명(예: song.mp3) 또는 전체 주소를 입력하세요.\n(파일명만 입력하면 'https://tangshi.kr/mp3/'가 자동으로 붙습니다.)");
             if (!url) return;
-
-            // http로 시작하지 않으면 자동으로 경로 완성
-            if (!url.startsWith('http')) {
-                url = 'https://tangshi.kr/mp3/' + url;
-            }
-
+            if (!url.startsWith('http')) { url = 'https://tangshi.kr/mp3/' + url; }
             const input = document.getElementById('inContent');
-            const start = input.selectionStart;
-            const end = input.selectionEnd;
-            const text = input.value;
-            // 문법: {{오디오|주소}}
-            const insertText = `{{오디오|${url}}}`;
-            
+            const start = input.selectionStart; const end = input.selectionEnd;
+            const text = input.value; const insertText = `{{오디오|${url}}}`;
             input.value = text.substring(0, start) + insertText + text.substring(end);
         }
 
-        // --- [v12.2] 태그 정리 함수 (Clean Title) ---
+        // --- 텍스트 유틸리티 ---
         function cleanTitle(text) {
             if (!text) return "";
             return text.replace(/\[.*?\]/g, '').trim();
         }
         
-        // --- [v12.5] 카드 미리보기용 텍스트 클리너 ---
         function cleanTextForCard(text) {
             if (!text) return "";
-            // 오디오/이미지 태그 제거
             text = text.replace(/\{\{.*?\}\}/g, '');
-            // 라이선스 태그 제거
             text = text.replace(/###.*?###/g, '');
-            // 강조 구문 기호 제거 (글자는 남김)
             text = text.replace(/%%(.*?)%%/g, '$1');
             text = text.replace(/\$\$(.*?)\$\$/g, '$1');
             text = text.replace(/\[\[(.*?)\]\]/g, '$1');
-            
             return text.substring(0, 40) + (text.length > 40 ? "..." : "");
         }
 
-        // --- 렌더링 (관리자 모드 반영) ---
+        function parseText(text, isPoetMode = false) {
+            if (!text) return "";
+            if (isPoetMode) { text = text.replace(/([\u2E80-\u2EFF\u31C0-\u31EF\u3200-\u32FF\u3400-\u4DBF\u4E00-\u9FBF\uF900-\uFAFF])\(([^)]+)\)/g, "<ruby>$1<rt>$2</rt></ruby>"); }
+            text = text.replace(/%%(.*?)%%/g, '<b>$1</b>');
+            text = text.replace(/\$\$(.*?)\$\$/g, '<span style="color:#888; font-style:italic;">$1</span>');
+            text = text.replace(/\{\{오디오\|(.*?)\}\}/g, '<div style="margin-top:10px;"><audio controls src="$1" style="width:100%; border-radius:20px;"></audio></div>');
+            text = text.replace(/###(.*?)###/g, '<div class="source-credit">$1</div>');
+            text = text.replace(/\[\[(.+?)\]\]/g, '<span class="wiki-link" onclick="openModalByName(\'$1\')">$1</span>');
+            text = text.replace(/\{\{(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\}\}/g, '<a href="$2" target="_blank" class="img-card"><img src="$1" alt="$3"><span class="img-caption">$3</span></a>');
+            text = text.replace(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([\w-]{11})(?:[&?][^"\s]*)?/g, '<div class="video-container"><iframe src="https://www.youtube.com/embed/$1" title="YouTube" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>');
+            text = text.replace(/(https?:\/\/www\.qtfm\.cn\S+)/g, '<a href="$1" target="_blank" class="qtfm-btn">🎧 蜻蜓FM 낭송 듣기</a>');
+            text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">🔗 $1</a>');
+            return text;
+        }
+
+        // --- 렌더링 ---
         function render(query = "", eraFilter = "all") {
             const root = document.getElementById('timeline-root'); root.innerHTML = '';
             const safeQuery = query ? query.trim().toLowerCase() : "";
@@ -596,7 +582,6 @@
                     
                     const btns = isAdmin ? `<div class="action-btns" style="display:block;"><span class="btn-text btn-edit" onclick="editItem(${item.id})">[수정]</span><span class="btn-text btn-del" onclick="deleteItem(${item.id})">[삭제]</span></div>` : '';
 
-                    // [v12.5] 카드 미리보기 클리너 적용
                     div.innerHTML = `<div class="year-bubble" onclick="openContextModal(${item.id})">${item.year}</div><div class="content clearfix" style="background-color:${cardBg};">${imgTag} <span class="era-tag">${item.era}</span><div class="title-text" onclick="openModal(${item.id})">${cleanTitle(item.name)}</div>${tagHtml} <small>${cleanTextForCard(item.desc)}</small>${btns}</div>`;
                     root.appendChild(div);
                 } else {
@@ -605,7 +590,6 @@
                     root.appendChild(div);
                 }
             });
-            
             setTimeout(adjustPadding, 100);
         }
 
@@ -617,34 +601,6 @@
         }
         function filterData() { render(document.getElementById('searchInput').value.toLowerCase(), document.getElementById('eraFilter').value); }
         
-        // --- [v12.4] 텍스트 렌더링 함수 (강조, 이탤릭 추가) ---
-        function parseText(text, isPoetMode = false) {
-            if (!text) return "";
-            
-            // 1. '한자(기호/병음)' 패턴을 찾아서 <ruby> 태그로 자동 변환 
-            if (isPoetMode) { 
-                text = text.replace(/([\u2E80-\u2EFF\u31C0-\u31EF\u3200-\u32FF\u3400-\u4DBF\u4E00-\u9FBF\uF900-\uFAFF])\(([^)]+)\)/g, "<ruby>$1<rt>$2</rt></ruby>"); 
-            }
-            
-            // [v12.4] 텍스트 강조 기능
-            text = text.replace(/%%(.*?)%%/g, '<b>$1</b>'); // %%강조%% -> Bold
-            text = text.replace(/\$\$(.*?)\$\$/g, '<span style="color:#888; font-style:italic;">$1</span>'); // $$독백$$ -> Gray Italic
-
-            // [v12.1] 오디오 태그 {{오디오|...}} 변환 (위치 상관없이)
-            text = text.replace(/\{\{오디오\|(.*?)\}\}/g, '<div style="margin-top:10px;"><audio controls src="$1" style="width:100%; border-radius:20px;"></audio></div>');
-
-            // [v11.0] ### 내용 ### 패턴을 찾아서 source-credit 클래스로 변환
-            text = text.replace(/###(.*?)###/g, '<div class="source-credit">$1</div>');
-            
-            // 2. 다른 마크다운 처리
-            text = text.replace(/\[\[(.+?)\]\]/g, '<span class="wiki-link" onclick="openModalByName(\'$1\')">$1</span>');
-            text = text.replace(/\{\{(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\}\}/g, '<a href="$2" target="_blank" class="img-card"><img src="$1" alt="$3"><span class="img-caption">$3</span></a>');
-            text = text.replace(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([\w-]{11})(?:[&?][^"\s]*)?/g, '<div class="video-container"><iframe src="https://www.youtube.com/embed/$1" title="YouTube" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>');
-            text = text.replace(/(https?:\/\/www\.qtfm\.cn\S+)/g, '<a href="$1" target="_blank" class="qtfm-btn">🎧 蜻蜓FM 낭송 듣기</a>');
-            text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">🔗 $1</a>');
-            return text;
-        }
-
         function openModalByName(name) {
             if(currentOpenId !== null) { modalHistory.push(currentOpenId); document.getElementById('backBtn').style.display = 'block'; }
             const item = db.find(d => d.name.trim() === name.trim());
@@ -667,23 +623,16 @@
         function applyConfigUI() {
             document.getElementById('pageTitle').innerText = config.title; document.getElementById('pageDesc').innerText = config.desc;
             document.title = config.title; 
-            
             document.getElementById('pageFooter').innerHTML = config.copyright || "";
             document.getElementById('cfgCopyright').value = config.copyright || "";
-
-            const badgeLeft = document.getElementById('badgeLeft');
-            const badgeRight = document.getElementById('badgeRight');
-            badgeLeft.innerText = config.leftLabel;
-            badgeRight.innerText = config.rightLabel;
-            badgeLeft.style.backgroundColor = config.leftCardColor || "#ffffff";
-            badgeRight.style.backgroundColor = config.rightCardColor || "#ffffff";
-
+            const badgeLeft = document.getElementById('badgeLeft'); const badgeRight = document.getElementById('badgeRight');
+            badgeLeft.innerText = config.leftLabel; badgeRight.innerText = config.rightLabel;
+            badgeLeft.style.backgroundColor = config.leftCardColor || "#ffffff"; badgeRight.style.backgroundColor = config.rightCardColor || "#ffffff";
             document.getElementById('cfgTitle').value = config.title; document.getElementById('cfgDesc').value = config.desc;
             document.getElementById('cfgLabelLeft').value = config.leftLabel; document.getElementById('cfgLabelRight').value = config.rightLabel;
             document.getElementById('cfgBgColor').value = config.bgColor || "#fdfbf7"; document.getElementById('cfgBgImage').value = config.bgImage || "";
             document.getElementById('cfgLeftColor').value = config.leftCardColor || "#ffffff"; document.getElementById('cfgRightColor').value = config.rightCardColor || "#ffffff";
             document.getElementById('optLeft').innerText = "왼쪽: " + config.leftLabel; document.getElementById('optRight').innerText = "오른쪽: " + config.rightLabel;
-            
             document.body.style.backgroundColor = config.bgColor || "#fdfbf7";
             document.getElementById('stickyHeader').style.backgroundColor = config.bgColor || "#fdfbf7";
             document.getElementById('pageFooter').style.backgroundColor = config.bgColor || "#fdfbf7";
@@ -692,17 +641,12 @@
                 document.body.style.backgroundImage = `url('${config.bgImage}')`;
                 document.body.style.backgroundSize = config.bgRepeat === 'cover' ? 'cover' : 'auto';
                 document.body.style.backgroundRepeat = config.bgRepeat === 'cover' ? 'no-repeat' : 'repeat';
-            } else {
-                document.body.style.backgroundImage = 'none';
-            }
-            updateFormUI();
-            
-            setTimeout(adjustPadding, 100);
+            } else { document.body.style.backgroundImage = 'none'; }
+            updateFormUI(); setTimeout(adjustPadding, 100);
         }
         function saveConfig() {
             config.title = document.getElementById('cfgTitle').value; config.desc = document.getElementById('cfgDesc').value;
             config.copyright = document.getElementById('cfgCopyright').value;
-
             config.leftLabel = document.getElementById('cfgLabelLeft').value; config.rightLabel = document.getElementById('cfgLabelRight').value;
             config.bgColor = document.getElementById('cfgBgColor').value; config.bgImage = document.getElementById('cfgBgImage').value;
             config.bgRepeat = document.getElementById('cfgBgRepeat').value; config.leftCardColor = document.getElementById('cfgLeftColor').value;
@@ -711,7 +655,17 @@
         }
         function updateFormUI() {}
         
-        /* [수정 모드 진입 함수] */
+        // [NEW] 좌표 프리셋 적용
+        function applyGeoPreset() {
+            const val = document.getElementById('geoPreset').value;
+            if(val) {
+                const parts = val.split(',');
+                document.getElementById('inLat').value = parts[0];
+                document.getElementById('inLng').value = parts[1];
+            }
+        }
+
+        /* 수정 모드 */
         function editItem(id) {
             const item = db.find(d => d.id === Number(id)); 
             if (!item) { alert("항목을 찾을 수 없습니다."); return; }
@@ -727,18 +681,19 @@
             document.getElementById('inImg').value = item.img || "";
             document.getElementById('inCardColor').value = item.cardColor || "#ffffff";
             
+            // [NEW] 좌표 불러오기
+            document.getElementById('inLat').value = item.lat || "";
+            document.getElementById('inLng').value = item.lng || "";
+
             const contentBox = document.getElementById('inContent');
             if (item.type === 'poet' && item.poems) {
-                // 저장된 시 데이터를 +++ --- 형식으로 복원
                 contentBox.value = item.poems.map(p => {
                     let text = `${p.title}|${p.content}`;
                     if (p.simplified) text += `\n\n+++\n${p.simplified}`;
                     if (p.desc) text += `\n\n---\n${p.desc}`;
                     return text;
                 }).join('\n\n===\n\n');
-            } else {
-                contentBox.value = item.historyDetail || "";
-            }
+            } else { contentBox.value = item.historyDetail || ""; }
             
             editingId = item.id; 
             document.getElementById('btnSave').innerText = "수정 완료"; 
@@ -751,58 +706,39 @@
             const name = document.getElementById('inName').value; const tags = document.getElementById('inTags').value.split(',').map(t=>t.trim()).filter(t=>t);
             const desc = document.getElementById('inDesc').value; const img = document.getElementById('inImg').value;
             const cardColor = document.getElementById('inCardColor').value; const rawContent = document.getElementById('inContent').value;
+            
+            // [NEW] 좌표 저장
+            const lat = document.getElementById('inLat').value;
+            const lng = document.getElementById('inLng').value;
+
             if (!year || !name) { alert('필수 항목 누락'); return; }
             
             let poems = []; let historyDetail = "";
             if (type === 'poet' && rawContent.trim()) { 
                 const blocks = rawContent.split('==='); 
                 poems = blocks.map(b => { 
-                    // 구조: 제목|내용 -> +++간체 -> ---해설
-                    let temp = b;
-                    let pDesc = "";
-                    const descParts = temp.split('---');
-                    if (descParts.length > 1) {
-                        pDesc = descParts.slice(1).join('---').trim();
-                        temp = descParts[0];
-                    }
-                    
-                    let pSimp = "";
-                    const simpParts = temp.split('+++');
-                    if (simpParts.length > 1) {
-                        pSimp = simpParts.slice(1).join('+++').trim();
-                        temp = simpParts[0];
-                    }
-                    
+                    let temp = b; let pDesc = ""; const descParts = temp.split('---');
+                    if (descParts.length > 1) { pDesc = descParts.slice(1).join('---').trim(); temp = descParts[0]; }
+                    let pSimp = ""; const simpParts = temp.split('+++');
+                    if (simpParts.length > 1) { pSimp = simpParts.slice(1).join('+++').trim(); temp = simpParts[0]; }
                     const idx = temp.indexOf('|'); 
-                    if (idx !== -1) {
-                        return { 
-                            title: temp.substring(0, idx).trim(), 
-                            content: temp.substring(idx + 1).trim(),
-                            simplified: pSimp,
-                            desc: pDesc
-                        };
-                    }
+                    if (idx !== -1) { return { title: temp.substring(0, idx).trim(), content: temp.substring(idx + 1).trim(), simplified: pSimp, desc: pDesc }; }
                     return null; 
                 }).filter(p => p); 
-            } else { 
-                historyDetail = rawContent.trim(); 
-            }
+            } else { historyDetail = rawContent.trim(); }
             
-            const newData = { id: editingId || Date.now(), year, era, type, name, tags, desc, img, isShow, cardColor, poems, historyDetail };
+            const newData = { id: editingId || Date.now(), year, era, type, name, tags, desc, img, isShow, cardColor, poems, historyDetail, lat, lng };
             
-            if (editingId) { 
-                const idx = db.findIndex(d => d.id === editingId); 
-                if (idx !== -1) db[idx] = newData; 
-            } else { 
-                db.push(newData); 
-            }
-            
+            if (editingId) { const idx = db.findIndex(d => d.id === editingId); if (idx !== -1) db[idx] = newData; } else { db.push(newData); }
             saveToLocal(); render(); populateEraFilter(); clearForm();
         }
+
         function clearForm() {
             document.getElementById('inYear').value = ''; document.getElementById('inName').value = '';
             document.getElementById('inTags').value = ''; document.getElementById('inDesc').value = '';
             document.getElementById('inImg').value = ''; document.getElementById('inContent').value = '';
+            document.getElementById('inLat').value = ''; document.getElementById('inLng').value = '';
+            document.getElementById('geoPreset').value = '';
             document.getElementById('inShow').checked = true; document.getElementById('inCardColor').value = "#ffffff";
             editingId = null; document.getElementById('btnSave').innerText = "저장";
         }
@@ -813,20 +749,10 @@
             const item = db.find(d => d.id === id); if (!item) return;
             if (!keepHistory) { modalHistory = []; document.getElementById('backBtn').style.display = 'none'; }
             currentOpenId = id;
-            
-            // [v12.3] 모달 열 때 플로팅 닫기 버튼 보이기
             document.getElementById('floatingCloseBtn').style.display = 'block';
-            
             const query = document.getElementById('searchInput').value.trim().toLowerCase();
 
-            // [v12.5] 모달 내 삭제 버튼 추가
-            const editBtnHtml = isAdmin ? `
-                <div style="text-align:right; margin-bottom:10px;">
-                    <span class="btn-text btn-edit" onclick="editItem(${item.id}); closeModal('detailModal');">[수정]</span>
-                    <span class="btn-text btn-del" onclick="deleteItem(${item.id}); closeModal('detailModal');">[삭제]</span>
-                </div>` : '';
-                
-            // [v12.2] 모달 제목에도 cleanTitle 적용
+            const editBtnHtml = isAdmin ? `<div style="text-align:right; margin-bottom:10px;"><span class="btn-text btn-edit" onclick="editItem(${item.id}); closeModal('detailModal');">[수정]</span><span class="btn-text btn-del" onclick="deleteItem(${item.id}); closeModal('detailModal');">[삭제]</span></div>` : '';
             document.getElementById('mName').innerHTML = `${cleanTitle(item.name)} <span style='font-size:0.7em; color:#888;'>(${item.year})</span>`;
             document.getElementById('mDesc').innerHTML = editBtnHtml + parseText(item.desc, false);
             const tagsHtml = item.tags ? item.tags.map(t => `<span class="tag-badge">#${t}</span>`).join('') : "";
@@ -835,42 +761,19 @@
             if(item.img) { mImg.src = item.img; mImg.style.display = 'block'; } else { mImg.style.display = 'none'; }
             
             const area = document.getElementById('mContentArea'); area.innerHTML = '';
-            
             if (item.type === 'poet' && item.poems) {
                 item.poems.forEach((p, index) => {
                     let isMatch = true;
                     if (query) {
                         const matchTitle = p.title && p.title.toLowerCase().includes(query);
                         const matchContent = p.content && p.content.toLowerCase().includes(query);
-                        if (!matchTitle && !matchContent) {
-                            isMatch = false; 
-                        }
+                        if (!matchTitle && !matchContent) { isMatch = false; }
                     }
-
-                    const details = document.createElement('details'); 
-                    details.className = 'outer-details';
-                    
-                    if (!isMatch) {
-                        details.style.display = 'none';
-                    } else {
-                        if (query) details.open = true;
-                    }
-
-                    // 본문 렌더링 (병음 또는 평측이 루비로 포함된 텍스트)
+                    const details = document.createElement('details'); details.className = 'outer-details';
+                    if (!isMatch) { details.style.display = 'none'; } else { if (query) details.open = true; }
                     let body = `<div class="hanja-text">${parseText(p.content, true)}</div>`; 
-                    
-                    if (p.simplified) {
-                        const simpId = `simp_${item.id}_${index}`;
-                        // 버튼 누르기 전엔 절대 안 보임 (display:none)
-                        body += `<span class="simp-btn" onclick="toggleSimplified('${simpId}')">🇨🇳 간체자 보기</span>`;
-                        body += `<div id="${simpId}" class="simplified-box"><div style="margin-top:5px;">${parseText(p.simplified, true)}</div></div>`;
-                    }
-
-                    if(p.desc) { 
-                        body += `<details class="inner-details"><summary class="inner-summary">[해설 보기]</summary><div class="explain-text">${parseText(p.desc, false)}</div></details>`; 
-                    }
-                    
-                    // [v12.2] 시 제목(아코디언 헤더)에도 cleanTitle 적용
+                    if (p.simplified) { const simpId = `simp_${item.id}_${index}`; body += `<span class="simp-btn" onclick="toggleSimplified('${simpId}')">🇨🇳 간체자 보기</span>`; body += `<div id="${simpId}" class="simplified-box"><div style="margin-top:5px;">${parseText(p.simplified, true)}</div></div>`; }
+                    if(p.desc) { body += `<details class="inner-details"><summary class="inner-summary">[해설 보기]</summary><div class="explain-text">${parseText(p.desc, false)}</div></details>`; }
                     details.innerHTML = `<summary class="outer-summary">${cleanTitle(p.title)}</summary><div class="poem-body">${body}</div>`;
                     area.appendChild(details);
                 });
@@ -879,52 +782,64 @@
             document.getElementById('detailModal').style.display = "block";
         }
 
-        // [v12.4] 통계 모달 개편 (인물별 작품 수 랭킹)
         function openStatModal() {
             const totalCards = db.length; 
-            const leftCount = db.filter(d=>d.type==='poet').length; 
-            const rightCount = db.filter(d=>d.type==='history').length;
-            
-            // 작품 수 집계
-            const stats = {};
-            let totalPoems = 0;
-
-            db.forEach(item => {
-                if (item.type === 'poet' && item.poems) {
-                    const key = cleanTitle(item.name); // 태그 제거한 이름 사용 (이백 [성당] -> 이백)
-                    const count = item.poems.length;
-                    stats[key] = (stats[key] || 0) + count;
-                    totalPoems += count;
-                } else if (item.type === 'history') {
-                    // 역사는 그냥 1개로 칠지 말지 선택. 여기선 인물 랭킹이므로 제외하거나 따로 표시
-                }
-            });
-
-            // 정렬 (내림차순)
+            const stats = {}; let totalPoems = 0;
+            db.forEach(item => { if (item.type === 'poet' && item.poems) { const key = cleanTitle(item.name); const count = item.poems.length; stats[key] = (stats[key] || 0) + count; totalPoems += count; } });
             const sortedStats = Object.entries(stats).sort((a, b) => b[1] - a[1]);
-
-            let html = `
-                <table class="stat-table">
-                    <tr><th>총 데이터(카드)</th><td>${totalCards}개</td></tr>
-                    <tr><th>수록된 작품 수</th><td>${totalPoems}수</td></tr>
-                    <tr><th colspan="2" style="text-align:center; background:#eee;">🏆 인물별 작품 수 랭킹</th></tr>
-                </table>
-                <div class="stat-scroll-box">
-                    <table class="stat-rank-table">
-            `;
-            
-            sortedStats.forEach((entry, index) => {
-                html += `<tr><td class="rank-num">${index + 1}</td><td>${entry[0]}</td><td style="text-align:right; font-weight:bold;">${entry[1]}수</td></tr>`;
-            });
-
-            if (sortedStats.length === 0) {
-                html += `<tr><td colspan="3" style="text-align:center; padding:20px;">집계된 작품이 없습니다.</td></tr>`;
-            }
-
+            let html = `<table class="stat-table"><tr><th>총 데이터(카드)</th><td>${totalCards}개</td></tr><tr><th>수록된 작품 수</th><td>${totalPoems}수</td></tr><tr><th colspan="2" style="text-align:center; background:#eee;">🏆 인물별 작품 수 랭킹</th></tr></table><div class="stat-scroll-box"><table class="stat-rank-table">`;
+            sortedStats.forEach((entry, index) => { html += `<tr><td class="rank-num">${index + 1}</td><td>${entry[0]}</td><td style="text-align:right; font-weight:bold;">${entry[1]}수</td></tr>`; });
+            if (sortedStats.length === 0) { html += `<tr><td colspan="3" style="text-align:center; padding:20px;">집계된 작품이 없습니다.</td></tr>`; }
             html += `</table></div>`;
-            
             document.getElementById('statContent').innerHTML = html; 
             document.getElementById('statModal').style.display = 'block';
+        }
+
+        // [NEW] 지도 모달 열기 및 초기화
+        function openMapModal() {
+            document.getElementById('mapModal').style.display = 'block';
+            
+            // 모달이 열린 직후에는 사이즈 계산이 안될 수 있으므로 약간의 지연 후 렌더링
+            setTimeout(() => {
+                if (!map) {
+                    // 지도 최초 생성 (중국 시안 중심)
+                    map = L.map('map').setView([34.26, 108.94], 5);
+                    
+                    // 오픈스트리트맵 타일 사용
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(map);
+
+                    markersLayer = L.layerGroup().addTo(map);
+                } else {
+                    map.invalidateSize(); // 모달 내부에서 지도 크기 재계산 (필수)
+                }
+
+                // 마커 새로고침
+                updateMarkers();
+            }, 100);
+        }
+
+        function updateMarkers() {
+            if(!markersLayer) return;
+            markersLayer.clearLayers();
+
+            db.forEach(item => {
+                if(item.lat && item.lng) {
+                    const marker = L.marker([item.lat, item.lng]);
+                    
+                    // 팝업 내용
+                    const popupContent = `
+                        <div style="text-align:center;">
+                            <b>${cleanTitle(item.name)}</b> (${item.year})<br>
+                            <span style="font-size:0.8em; color:#666;">${item.era}</span><br>
+                            <button onclick="closeModal('mapModal'); openModal(${item.id});" style="margin-top:5px; cursor:pointer; background:#eee; border:1px solid #ccc; padding:2px 5px; border-radius:3px;">상세보기</button>
+                        </div>
+                    `;
+                    marker.bindPopup(popupContent);
+                    markersLayer.addLayer(marker);
+                }
+            });
         }
 
         function openContextModal(targetId) {
@@ -945,7 +860,6 @@
         
         function closeModal(id) { 
             document.getElementById(id).style.display = "none"; 
-            // [v12.3] 닫을 때 플로팅 버튼도 숨기기
             document.getElementById('floatingCloseBtn').style.display = 'none';
         }
         
