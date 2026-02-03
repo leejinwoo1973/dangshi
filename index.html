@@ -17,13 +17,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
     <style>
-        /* --- 기본 스타일 --- */
         * { box-sizing: border-box !important; }
         :root { --line-color: #8B0000; --text-color: #333; --edit-color: #0056b3; --link-color: #1a0dab; --dot-color: #aaa; --tag-bg: #eef; --tag-text: #0044cc; }
         
         body { font-family: 'KoPub Batang', 'Noto Serif KR', serif; color: var(--text-color); margin: 0; padding: 0; background-color: #fdfbf7; background-attachment: fixed; transition: background 0.3s; }
         
-        /* --- 상단 고정 영역 --- */
         #stickyHeader {
             position: -webkit-sticky; position: sticky; top: 0; z-index: 1000;
             background-color: #fdfbf7; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
@@ -40,7 +38,6 @@
         .stat-btn, .print-btn, .map-btn, .rel-btn { background: #555; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; }
         .print-btn { background: #333; } .map-btn { background: #007bff; } .rel-btn { background: #6f42c1; }
 
-        /* --- 타임라인 헤더 --- */
         .timeline-headers { position: relative; max-width: 1000px; width: 100%; height: 60px; margin: 0 auto; padding-bottom: 15px; }
         #badgeLeft, #badgeRight {
             position: absolute; top: 0; display: inline-block; padding: 12px 0; width: 160px; 
@@ -50,13 +47,11 @@
         }
         #badgeLeft { right: 50%; margin-right: 50px; } #badgeRight { left: 50%; margin-left: 50px; }
 
-        /* --- 타임라인 본문 --- */
         .timeline { position: relative; max-width: 1000px; margin: 0 auto; padding-bottom: 80px; padding-top: 20px; }
         .timeline::after { content: ''; position: absolute; width: 4px; background-color: var(--line-color); top: 0; bottom: 0; left: 50%; margin-left: -2px; z-index: 0; }
         .container { padding: 10px 50px; position: relative; width: 50%; }
         .left { left: 0; text-align: right; } .right { left: 50%; text-align: left; }
         
-        /* 애니메이션 카드 스타일 */
         .content { 
             padding: 15px; position: relative; border-radius: 8px; 
             border: 1px solid rgba(0,0,0,0.05); box-shadow: 2px 2px 5px rgba(0,0,0,0.05); 
@@ -65,8 +60,6 @@
             transform-origin: center center;
         }
         .left .content { text-align: right; }
-        
-        /* 중앙 활성화 및 호버 효과 */
         .content.active { transform: scale(1.1); box-shadow: 0 10px 25px rgba(139, 0, 0, 0.15); z-index: 50; border-color: rgba(139,0,0,0.2); }
         .content:hover, .content.active:hover { transform: scale(1.2) !important; box-shadow: 0 15px 30px rgba(0,0,0,0.2) !important; z-index: 100 !important; }
         
@@ -97,12 +90,10 @@
         a:not(.img-card):not(.qtfm-btn):not(.source-credit a) { color: var(--link-color); text-decoration: none; font-weight: bold; }
         a:not(.img-card):not(.qtfm-btn):not(.source-credit a):hover { text-decoration: underline; background-color: #eee; border-radius: 3px;}
 
-        /* 모바일 최적화 */
         @media (max-width: 768px) {
             .thumb-img, .tag-container, .content small, .action-btns { display: none !important; }
             .content { padding: 10px 15px; min-height: auto; display: flex; flex-direction: column; justify-content: center; }
             .title-text { font-size: 1.15rem; margin-bottom: 0; border-bottom: none; line-height: 1.3; }
-            .era-tag { font-size: 0.85rem; margin-bottom: 3px; color: #666; font-weight: bold; }
             .timeline-headers { display: flex; height: auto; padding: 0 10px; }
             #badgeLeft, #badgeRight { position: static; width: 48%; margin: 0 1%; padding: 10px 0; font-size: 1rem; }
             .container { padding: 10px 30px; } 
@@ -110,7 +101,6 @@
             .right .content { align-items: flex-start; text-align: left; }
         }
 
-        /* 관리자 패널 */
         .admin-btn { position: fixed; top: 20px; right: 20px; padding: 8px 12px; background: #333; color: white; border: none; cursor: pointer; z-index: 2000; border-radius: 5px; display: none; }
         .login-trigger { position: fixed; bottom: 10px; right: 10px; opacity: 0.3; font-size: 12px; cursor: pointer; z-index: 2000;}
         #adminPanel { display: none; position: fixed; top: 60px; right: 20px; width: 500px; background: white; border: 2px solid #333; padding: 25px; z-index: 2100; box-shadow: 0 5px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; font-family: sans-serif; }
@@ -129,7 +119,6 @@
         .pinyin-btn, .tone-btn-input, .license-btn, .audio-btn { color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
         .pinyin-btn { background-color: #28a745; } .tone-btn-input { background-color: #007bff; } .license-btn { background-color: #6f42c1; } .audio-btn { background-color: #fd7e14; }
 
-        /* 모달 시스템 */
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
         .modal-content { background-color: #fff; margin: 2% auto; padding: 30px; border: 1px solid #888; width: 90%; max-width: 800px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; position: relative; }
         .close { color: #aaa; float: right; font-size: 32px; font-weight: bold; cursor: pointer; position: sticky; top: 0; right: 0; z-index: 10; background: rgba(255,255,255,0.9); padding: 0 10px; border-radius: 5px;}
@@ -139,7 +128,6 @@
         #floatingCloseBtn:active { transform: translateX(-50%) scale(0.95); background-color: black; }
         .back-btn { display: none; float: left; background: #eee; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; color: #333; }
         
-        /* 통계 및 기타 스타일 */
         .stat-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem;}
         .stat-table th, .stat-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         .stat-table th { background-color: #f2f2f2; font-weight: bold; }
@@ -166,11 +154,11 @@
         details.inner-details { border-top: 1px dashed #ddd; padding-top: 10px; margin-top: 10px; line-height: 1.6;}
         .qtfm-btn { display: inline-block; background-color: #E60026; color: white; padding: 5px 12px; border-radius: 20px; text-decoration: none; font-size: 0.9rem; font-weight: bold; margin-top: 10px; }
         
-        /* 지도 및 그래프 */
         #map { width: 100%; height: 500px; border-radius: 8px; border: 2px solid #333; }
         #miniMapWrapper { width: 100%; margin: 15px 0; display: none; }
         #miniMap { width: 100%; height: 200px; border-radius: 8px; border: 1px solid #ccc; }
         #miniMapCaption { text-align: center; font-size: 0.85rem; color: #666; margin-top: 5px; font-weight: bold; }
+        
         #relContainer { text-align:center; margin-top:10px; }
         .rel-badge { display:inline-block; padding: 5px 10px; margin: 3px; border: 1px solid #ccc; background: #fff; border-radius: 20px; cursor: pointer; font-size: 0.9rem; box-shadow: 0 2px 3px rgba(0,0,0,0.1); transition: all 0.2s; }
         .rel-badge:hover { background: var(--tag-bg); border-color: var(--tag-text); color: var(--tag-text); transform: scale(1.05); }
@@ -178,7 +166,6 @@
         #network { width: 100%; height: 600px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px; }
         .leaflet-container { font-family: sans-serif !important; z-index: 1; }
         
-        /* 태그 클라우드 */
         .tag-cloud-box { background: #f8f9fa; border: 1px solid #eee; border-radius: 10px; padding: 20px; margin-bottom: 20px; text-align: center; line-height: 1.8; }
         .tag-cloud-item { display: inline-block; margin: 0 5px; cursor: pointer; color: #555; transition: all 0.2s; text-decoration: none; }
         .tag-cloud-item:hover { color: var(--line-color); transform: scale(1.2); text-decoration: underline; }
@@ -190,7 +177,6 @@
         .crop-btn { padding:10px 20px; font-size:16px; background:white; border:none; cursor:pointer; margin:0 5px; border-radius:5px;}
         
         footer { text-align: center; padding: 20px; border-top: 1px solid #ddd; color: #888; font-size: 0.9rem; background-color: #fdfbf7; }
-        /* [UPDATED] 라이선스 표기 스타일 개선 */
         .source-credit { margin-top: 20px; text-align: right; border-top: 1px dashed #ddd; padding-top: 10px; font-size: 0.85rem; color: #666; display: block; }
         .source-credit img { vertical-align: middle; margin-right: 5px; max-height: 18px; margin-bottom:2px; }
         .source-credit a { text-decoration: none; color: #555; font-weight: bold; }
@@ -244,7 +230,7 @@
         <div class="form-group">
             <label id="lblYear">연도</label>
             <div style="display:flex; gap:5px;"><input type="number" id="inYear" placeholder="시작/출생" style="flex:1;" oninput="detectEra()"><input type="number" id="inDeathYear" placeholder="사망" style="flex:1; display:none;"><input type="text" id="inEra" placeholder="시대(자동)" style="flex:1;"></div>
-            <div id="eraHint" style="font-size:0.8rem; color:#d63384;"></div>
+            <div id="eraHint" style="font-size:0.8rem; color:#d63384; margin-top:5px; min-height:20px;"></div>
         </div>
         <div class="form-group"><input type="text" id="inName" placeholder="제목/이름"></div>
         <div class="form-group"><input type="text" id="inRelations" placeholder="관계 (이름:관계, ...)"></div>
@@ -367,7 +353,7 @@
 
         function autoPinyin() { const i = document.getElementById('inContent'); const s = i.selectionStart; const e = i.selectionEnd; if(s===e) return alert("선택필요"); const t = pinyinPro.pinyin(i.value.substring(s,e), { type: 'all', toneType: 'symbol', nonZh: 'consecutive' }); i.setRangeText(t.map(x => x.isZh ? `${x.origin}(${x.pinyin})` : x.origin).join('')); }
         function autoTone() { const i = document.getElementById('inContent'); const s = i.selectionStart; const e = i.selectionEnd; if(s===e) return alert("선택필요"); const t = pinyinPro.pinyin(i.value.substring(s,e), { type: 'all', toneType: 'num', nonZh: 'consecutive' }); i.setRangeText(t.map(x => { if (!x.isZh) return x.origin; return `${x.origin}(${/[34]$/.test(x.pinyin)?'●':'○'})`; }).join('')); }
-        function insertLicense() { document.getElementById('inContent').setRangeText(`\n### 자료출처: <a href='http://db.cyberseodang.or.kr' target='_blank'><img src='http://db.cyberseodang.or.kr/images/front/logo_b.png'> 동양고전종합DB</a> ###`); }
+        function insertLicense() { document.getElementById('inContent').setRangeText(`\n### 자료출처: <a href='http://db.cyberseodang.or.kr'>동양고전종합DB</a> ###`); }
         function insertAudio() { let u = prompt("오디오 URL"); if(u) { if(!u.startsWith('http')) u='https://tangshi.kr/mp3/'+u; document.getElementById('inContent').setRangeText(`{{오디오|${u}}}`); } }
 
         function cleanTitle(t) { return t ? t.replace(/\[.*?\]/g, '').trim() : ""; }
@@ -375,12 +361,11 @@
         function parseText(t, m=false) { 
             if(!t) return ""; 
             if(m) t = t.replace(/([\u4E00-\u9FFF])\(([^)]+)\)/g, "<ruby>$1<rt>$2</rt></ruby>"); 
-            t = t.replace(/%%(.*?)%%/g, '<b>$1</b>')
-                 .replace(/\$\$(.*?)\$\$/g, '<span style="color:#888;font-style:italic;">$1</span>')
-                 .replace(/\{\{오디오\|(.*?)\}\}/g, '<audio controls src="$1" style="width:100%;margin-top:10px;"></audio>')
-                 .replace(/###(.*?)###/g, '<div class="source-credit">$1</div>')
-                 .replace(/\[\[(.*?)\]\]/g, '<span class="wiki-link" onclick="openModalByName(\'$1\')">$1</span>'); 
-            return t; 
+            return t.replace(/%%(.*?)%%/g, '<b>$1</b>')
+                    .replace(/\$\$(.*?)\$\$/g, '<span style="color:#888;font-style:italic;">$1</span>')
+                    .replace(/\{\{오디오\|(.*?)\}\}/g, '<audio controls src="$1" style="width:100%;margin-top:10px;"></audio>')
+                    .replace(/###(.*?)###/g, '<div class="source-credit">$1</div>')
+                    .replace(/\[\[(.*?)\]\]/g, '<span class="wiki-link" onclick="openModalByName(\'$1\')">$1</span>'); 
         }
 
         async function searchLocation() {
@@ -388,6 +373,7 @@
             try { const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`); const j = await r.json(); if(j.length>0) { document.getElementById('inLat').value = parseFloat(j[0].lat).toFixed(4); document.getElementById('inLng').value = parseFloat(j[0].lon).toFixed(4); alert("발견: "+j[0].display_name); } else alert("실패"); } catch(e){alert("오류");}
         }
 
+        // 이미지 크롭 관련 로직
         function handleImageSelect(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -404,6 +390,7 @@
         }
         function performCrop() {
             if(!cropper) return;
+            // 150x150 사이즈로 저장
             const canvas = cropper.getCroppedCanvas({ width:150, height:150 });
             const base64 = canvas.toDataURL('image/jpeg', 0.8);
             document.getElementById('inImg').value = base64;
@@ -417,7 +404,11 @@
         function detectEra() {
             const y = parseInt(document.getElementById('inYear').value); if(!y) return;
             const f = tangChronology.find(i => y >= i.start && y <= i.end);
-            if(f) { document.getElementById('inEra').value = f.era; document.getElementById('eraHint').innerText = `💡 ${f.era} - ${f.emperor} (${f.reign})`; }
+            if(f) { 
+                document.getElementById('inEra').value = f.era; 
+                // [FIXED] innerText -> innerHTML로 수정하여 버튼이 보이게 함
+                document.getElementById('eraHint').innerHTML = `💡 ${f.era} - ${f.emperor} (${f.reign}) <button type="button" onclick="addAutoTags('${f.emperor}', '${f.reign}')" style="border:1px solid #d63384; background:#fff; cursor:pointer; font-size:10px; border-radius:3px;">태그추가</button>`;
+            }
         }
         function addAutoTags(e,r) { 
             const i=document.getElementById('inTags'); let t=i.value.split(',').map(x=>x.trim()).filter(x=>x); 
@@ -453,7 +444,7 @@
                     // [FIX] 색상 로직 개선: 사용자가 지정한 색이 있고 흰색이 아니면 사용, 아니면 시대별 색상 적용
                     const userColor = (item.cardColor && item.cardColor !== "#ffffff") ? item.cardColor : null;
                     let cardBg = userColor || (eraTheme[item.era] || (item.type==='poet' ? config.leftCardColor : config.rightCardColor));
-                    if (!cardBg || cardBg === "#ffffff") cardBg = "#ffffff"; // 최후의 보루
+                    if (!cardBg || cardBg === "#ffffff") cardBg = "#ffffff"; 
 
                     let tagHtml = item.tags ? '<div class="tag-container">' + item.tags.map(t => `<span class="tag-badge" onclick="searchTag('${t}')">#${t}</span>`).join('') + '</div>' : "";
                     const btns = isAdmin ? `<div class="action-btns" style="display:block;"><span class="btn-text btn-edit" onclick="editItem(${item.id})">[수정]</span></div>` : '';
@@ -495,7 +486,8 @@
         }
         
         function applyConfigUI() {
-            document.getElementById('pageTitle').innerText = config.title; document.getElementById('pageDesc').innerText = config.desc;
+            document.getElementById('pageTitle').innerText = config.title; 
+            document.getElementById('pageDesc').innerText = config.desc;
             document.title = config.title; 
             document.getElementById('pageFooter').innerHTML = config.copyright || "";
             document.getElementById('cfgCopyright').value = config.copyright || "";
@@ -532,6 +524,7 @@
             document.getElementById('inLat').value = item.lat||""; document.getElementById('inLng').value = item.lng||"";
             document.getElementById('inGeoName').value = item.geoName||""; document.getElementById('inGeoDesc').value = item.geoDesc||"";
             
+            // 미리보기 복원
             if(item.img && item.img.startsWith('data:image')) {
                 const preview = document.getElementById('imgPreview');
                 preview.style.display = 'block'; preview.style.backgroundImage = `url(${item.img})`;
@@ -592,6 +585,27 @@
         }
         function deleteItem(id) { if(confirm('삭제?')) { db = db.filter(i => i.id !== id); saveToLocal(); render(); populateEraFilter(); } }
         function resetAllData() { if(confirm('전체 삭제?')) { localStorage.removeItem('tangTimelineDB'); location.reload(); } }
+
+        // [FIXED] Context Modal 클릭 이벤트 복구
+        function openContextModal(targetId) {
+            const targetItem = db.find(d => d.id === targetId); if (!targetItem) return;
+            const idx = db.findIndex(d => d.id === targetId);
+            document.getElementById('ctxTargetYear').innerText = targetItem.year;
+            
+            // 전후 5개 항목 추출
+            const siblings = db.slice(Math.max(0, idx - 5), Math.min(db.length, idx + 6));
+            
+            const list = document.getElementById('ctxList'); list.innerHTML = '';
+            siblings.forEach(item => {
+                const li = document.createElement('li'); 
+                const isMinor = !item.isShow;
+                li.className = `ctx-item ${item.id === targetId ? 'current' : ''} ${isMinor ? 'minor' : ''}`;
+                li.onclick = () => { closeModal('contextModal'); openModal(item.id); };
+                li.innerHTML = `<div class="ctx-year">${item.year}</div><div class="ctx-info"><div class="ctx-name">${item.name}</div><span class="ctx-desc">${item.desc.substring(0, 40)}...</span></div>`;
+                list.appendChild(li);
+            });
+            document.getElementById('contextModal').style.display = "block";
+        }
 
         function openModal(id, keepHistory = false) {
             // [FIX] 모달 열 때마다 이전 데이터(지도 설명, 지도) 초기화
@@ -693,6 +707,7 @@
             }, 100);
         }
 
+        // [FIXED] 관계도 물리 엔진(Physics) 복구
         function openRelModal() {
             document.getElementById('relModal').style.display = 'block';
             const nodes = []; const edges = []; const ids = new Set();
@@ -731,7 +746,16 @@
                 }
             });
             const container = document.getElementById('network');
-            const network = new vis.Network(container, { nodes, edges }, { nodes:{font:{size:16, face:'KoPub Batang'}}, physics:{stabilization:false} });
+            const options = {
+                nodes: { font: { size: 16, face: 'KoPub Batang' } },
+                // [RESTORED] 물리 엔진 설정 복구
+                physics: {
+                    enabled: true,
+                    stabilization: false,
+                    barnesHut: { gravitationalConstant: -2000, springConstant: 0.04, springLength: 95 }
+                }
+            };
+            const network = new vis.Network(container, { nodes, edges }, options);
             network.on("click", function(p) { if(p.nodes.length) openModalByName(p.nodes[0]); });
         }
 
