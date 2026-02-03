@@ -59,7 +59,7 @@
         .content.active { transform: scale(1.1); box-shadow: 0 10px 25px rgba(139, 0, 0, 0.15); z-index: 50; border-color: rgba(139,0,0,0.2); }
         .content:hover, .content.active:hover { transform: scale(1.2) !important; box-shadow: 0 15px 30px rgba(0,0,0,0.2) !important; z-index: 100 !important; }
         
-        .thumb-img { float: left; margin-right: 15px; margin-bottom: 5px; width: 120px; height: 120px; border-radius: 5px; border: 1px solid #ddd; padding: 2px; background: #fff; object-fit: cover; }
+        .thumb-img { float: left; margin-right: 15px; margin-bottom: 5px; width: 110px; height: 110px; border-radius: 5px; border: 1px solid #ddd; padding: 2px; background: #fff; object-fit: cover; }
         
         .title-text { font-size: 1.4em; font-weight: bold; color: #000; display: inline; line-height: 1.3; }
         .title-text:hover { color: var(--line-color); text-decoration: underline; }
@@ -110,6 +110,9 @@
         #floatingCloseBtn { display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 3000; background-color: rgba(0, 0, 0, 0.75); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-size: 16px; font-weight: bold; cursor: pointer; }
         .back-btn { display: none; float: left; background: #eee; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; color: #333; }
         
+        /* [상세 모달 이미지 스타일 - 중앙 정렬] */
+        #mImg { display: block; margin: 0 auto 20px auto; max-width: 250px; max-height: 300px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+
         /* [개선된 타임라인 문맥 팝업 스타일] */
         #contextModal .modal-content { max-width: 600px; background: #fdfbf7; padding: 25px; border-radius: 15px; }
         .ctx-list { list-style: none; padding: 0; margin-top: 20px; }
@@ -635,18 +638,24 @@
 
             if (!year || !name) { alert('필수 항목 누락'); return; }
             
+            // [FIXED] poems 저장 로직 개선 (=== 없어도 저장)
             let poems = []; let historyDetail = "";
-            if (type === 'poet' && rawContent.trim()) { 
-                const blocks = rawContent.split('==='); 
-                poems = blocks.map(b => { 
-                    let temp = b; let pDesc = ""; const descParts = temp.split('---');
-                    if (descParts.length > 1) { pDesc = descParts.slice(1).join('---').trim(); temp = descParts[0]; }
-                    let pSimp = ""; const simpParts = temp.split('+++');
-                    if (simpParts.length > 1) { pSimp = simpParts.slice(1).join('+++').trim(); temp = simpParts[0]; }
-                    const idx = temp.indexOf('|'); 
-                    if (idx !== -1) return { title: temp.substring(0, idx).trim(), content: temp.substring(idx + 1).trim(), simplified: pSimp, desc: pDesc }; 
-                    return null; 
-                }).filter(p => p); 
+            if (type === 'poet') {
+                if (rawContent.includes('===')) {
+                    const blocks = rawContent.split('==='); 
+                    poems = blocks.map(b => { 
+                        let temp = b; let pDesc = ""; const descParts = temp.split('---');
+                        if (descParts.length > 1) { pDesc = descParts.slice(1).join('---').trim(); temp = descParts[0]; }
+                        let pSimp = ""; const simpParts = temp.split('+++');
+                        if (simpParts.length > 1) { pSimp = simpParts.slice(1).join('+++').trim(); temp = simpParts[0]; }
+                        const idx = temp.indexOf('|'); 
+                        if (idx !== -1) return { title: temp.substring(0, idx).trim(), content: temp.substring(idx + 1).trim(), simplified: pSimp, desc: pDesc }; 
+                        return { title: '내용', content: temp.trim(), simplified: pSimp, desc: pDesc }; // 제목 없어도 저장
+                    }).filter(p => p);
+                } else if (rawContent.trim()) {
+                    // 구분자 없으면 통째로 하나로 저장
+                    poems = [{ title: '내용', content: rawContent.trim(), simplified: '', desc: '' }];
+                }
             } else { historyDetail = rawContent.trim(); }
             
             const newData = { id: editingId || Date.now(), year, deathYear, era, type, name, hanja, tags, relations, desc, img, isShow, cardColor, poems, historyDetail, lat, lng, geoName, geoDesc };
@@ -676,13 +685,14 @@
         function resetAllData() { if(confirm('전체 삭제?')) { localStorage.removeItem('tangTimelineDB'); location.reload(); } }
 
         function openModal(id, keepHistory = false) {
+            // [FIX] 안전장치 추가: 에러가 나도 기본 UI는 뜨도록 try-catch 감싸기
             try {
                 // UI 초기화 (이전 데이터 잔상 방지)
                 document.getElementById('miniMapCaption').innerText = ''; 
                 document.getElementById('miniMap').innerHTML = '';
                 document.getElementById('relContainer').innerHTML = '';
 
-                const item = db.find(d => d.id == id); 
+                const item = db.find(d => d.id == id); // 느슨한 비교
                 if (!item) { console.error("Item not found:", id); return; }
 
                 if (!keepHistory) { 
@@ -711,7 +721,7 @@
                 document.getElementById('mDesc').innerHTML = editBtn + parseText(item.desc, false);
                 document.getElementById('mTags').innerHTML = item.tags ? item.tags.map(t => `<span class="tag-badge">#${t}</span>`).join('') : "";
                 
-                // 이미지
+                // 이미지 (강제 표시)
                 const mImg = document.getElementById('mImg'); 
                 if(item.img) { mImg.src = item.img; mImg.style.display = 'block'; } 
                 else { mImg.style.display = 'none'; }
@@ -719,7 +729,7 @@
                 // [안전장치] 본문 렌더링
                 const area = document.getElementById('mContentArea'); area.innerHTML = '';
                 try {
-                    if (item.type === 'poet' && Array.isArray(item.poems)) {
+                    if (item.type === 'poet' && Array.isArray(item.poems) && item.poems.length > 0) {
                         item.poems.forEach((p) => {
                             let body = `<div class="hanja-text">${parseText(p.content, true)}</div>`; 
                             if (p.simplified) body += `<div style="margin-top:5px; padding:10px; background:#f9f9f9; border-left:4px solid #d63384;">${parseText(p.simplified, true)}</div>`;
@@ -728,8 +738,10 @@
                             details.innerHTML = `<summary class="outer-summary">${cleanTitle(p.title)}</summary><div class="poem-body">${body}</div>`;
                             area.appendChild(details);
                         });
-                    } else if (item.historyDetail) { 
-                        area.innerHTML = `<div class="poem-body">${parseText(item.historyDetail, false)}</div>`; 
+                    } else { 
+                        // poems가 없거나 비어있으면 historyDetail 또는 poems가 아닌 텍스트라도 보여줌
+                        let content = item.historyDetail || (item.poems && item.poems[0] ? item.poems[0].content : "내용 없음");
+                        area.innerHTML = `<div class="poem-body">${parseText(content, false)}</div>`; 
                     }
                 } catch(e) { console.error("Content Render Error:", e); }
                 
@@ -739,7 +751,7 @@
                     if(item.relations && typeof item.relations === 'string') {
                         item.relations.split(',').forEach(r => {
                             const p = r.split(':');
-                            if(p.length > 0) {
+                            if(p.length > 0 && p[0].trim()) {
                                 const badge = document.createElement('span'); badge.className = 'rel-badge';
                                 badge.innerHTML = `${p[0]} <small>${p[1]||''}</small>`; 
                                 badge.onclick = () => openModalByName(p[0]);
@@ -767,7 +779,7 @@
                     }
                 } catch(e) { console.error("Map Render Error:", e); }
 
-                // 모달 띄우기
+                // [중요] 모든 준비가 끝난 후 모달 표시 (맨 뒤로 이동)
                 document.getElementById('detailModal').style.display = "block";
                 document.getElementById('floatingCloseBtn').style.display = 'block';
 
@@ -864,6 +876,7 @@
             network.on("click", function(p) { if(p.nodes.length) openModalByName(p.nodes[0]); });
         }
 
+        // [FIXED] Context Modal 클릭 이벤트 복구 (ID 비교 느슨하게)
         function openContextModal(targetId) {
             const targetItem = db.find(d => d.id == targetId); if (!targetItem) return;
             const idx = db.findIndex(d => d.id == targetId);
