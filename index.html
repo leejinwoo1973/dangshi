@@ -47,7 +47,7 @@
         .container { padding: 10px 50px; position: relative; width: 50%; }
         .left { left: 0; text-align: right; } .right { left: 50%; text-align: left; }
         
-        /* [카드 스타일 - 기사형 레이아웃] */
+        /* [카드 스타일] */
         .content { 
             padding: 20px; position: relative; border-radius: 8px; 
             border: 1px solid rgba(0,0,0,0.05); box-shadow: 2px 2px 5px rgba(0,0,0,0.05); 
@@ -59,23 +59,19 @@
         .content.active { transform: scale(1.1); box-shadow: 0 10px 25px rgba(139, 0, 0, 0.15); z-index: 50; border-color: rgba(139,0,0,0.2); }
         .content:hover, .content.active:hover { transform: scale(1.2) !important; box-shadow: 0 15px 30px rgba(0,0,0,0.2) !important; z-index: 100 !important; }
         
-        /* 이미지 Float */
-        .thumb-img { float: left; margin-right: 15px; margin-bottom: 5px; width: 110px; height: 110px; border-radius: 5px; border: 1px solid #ddd; padding: 2px; background: #fff; object-fit: cover; }
+        .thumb-img { float: left; margin-right: 15px; margin-bottom: 5px; width: 120px; height: 120px; border-radius: 5px; border: 1px solid #ddd; padding: 2px; background: #fff; object-fit: cover; }
         
-        /* 텍스트 요소 */
         .title-text { font-size: 1.4em; font-weight: bold; color: #000; display: inline; line-height: 1.3; }
         .title-text:hover { color: var(--line-color); text-decoration: underline; }
-        .era-tag { font-size: 0.85em; color: #666; font-weight:bold; display: inline-block; margin-right: 5px; vertical-align: middle;}
-        .tag-container { margin: 6px 0; line-height: 1.5; }
+        .era-tag { font-size: 0.8em; color: #666; font-weight:bold; display: inline-block; margin-right: 5px; vertical-align: middle;}
+        .tag-container { margin-bottom: 8px; line-height: 1.4; display: block; margin-top: 5px;}
         .tag-badge { display: inline-block; font-size: 0.75rem; background: #eef; color: #0044cc; padding: 1px 6px; border-radius: 3px; margin-right: 3px; }
-        .desc-text { font-size: 0.95rem; color: #444; line-height: 1.6; display: block; margin-top: 6px; }
+        .desc-text { font-size: 0.95rem; color: #444; line-height: 1.6; display: block; margin-top: 5px;}
 
-        /* 수정/삭제 버튼 */
-        .action-btns { clear: both; margin-top: 10px; padding-top: 8px; border-top: 1px dashed #eee; text-align: right; font-size: 0.85rem; display: none; }
+        .action-btns { clear: both; margin-top: 10px; padding-top: 5px; border-top: 1px dashed #eee; text-align: right; font-size: 0.85rem; display: none; }
         .btn-text { cursor: pointer; text-decoration: underline; margin-left: 10px; font-weight: bold; }
         .btn-edit { color: var(--edit-color); } .btn-del { color: #dc3545; }
 
-        /* 연도 버블 */
         .year-bubble { position: absolute; width: 50px; height: 50px; background-color: white; border: 3px solid var(--line-color); border-radius: 50%; z-index: 20; text-align: center; line-height: 50px; font-weight: bold; font-size: 13px; color: var(--line-color); top: 15px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); background:#fff; }
         .year-bubble:hover { background-color: var(--line-color); color: white; transform: scale(1.1); }
         .left .year-bubble { right: -25px; } .right .year-bubble { left: -25px; }
@@ -396,10 +392,17 @@
         }
 
         function cleanTitle(t) { return t ? t.replace(/\[.*?\]/g, '').trim() : ""; }
-        function cleanTextForCard(t) { if(!t) return ""; return t.replace(/\{\{.*?\}\}/g, '').replace(/###.*?###/g, '').replace(/%%(.*?)%%/g, '$1').replace(/\$\$(.*?)\$\$/g, '$1').substring(0, 40)+"..."; }
+        function cleanTextForCard(t) { 
+            if(!t) return ""; 
+            // 안전장치: 숫자가 들어와도 문자열로 변환
+            t = String(t);
+            return t.replace(/\{\{.*?\}\}/g, '').replace(/###.*?###/g, '').replace(/%%(.*?)%%/g, '$1').replace(/\$\$(.*?)\$\$/g, '$1').substring(0, 40)+"..."; 
+        }
         
         function parseText(t, m=false) { 
             if(!t) return ""; 
+            // 안전장치: 숫자가 들어와도 문자열로 변환
+            t = String(t);
             if(m) t = t.replace(/([\u4E00-\u9FFF])\(([^)]+)\)/g, "<ruby>$1<rt>$2</rt></ruby>"); 
             return t.replace(/\{\{이미지\|(.*?)\|(.*?)\}\}/g, '<figure class="img-card-figure"><img src="$1"><figcaption>$2</figcaption></figure>')
                     .replace(/%%(.*?)%%/g, '<b>$1</b>')
@@ -673,14 +676,13 @@
         function resetAllData() { if(confirm('전체 삭제?')) { localStorage.removeItem('tangTimelineDB'); location.reload(); } }
 
         function openModal(id, keepHistory = false) {
-            // [FIX] 안전장치 추가: 에러가 나도 기본 UI는 뜨도록 try-catch 감싸기
             try {
-                // UI 초기화
+                // UI 초기화 (이전 데이터 잔상 방지)
                 document.getElementById('miniMapCaption').innerText = ''; 
                 document.getElementById('miniMap').innerHTML = '';
                 document.getElementById('relContainer').innerHTML = '';
 
-                const item = db.find(d => d.id == id); // 느슨한 비교
+                const item = db.find(d => d.id == id); 
                 if (!item) { console.error("Item not found:", id); return; }
 
                 if (!keepHistory) { 
@@ -689,7 +691,7 @@
                 }
                 currentOpenId = id;
 
-                // 타이틀 생성
+                // 타이틀
                 let dateStr = formatDate(item.year); 
                 if (item.type === 'poet') dateStr += ` ~ ${formatDate(item.deathYear)}`;
                 
@@ -704,67 +706,76 @@
                 }
                 document.getElementById('mName').innerHTML = nameHtml;
                 
-                // 설명 및 태그
+                // 설명 & 태그
                 const editBtn = isAdmin ? `<div style="text-align:right; margin-bottom:10px;"><span class="btn-text btn-edit" onclick="editItem(${item.id}); closeModal('detailModal');">[수정]</span></div>` : '';
                 document.getElementById('mDesc').innerHTML = editBtn + parseText(item.desc, false);
                 document.getElementById('mTags').innerHTML = item.tags ? item.tags.map(t => `<span class="tag-badge">#${t}</span>`).join('') : "";
                 
+                // 이미지
                 const mImg = document.getElementById('mImg'); 
                 if(item.img) { mImg.src = item.img; mImg.style.display = 'block'; } 
                 else { mImg.style.display = 'none'; }
                 
-                // 본문 렌더링 (안전장치)
+                // [안전장치] 본문 렌더링
                 const area = document.getElementById('mContentArea'); area.innerHTML = '';
-                if (item.type === 'poet' && Array.isArray(item.poems)) {
-                    item.poems.forEach((p, index) => {
-                        let body = `<div class="hanja-text">${parseText(p.content, true)}</div>`; 
-                        if (p.simplified) body += `<div style="margin-top:5px; padding:10px; background:#f9f9f9; border-left:4px solid #d63384;">${parseText(p.simplified, true)}</div>`;
-                        if(p.desc) body += `<details class="inner-details"><summary class="inner-summary">[해설]</summary><div class="explain-text">${parseText(p.desc, false)}</div></details>`; 
-                        const details = document.createElement('details'); details.className = 'outer-details';
-                        details.innerHTML = `<summary class="outer-summary">${cleanTitle(p.title)}</summary><div class="poem-body">${body}</div>`;
-                        area.appendChild(details);
-                    });
-                } else if (item.historyDetail) { 
-                    area.innerHTML = `<div class="poem-body">${parseText(item.historyDetail, false)}</div>`; 
-                }
+                try {
+                    if (item.type === 'poet' && Array.isArray(item.poems)) {
+                        item.poems.forEach((p) => {
+                            let body = `<div class="hanja-text">${parseText(p.content, true)}</div>`; 
+                            if (p.simplified) body += `<div style="margin-top:5px; padding:10px; background:#f9f9f9; border-left:4px solid #d63384;">${parseText(p.simplified, true)}</div>`;
+                            if(p.desc) body += `<details class="inner-details"><summary class="inner-summary">[해설]</summary><div class="explain-text">${parseText(p.desc, false)}</div></details>`; 
+                            const details = document.createElement('details'); details.className = 'outer-details';
+                            details.innerHTML = `<summary class="outer-summary">${cleanTitle(p.title)}</summary><div class="poem-body">${body}</div>`;
+                            area.appendChild(details);
+                        });
+                    } else if (item.historyDetail) { 
+                        area.innerHTML = `<div class="poem-body">${parseText(item.historyDetail, false)}</div>`; 
+                    }
+                } catch(e) { console.error("Content Render Error:", e); }
                 
-                // 관계 배지
-                const relContainer = document.getElementById('relContainer');
-                if(item.relations) {
-                    item.relations.split(',').forEach(r => {
-                        const p = r.split(':');
-                        if(p.length > 0) {
-                            const badge = document.createElement('span'); badge.className = 'rel-badge';
-                            badge.innerHTML = `${p[0]} <small>${p[1]||''}</small>`; 
-                            badge.onclick = () => openModalByName(p[0]);
-                            relContainer.appendChild(badge);
-                        }
-                    });
-                }
+                // [안전장치] 관계 배지
+                try {
+                    const relContainer = document.getElementById('relContainer');
+                    if(item.relations && typeof item.relations === 'string') {
+                        item.relations.split(',').forEach(r => {
+                            const p = r.split(':');
+                            if(p.length > 0) {
+                                const badge = document.createElement('span'); badge.className = 'rel-badge';
+                                badge.innerHTML = `${p[0]} <small>${p[1]||''}</small>`; 
+                                badge.onclick = () => openModalByName(p[0]);
+                                relContainer.appendChild(badge);
+                            }
+                        });
+                    }
+                } catch(e) { console.error("Rel Render Error:", e); }
 
-                // 지도
-                const miniMapWrapper = document.getElementById('miniMapWrapper');
-                if(item.lat && item.lng) {
-                    miniMapWrapper.style.display = 'block'; 
-                    document.getElementById('miniMapCaption').innerText = item.geoDesc || "";
-                    setTimeout(() => {
-                        if (miniMap) miniMap.remove();
-                        miniMap = L.map('miniMap').setView([item.lat, item.lng], 6);
-                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(miniMap);
-                        L.marker([item.lat, item.lng]).addTo(miniMap).bindPopup(`<b>${item.geoName||item.name}</b>`).openPopup();
-                    }, 200);
-                } else { 
-                    miniMapWrapper.style.display = (relContainer.innerHTML ? 'block' : 'none'); 
-                    if(!item.lat) document.getElementById('miniMap').style.display='none'; 
-                }
+                // [안전장치] 지도
+                try {
+                    const miniMapWrapper = document.getElementById('miniMapWrapper');
+                    if(item.lat && item.lng) {
+                        miniMapWrapper.style.display = 'block'; 
+                        document.getElementById('miniMapCaption').innerText = item.geoDesc || "";
+                        setTimeout(() => {
+                            if (miniMap) miniMap.remove();
+                            miniMap = L.map('miniMap').setView([item.lat, item.lng], 6);
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(miniMap);
+                            L.marker([item.lat, item.lng]).addTo(miniMap).bindPopup(`<b>${item.geoName||item.name}</b>`).openPopup();
+                        }, 200);
+                    } else { 
+                        miniMapWrapper.style.display = (document.getElementById('relContainer').innerHTML ? 'block' : 'none'); 
+                        if(!item.lat) document.getElementById('miniMap').style.display='none'; 
+                    }
+                } catch(e) { console.error("Map Render Error:", e); }
 
-                // [중요] 모든 준비가 끝난 후 모달 표시 (맨 뒤로 이동)
+                // 모달 띄우기
                 document.getElementById('detailModal').style.display = "block";
                 document.getElementById('floatingCloseBtn').style.display = 'block';
 
             } catch (err) {
-                console.error("Modal Open Error:", err);
-                alert("상세 정보를 불러오는 중 오류가 발생했습니다.");
+                console.error("Critical Modal Error:", err);
+                // 에러가 나도 일단 창은 띄워서 내용은 확인하게 함
+                document.getElementById('detailModal').style.display = "block";
+                document.getElementById('floatingCloseBtn').style.display = 'block';
             }
         }
 
@@ -833,7 +844,7 @@
                         }
                         nodes.push(nodeOpt); ids.add(name); 
                     }
-                    if(item.relations) {
+                    if(item.relations && typeof item.relations === 'string') {
                         item.relations.split(',').forEach(r => {
                             const p = r.split(':');
                             const target = p[0].trim();
@@ -849,11 +860,10 @@
                 }
             });
             const container = document.getElementById('network');
-            const network = new vis.Network(container, { nodes, edges }, { nodes:{font:{size:16, face:'KoPub Batang'}}, physics:{stabilization:false} });
+            const network = new vis.Network(container, { nodes, edges }, { nodes:{font:{size:16, face:'KoPub Batang'}}, physics:{stabilization:false, barnesHut: { gravitationalConstant: -2000, springConstant: 0.04, springLength: 95 }} });
             network.on("click", function(p) { if(p.nodes.length) openModalByName(p.nodes[0]); });
         }
 
-        // [FIXED] Context Modal 클릭 이벤트 복구 (ID 비교 느슨하게)
         function openContextModal(targetId) {
             const targetItem = db.find(d => d.id == targetId); if (!targetItem) return;
             const idx = db.findIndex(d => d.id == targetId);
