@@ -86,7 +86,6 @@
         #itemMapContainer { width: 100%; height: 250px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 20px; display: none; clear: both; }
         #mContentArea { clear: both; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #ddd; }
         
-        /* [v13.10 수정] 시 목록 overflow: visible (주석 말풍선 짤림 방지) */
         details.outer-details { margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fff; overflow: visible !important; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
         summary.outer-summary { padding: 15px; cursor: pointer; background: #f8f9fa; font-weight: bold; font-size: 1.1em; list-style: none; display: flex; align-items: center; justify-content: space-between; }
         summary.outer-summary:hover { background: #e9ecef; }
@@ -108,41 +107,15 @@
         ruby { display: inline-block; text-align: center; margin: 0 2px; ruby-position: under; }
         rt { font-size: 0.6em; color: #777; font-family: sans-serif; display: block; line-height: 1.2; user-select: none; }
         .qtfm-btn { display: inline-block; background-color: #E60026; color: white; padding: 5px 12px; border-radius: 20px; text-decoration: none; font-size: 0.9rem; font-weight: bold; margin-top: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s; }
-        
-        /* [v13.10] 라이선스 및 주석 스타일 (Clear Fix, 말풍선 개선) */
         .source-credit { margin-top: 30px; text-align: right; border-top: 1px dashed #ddd; padding-top: 10px; font-size: 0.85rem; color: #888; display: block; clear: both; }
         .source-credit img { vertical-align: middle; margin-right: 3px; max-height: 20px; }
-        
-        /* [v13.10] 주석 마커 크기 축소 */
         .fn-marker { cursor: pointer; color: var(--link-color); font-weight: bold; font-size: 0.6em; vertical-align: super; position: relative; top: -0.2em; }
-        
-        /* [v13.10] 주석 툴팁 개선 */
-        .fn-marker:hover::after { 
-            content: attr(data-tooltip); 
-            position: absolute; 
-            bottom: 150%; /* 더 위로 */
-            left: 50%; 
-            transform: translateX(-50%); 
-            background: rgba(0,0,0,0.9); /* 더 진하게 */
-            color: #fff; 
-            padding: 10px 14px; 
-            border-radius: 8px; 
-            font-size: 0.95rem; /* 툴팁 글자 크기는 유지 */
-            width: max-content; 
-            max-width: 300px; /* 너비 확보 */
-            white-space: normal; 
-            line-height: 1.5; 
-            z-index: 9999; 
-            pointer-events: none; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            text-align: left;
-        }
-        
+        .fn-marker:hover::after { content: attr(data-tooltip); position: absolute; bottom: 150%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 0.95rem; width: max-content; max-width: 300px; white-space: normal; line-height: 1.5; z-index: 9999; pointer-events: none; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: left; }
         .fn-list { margin-top: 30px; padding-top: 10px; border-top: 1px solid #ccc; font-size: 0.9rem; color: #555; clear: both; background: #f9f9f9; padding: 15px; border-radius: 5px; }
         .fn-item { margin-bottom: 5px; }
         .fn-back { text-decoration: none; margin-right: 5px; color: #999; font-weight: bold; }
 
-        /* [관리자 패널] */
+        /* [관리자 패널 및 시크릿 버튼] */
         #adminPanel { display: none; position: fixed; top: 60px; right: 20px; width: 500px; background: white; border: 2px solid #333; padding: 25px; z-index: 2100; box-shadow: 0 5px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; font-family: sans-serif; }
         .form-group { margin-bottom: 12px; } .form-group label { display: block; font-weight: bold; font-size: 13px; margin-bottom: 5px;}
         .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; font-size: 14px; }
@@ -156,6 +129,11 @@
         .btn-green { background-color: #28a745; } .btn-blue { background-color: #007bff; } .btn-purple { background-color: #6f42c1; } .btn-orange { background-color: #fd7e14; }
         .syntax-guide { font-size: 11px; color: #555; background: #f8f9fa; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 5px; line-height: 1.5; letter-spacing: -0.5px; }
         .syntax-guide code { background: #fff; border: 1px solid #ccc; padding: 1px 4px; border-radius: 3px; color: #d63384; font-family: monospace; font-weight: bold; }
+        
+        .admin-btn { position: fixed; top: 20px; right: 20px; padding: 8px 12px; background: #333; color: white; border: none; cursor: pointer; z-index: 2000; border-radius: 5px; display: none; }
+        
+        /* [v13.10] 시크릿 로그인 버튼 (투명) */
+        .login-trigger { position: fixed; bottom: 0; right: 0; width: 50px; height: 50px; background: transparent; z-index: 9999; cursor: default; }
 
         /* [특수 기능] */
         #map { width: 100%; height: 500px; border-radius: 8px; border: 2px solid #333; }
@@ -174,6 +152,8 @@
         .stat-rank-table td { padding: 8px; border-bottom: 1px solid #f0f0f0; }
         .rank-num { font-weight: bold; color: #8B0000; width: 30px; text-align: center; }
 
+        footer { text-align: center; padding: 20px; border-top: 1px solid #ddd; color: #888; font-size: 0.9rem; font-family: 'Noto Serif KR', serif; background-color: #fdfbf7; }
+
         @media (max-width: 768px) {
             #mImg { float: none; display: block; margin: 0 auto 15px auto; width: 70%; max-width: 250px; }
             #mName, #mTags { text-align: center; display: block; width: 100%; border-bottom: none;}
@@ -189,6 +169,14 @@
             .container { padding: 10px 30px; } 
             .left .content { align-items: flex-end; text-align: right; }
             .right .content { align-items: flex-start; text-align: left; }
+        }
+        @media print {
+            .admin-btn, .search-bar, .action-btns, .config-section, .btn-group, .help-trigger, .modal, .simp-btn, .pinyin-btn, .tts-btn, .login-trigger, #floatingCloseBtn { display: none !important; }
+            #stickyHeader { position: static; box-shadow: none; }
+            body { background: white !important; color: black; padding-top: 0 !important; }
+            .content { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
+            .timeline::after { background-color: #ccc; }
+            .year-bubble { border-color: #333; color: #333; }
         }
     </style>
 </head>
@@ -238,7 +226,7 @@
         </div>
         
         <div class="form-group" style="background:#e8f5e9; padding:10px; border-radius:5px; margin-bottom:10px;">
-             <label>📍 지도 위치</label>
+             <label>📍 지도 위치 (영어 검색 권장)</label>
              <div style="display:flex; gap:5px; margin-bottom:5px;"><input type="text" id="inLocationSearch" placeholder="예: Chang'an" style="flex:1;"><button type="button" onclick="searchLocation()" class="tool-btn btn-green" style="padding:5px 10px;">🔍</button></div>
              <div style="display:flex; gap:5px;"><input type="number" id="inLat" placeholder="위도" style="flex:1;"><input type="number" id="inLng" placeholder="경도" style="flex:1;"></div>
              <input type="text" id="inGeoName" placeholder="장소명 (예: 장안)" style="margin-top:5px; width:100%;">
@@ -281,7 +269,7 @@
     
     <div class="timeline" id="timeline-root"></div>
     <footer id="pageFooter"></footer>
-    <div class="login-trigger" onclick="adminLogin()">Admin</div>
+    <div class="login-trigger" onclick="adminLogin()" title=""></div>
 
     <div id="detailModal" class="modal">
         <div class="modal-content"><button id="backBtn" class="back-btn" onclick="goBack()">⬅ 뒤로</button><span class="close" onclick="closeModal('detailModal')">&times;</span><div style="clear:both;"></div>
@@ -346,33 +334,23 @@
 
         function autoPinyin() { const i = document.getElementById('inContent'); const s = i.selectionStart; const e = i.selectionEnd; if(s===e) return alert("선택필요"); const t = pinyinPro.pinyin(i.value.substring(s,e), { type: 'all', toneType: 'symbol', nonZh: 'consecutive' }); i.setRangeText(t.map(x => x.isZh ? `${x.origin}(${x.pinyin})` : x.origin).join('')); }
         function autoTone() { const i = document.getElementById('inContent'); const s = i.selectionStart; const e = i.selectionEnd; if(s===e) return alert("선택필요"); const t = pinyinPro.pinyin(i.value.substring(s,e), { type: 'all', toneType: 'num', nonZh: 'consecutive' }); i.setRangeText(t.map(x => { if (!x.isZh) return x.origin; return `${x.origin}(${/[34]$/.test(x.pinyin)?'●':'○'})`; }).join('')); }
-        
-        // [v13.10] 라이선스 텍스트 제거
         function insertLicense() { const c = prompt("1.동양고전 2.나무위키 3.위키백과"); let h=""; if(c=='1') h="자료출처: <a href='http://db.cyberseodang.or.kr' target='_blank'><img src='http://db.cyberseodang.or.kr/images/front/logo_b.png'></a>"; else if(c=='2') h="출처: <a href='https://namu.wiki' target='_blank'>나무위키</a>"; else if(c=='3') h="출처: 위키백과"; const i=document.getElementById('inContent'); const s=i.selectionStart; i.value = i.value.substring(0,s)+`\n### ${h} ###`+i.value.substring(i.selectionEnd); }
-        
         function insertAudio() { let u = prompt("오디오 파일명"); if(u) { if(!u.startsWith('http')) u='https://tangshi.kr/mp3/'+u; document.getElementById('inContent').setRangeText(`{{오디오|${u}}}`); } }
         function cleanTitle(t) { return t ? t.replace(/\[.*?\]/g, '').trim() : ""; }
         function cleanTextForCard(t) { if(!t) return ""; return t.replace(/\{\{.*?\}\}/g, '').replace(/###.*?###/g, '').replace(/%%(.*?)%%/g, '$1').replace(/\$\$(.*?)\$\$/g, '$1').replace(/\[\[(.*?)\]\]/g, '$1').substring(0, 40)+"..."; }
         
-        // [v13.9] 텍스트 파싱 개선 (기존 문법 최우선)
         function parseText(t, m=false) { 
             if(!t) return "";
-            
-            // 1. [기존] 굵게, 기울임 최우선 처리 (%%, $$)
-            t = t.replace(/%%(.*?)%%/g, '<b>$1</b>').replace(/\$\$(.*?)\$\$/g, '<span style="color:#888; font-style:italic;">$1</span>');
-
-            // 2. [위키] 스타일
-            t = t.replace(/'''(.*?)'''/g, '<b>$1</b>').replace(/''(.*?)''/g, '<i>$1</i>').replace(/~~(.*?)~~/g, '<del>$1</del>').replace(/--(.*?)--/g, '<del>$1</del>').replace(/__(.*?)__/g, '<u>$1</u>').replace(/\^\^(.*?)\^\^/g, '<sup>$1</sup>').replace(/,,(.*?),,/g, '<sub>$1</sub>')
+            t = t.replace(/%%(.*?)%%/g, '<b>$1</b>').replace(/\$\$(.*?)\$\$/g, '<span style="color:#888; font-style:italic;">$1</span>')
+                 .replace(/'''(.*?)'''/g, '<b>$1</b>').replace(/''(.*?)''/g, '<i>$1</i>').replace(/~~(.*?)~~/g, '<del>$1</del>').replace(/--(.*?)--/g, '<del>$1</del>').replace(/__(.*?)__/g, '<u>$1</u>').replace(/\^\^(.*?)\^\^/g, '<sup>$1</sup>').replace(/,,(.*?),,/g, '<sub>$1</sub>')
                  .replace(/{{{#([a-zA-Z0-9]+)\s+(.*?)}}}/g, '<span style="color:$1">$2</span>').replace(/{{{([+\-]\d)\s+(.*?)}}}/g, (m, s, c) => `<span style="font-size:${1.0+(parseInt(s)*0.2)}em">${c}</span>`);
 
-            // 3. 주석 처리
             let footnotes = []; let fnCount = 0; const blockId = Math.random().toString(36).substr(2, 5);
             t = t.replace(/\[\*\s*(.*?)\]/g, (match, content) => {
                 fnCount++; footnotes.push({ id: `${blockId}-${fnCount}`, num: fnCount, content: content });
                 return `<sup class="fn-marker" data-tooltip="${content.replace(/"/g, '&quot;')}"><a href="#fn-${blockId}-${fnCount}" id="ref-${blockId}-${fnCount}">[${fnCount}]</a></sup>`;
             });
 
-            // 4. 루비/미디어 처리
             if(m) t = t.replace(/([\u2E80-\u2EFF\u31C0-\u31EF\u3200-\u32FF\u3400-\u4DBF\u4E00-\u9FBF\uF900-\uFAFF])\(([^)]+)\)/g, "<ruby>$1<rt>$2</rt></ruby>"); 
             t = t.replace(/(https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([\w-]{11})(?:\S+)?)/g, '<div class="video-container"><iframe src="https://www.youtube.com/embed/$2" frameborder="0" allowfullscreen></iframe></div>')
                  .replace(/\{\{오디오\|(.*?)\}\}/g, '<div style="margin-top:10px;"><audio controls src="$1" style="width:100%; border-radius:20px;"></audio></div>')
@@ -380,7 +358,6 @@
                  .replace(/\[\[(.+?)\]\]/g, '<span class="wiki-link" onclick="openModalByName(\'$1\')">$1</span>')
                  .replace(/\{\{(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\}\}/g, '<a href="$2" target="_blank" class="img-card"><img src="$1" alt="$3"><span class="img-caption">$3</span></a>');
 
-            // 5. 주석 리스트
             if (footnotes.length > 0) { t += `<div class="fn-list"><hr>`; footnotes.forEach(fn => { t += `<div id="fn-${fn.id}" class="fn-item"><a href="#ref-${fn.id}" class="fn-back">^</a> <b>[${fn.num}]</b> ${fn.content}</div>`; }); t += `</div>`; }
             return t;
         }
