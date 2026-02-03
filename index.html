@@ -47,7 +47,7 @@
         .container { padding: 10px 50px; position: relative; width: 50%; }
         .left { left: 0; text-align: right; } .right { left: 50%; text-align: left; }
         
-        /* [카드 스타일] */
+        /* [카드 스타일 - 기사형 레이아웃] */
         .content { 
             padding: 20px; position: relative; border-radius: 8px; 
             border: 1px solid rgba(0,0,0,0.05); box-shadow: 2px 2px 5px rgba(0,0,0,0.05); 
@@ -59,19 +59,23 @@
         .content.active { transform: scale(1.1); box-shadow: 0 10px 25px rgba(139, 0, 0, 0.15); z-index: 50; border-color: rgba(139,0,0,0.2); }
         .content:hover, .content.active:hover { transform: scale(1.2) !important; box-shadow: 0 15px 30px rgba(0,0,0,0.2) !important; z-index: 100 !important; }
         
-        .thumb-img { float: left; margin-right: 15px; margin-bottom: 5px; width: 120px; height: 120px; border-radius: 5px; border: 1px solid #ddd; padding: 2px; background: #fff; object-fit: cover; }
+        /* 이미지 Float */
+        .thumb-img { float: left; margin-right: 15px; margin-bottom: 5px; width: 110px; height: 110px; border-radius: 5px; border: 1px solid #ddd; padding: 2px; background: #fff; object-fit: cover; }
         
+        /* 텍스트 요소 */
         .title-text { font-size: 1.4em; font-weight: bold; color: #000; display: inline; line-height: 1.3; }
         .title-text:hover { color: var(--line-color); text-decoration: underline; }
-        .era-tag { font-size: 0.8em; color: #666; font-weight:bold; display: inline-block; margin-right: 5px; vertical-align: middle;}
-        .tag-container { margin-bottom: 8px; line-height: 1.4; display: block; margin-top: 5px;}
+        .era-tag { font-size: 0.85em; color: #666; font-weight:bold; display: inline-block; margin-right: 5px; vertical-align: middle;}
+        .tag-container { margin: 6px 0; line-height: 1.5; }
         .tag-badge { display: inline-block; font-size: 0.75rem; background: #eef; color: #0044cc; padding: 1px 6px; border-radius: 3px; margin-right: 3px; }
-        .desc-text { font-size: 0.95rem; color: #444; line-height: 1.6; display: block; margin-top: 5px;}
+        .desc-text { font-size: 0.95rem; color: #444; line-height: 1.6; display: block; margin-top: 6px; }
 
-        .action-btns { clear: both; margin-top: 10px; padding-top: 5px; border-top: 1px dashed #eee; text-align: right; font-size: 0.85rem; display: none; }
+        /* 수정/삭제 버튼 */
+        .action-btns { clear: both; margin-top: 10px; padding-top: 8px; border-top: 1px dashed #eee; text-align: right; font-size: 0.85rem; display: none; }
         .btn-text { cursor: pointer; text-decoration: underline; margin-left: 10px; font-weight: bold; }
         .btn-edit { color: var(--edit-color); } .btn-del { color: #dc3545; }
 
+        /* 연도 버블 */
         .year-bubble { position: absolute; width: 50px; height: 50px; background-color: white; border: 3px solid var(--line-color); border-radius: 50%; z-index: 20; text-align: center; line-height: 50px; font-weight: bold; font-size: 13px; color: var(--line-color); top: 15px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); background:#fff; }
         .year-bubble:hover { background-color: var(--line-color); color: white; transform: scale(1.1); }
         .left .year-bubble { right: -25px; } .right .year-bubble { left: -25px; }
@@ -107,7 +111,7 @@
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
         .modal-content { background-color: #fff; margin: 2% auto; padding: 30px; border: 1px solid #888; width: 90%; max-width: 800px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; position: relative; }
         .close { color: #aaa; float: right; font-size: 32px; font-weight: bold; cursor: pointer; position: sticky; top: 0; right: 0; z-index: 10; background: rgba(255,255,255,0.9); padding: 0 10px; border-radius: 5px;}
-        #floatingCloseBtn { display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 3000; background-color: rgba(0, 0, 0, 0.75); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; backdrop-filter: blur(4px); transition: all 0.2s; }
+        #floatingCloseBtn { display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 3000; background-color: rgba(0, 0, 0, 0.75); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-size: 16px; font-weight: bold; cursor: pointer; }
         .back-btn { display: none; float: left; background: #eee; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; color: #333; }
         
         /* [개선된 타임라인 문맥 팝업 스타일] */
@@ -337,7 +341,7 @@
                 adjustPadding(); window.addEventListener('resize', adjustPadding);
             } catch (e) { 
                 console.error(e);
-                render(); // 에러 나도 렌더링 시도
+                render(); 
             }
         }
 
@@ -803,7 +807,7 @@
                     if(item.lat && item.lng) {
                         const marker = L.marker([item.lat, item.lng]);
                         const txt = item.geoName || cleanTitle(item.name);
-                        marker.bindPopup(`<div style="text-align:center;"><b>${txt}</b><br><span style="color:#666">${item.era}</span><br><button onclick="closeModal('mapModal');openModal('${item.id}')">이동</button></div>`);
+                        marker.bindPopup(`<div style="text-align:center;"><b>${txt}</b><br><span style="color:#666">${item.era}</span><br><button onclick="closeModal('mapModal');openModal(${item.id})">이동</button></div>`);
                         markersLayer.addLayer(marker);
                     }
                 });
