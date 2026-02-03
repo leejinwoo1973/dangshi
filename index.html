@@ -324,8 +324,18 @@
              </div>
         </div>
 
-        <div class="form-group"><label>위치</label> <select id="inType" onchange="updateFormUI()"><option value="poet" id="optLeft">왼쪽</option><option value="history" id="optRight">오른쪽</option></select></div>
-        <div class="form-group"><label>연도 / 시대</label><div style="display:flex; gap:5px;"><input type="number" id="inYear" placeholder="연도" style="flex:1;"><input type="text" id="inEra" placeholder="시대" style="flex:1;"></div></div>
+        <div class="form-group"><label>위치 (유형)</label> <select id="inType" onchange="updateFormUI()"><option value="poet" id="optLeft">왼쪽 (시인/작품)</option><option value="history" id="optRight">오른쪽 (역사/사건)</option></select></div>
+        
+        <div class="form-group">
+            <label id="lblYear">연도 / 시대</label>
+            <div style="display:flex; gap:5px;">
+                <input type="number" id="inYear" placeholder="연도 (시작/출생)" style="flex:1;" oninput="detectEra()">
+                <input type="number" id="inDeathYear" placeholder="사망년도" style="flex:1; display:none;">
+                <input type="text" id="inEra" placeholder="시대 (자동)" style="flex:1;">
+            </div>
+            <div id="eraHint" style="font-size:0.8rem; color:#d63384; margin-top:3px; min-height:1.2em;"></div>
+        </div>
+
         <div class="form-group"><label>제목</label> <input type="text" id="inName"></div>
         <div class="form-group"><label>태그 (쉼표 구분)</label> <input type="text" id="inTags" placeholder="예: 전쟁, 이별, 유배"></div>
         <div class="form-group"><label>요약 (4줄)</label> <textarea id="inDesc" rows="4"></textarea></div>
@@ -387,7 +397,7 @@
         </div>
     </div>
 
-<script>
+    <script>
         const defaultConfig = { title: "당나라 역사와 시인 연표", desc: "나만의 역사 데이터베이스", leftLabel: "시인 / 작품", rightLabel: "역사 / 사건", bgColor: "#fdfbf7", bgImage: "", bgRepeat: "repeat", leftCardColor: "#ffffff", rightCardColor: "#ffffff", copyright: "" };
         let db=[], config={}, editingId=null, modalHistory=[], currentOpenId=null;
         let isAdmin = false; 
@@ -397,15 +407,36 @@
         let miniMap = null;
         let miniMarker = null;
 
-        // [NEW] 시대별 자동 색상 테마 정의 (가독성을 위해 연한 파스텔톤 사용)
         const eraTheme = {
-            "초당": "#f1f8e9", // 연한 초록 (시작)
-            "성당": "#fff8e1", // 연한 금색 (전성기)
-            "중당": "#e3f2fd", // 연한 파랑 (변화)
-            "만당": "#f3e5f5", // 연한 보라 (쇠퇴)
-            "오대": "#eceff1", // 연한 회색 (혼란)
-            "수나라": "#e0f2f1" // 청록색
+            "초당": "#f1f8e9", "성당": "#fff8e1", "중당": "#e3f2fd", "만당": "#f3e5f5", "오대": "#eceff1", "수나라": "#e0f2f1"
         };
+
+        // [NEW] 당나라 연표 데이터 (간략화)
+        const tangChronology = [
+            { start: 581, end: 617, era: "수나라", emperor: "문제/양제", reign: "" },
+            { start: 618, end: 626, era: "초당", emperor: "고조", reign: "무덕" },
+            { start: 627, end: 649, era: "초당", emperor: "태종", reign: "정관" },
+            { start: 650, end: 683, era: "초당", emperor: "고종", reign: "영휘/현경/의봉" },
+            { start: 684, end: 704, era: "초당", emperor: "측천무후", reign: "천수/장수" },
+            { start: 705, end: 709, era: "초당", emperor: "중종", reign: "신룡/경룡" },
+            { start: 710, end: 712, era: "초당", emperor: "예종", reign: "경운/태극" },
+            { start: 712, end: 741, era: "성당", emperor: "현종", reign: "개원" },
+            { start: 742, end: 755, era: "성당", emperor: "현종", reign: "천보" },
+            { start: 756, end: 762, era: "중당", emperor: "숙종", reign: "지덕/건원" },
+            { start: 763, end: 779, era: "중당", emperor: "대종", reign: "광덕/대력" },
+            { start: 780, end: 804, era: "중당", emperor: "덕종", reign: "건중/정원" },
+            { start: 805, end: 805, era: "중당", emperor: "순종", reign: "영정" },
+            { start: 806, end: 820, era: "중당", emperor: "헌종", reign: "원화" },
+            { start: 821, end: 824, era: "중당", emperor: "목종", reign: "장경" },
+            { start: 825, end: 826, era: "중당", emperor: "경종", reign: "보력" },
+            { start: 827, end: 840, era: "만당", emperor: "문종", reign: "대화/개성" },
+            { start: 841, end: 846, era: "만당", emperor: "무종", reign: "회창" },
+            { start: 847, end: 859, era: "만당", emperor: "선종", reign: "대중" },
+            { start: 860, end: 873, era: "만당", emperor: "의종", reign: "함통" },
+            { start: 874, end: 888, era: "만당", emperor: "희종", reign: "건부/광명" },
+            { start: 889, end: 904, era: "만당", emperor: "소종", reign: "대순/천우" },
+            { start: 905, end: 907, era: "만당", emperor: "애제", reign: "천우" }
+        ];
 
         async function init() {
             try {
@@ -423,10 +454,8 @@
                 applyConfigUI(); populateEraFilter(); render();
                 document.getElementById('pageDesc').innerText = config.desc;
                 document.getElementById('adminToggle').style.display = 'none';
-                
                 adjustPadding();
                 window.addEventListener('resize', adjustPadding);
-
             } catch (e) { alert("초기화 오류: " + e.message); }
         }
 
@@ -439,28 +468,16 @@
             if (isAdmin) return;
             const password = prompt("관리자 비밀번호를 입력하세요:");
             if (!password) return;
-
             const msgBuffer = new TextEncoder().encode(password);
             const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
             const hashArray = Array.from(new Uint8Array(hashBuffer));
             const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
             const mySecret = "6eb20c53054a7218e6731761b7539d9e38f6f5e39e53c2d78e0edd732de650f2"; 
-
-            if (hashHex === mySecret) {
-                isAdmin = true;
-                document.getElementById('adminToggle').style.display = 'block';
-                alert("관리자 모드 활성화!");
-                render();
-            } else {
-                alert("비밀번호가 틀렸습니다.");
-            }
+            if (hashHex === mySecret) { isAdmin = true; document.getElementById('adminToggle').style.display = 'block'; alert("관리자 모드 활성화!"); render(); } 
+            else { alert("비밀번호가 틀렸습니다."); }
         }
 
-        function saveToLocal() {
-            db.sort((a, b) => a.year - b.year);
-            localStorage.setItem('tangTimelineDB', JSON.stringify(db));
-        }
+        function saveToLocal() { db.sort((a, b) => a.year - b.year); localStorage.setItem('tangTimelineDB', JSON.stringify(db)); }
 
         function exportData() {
             const exportObj = { data: db, config: config };
@@ -485,13 +502,12 @@
 
         function autoPinyin() {
             const input = document.getElementById('inContent');
-            const fullText = input.value;
-            if (!fullText) { alert('내용을 입력하세요.'); return; }
-            if (typeof pinyinPro === 'undefined') { alert('인터넷 연결을 확인해주세요.'); return; }
+            if (!input.value) { alert('내용을 입력하세요.'); return; }
+            if (typeof pinyinPro === 'undefined') { alert('인터넷 연결 확인 필요'); return; }
             const { pinyin } = pinyinPro;
             const start = input.selectionStart; const end = input.selectionEnd;
-            if (start === end) { alert("변환할 글자를 드래그해서 선택해주세요."); return; }
-            const selectedText = fullText.substring(start, end);
+            if (start === end) { alert("드래그해서 선택해주세요."); return; }
+            const selectedText = input.value.substring(start, end);
             const converted = convertToPinyinString(selectedText, pinyin);
             input.setRangeText(converted);
         }
@@ -503,59 +519,46 @@
 
         function autoTone() {
             const input = document.getElementById('inContent');
-            const fullText = input.value;
-            if (!fullText) { alert('내용을 입력하세요.'); return; }
-            if (typeof pinyinPro === 'undefined') { alert('인터넷 연결을 확인해주세요.'); return; }
+            if (!input.value) { alert('내용을 입력하세요.'); return; }
+            if (typeof pinyinPro === 'undefined') { alert('인터넷 연결 확인 필요'); return; }
             const { pinyin } = pinyinPro;
             const start = input.selectionStart; const end = input.selectionEnd;
-            if (start === end) { alert("평측을 적용할 글자를 드래그해서 선택해주세요."); return; }
-            const selectedText = fullText.substring(start, end);
+            if (start === end) { alert("드래그해서 선택해주세요."); return; }
+            const selectedText = input.value.substring(start, end);
             const tokens = pinyin(selectedText, { type: 'all', toneType: 'num', nonZh: 'consecutive' });
             const converted = tokens.map(t => {
                 if (!t.isZh) return t.origin;
                 const isZe = /[34]$/.test(t.pinyin); 
-                const symbol = isZe ? '●' : '○';
-                return `${t.origin}(${symbol})`; 
+                return `${t.origin}(${isZe ? '●' : '○'})`; 
             }).join('');
             input.setRangeText(converted);
         }
         
         function insertLicense() {
-            const choice = prompt("삽입할 라이선스를 선택하세요 (번호 입력):\n1. 동양고전종합DB\n2. 나무위키\n3. 위키백과");
+            const choice = prompt("1.동양고전종합DB 2.나무위키 3.위키백과");
             if (!choice) return;
             let creditHtml = "";
             if (choice === '1') creditHtml = "자료출처: <a href='http://db.cyberseodang.or.kr' target='_blank'><img src='http://db.cyberseodang.or.kr/images/front/logo_b.png'> 동양고전종합DB</a>";
             else if (choice === '2') creditHtml = "출처: <a href='https://namu.wiki' target='_blank'>나무위키</a> (CC BY-NC-SA 2.0 KR)";
             else if (choice === '3') creditHtml = "출처: <a href='https://ko.wikipedia.org' target='_blank'>위키백과</a> (CC BY-SA 3.0)";
-            else { alert("잘못된 입력입니다."); return; }
             const input = document.getElementById('inContent');
-            const start = input.selectionStart; const end = input.selectionEnd;
-            const text = input.value; const insertText = `\n### ${creditHtml} ###`;
-            input.value = text.substring(0, start) + insertText + text.substring(end);
+            const insertText = `\n### ${creditHtml} ###`;
+            input.setRangeText(insertText);
         }
 
         function insertAudio() {
-            let url = prompt("오디오 파일명(예: song.mp3) 또는 전체 주소를 입력하세요.\n(파일명만 입력하면 'https://tangshi.kr/mp3/'가 자동으로 붙습니다.)");
+            let url = prompt("오디오 주소 (파일명만 입력시 tangshi.kr/mp3/ 자동추가)");
             if (!url) return;
             if (!url.startsWith('http')) { url = 'https://tangshi.kr/mp3/' + url; }
             const input = document.getElementById('inContent');
-            const start = input.selectionStart; const end = input.selectionEnd;
-            const text = input.value; const insertText = `{{오디오|${url}}}`;
-            input.value = text.substring(0, start) + insertText + text.substring(end);
+            input.setRangeText(`{{오디오|${url}}}`);
         }
 
-        function cleanTitle(text) {
-            if (!text) return "";
-            return text.replace(/\[.*?\]/g, '').trim();
-        }
+        function cleanTitle(text) { return text ? text.replace(/\[.*?\]/g, '').trim() : ""; }
         
         function cleanTextForCard(text) {
             if (!text) return "";
-            text = text.replace(/\{\{.*?\}\}/g, '');
-            text = text.replace(/###.*?###/g, '');
-            text = text.replace(/%%(.*?)%%/g, '$1');
-            text = text.replace(/\$\$(.*?)\$\$/g, '$1');
-            text = text.replace(/\[\[(.*?)\]\]/g, '$1');
+            text = text.replace(/\{\{.*?\}\}/g, '').replace(/###.*?###/g, '').replace(/%%(.*?)%%/g, '$1').replace(/\$\$(.*?)\$\$/g, '$1').replace(/\[\[(.*?)\]\]/g, '$1');
             return text.substring(0, 40) + (text.length > 40 ? "..." : "");
         }
 
@@ -576,32 +579,73 @@
 
         async function searchLocation() {
             const query = document.getElementById('inLocationSearch').value;
-            if (!query) { alert("검색할 지명이나 주소를 입력하세요."); return; }
-
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = "⌛";
-
+            if (!query) { alert("검색어를 입력하세요."); return; }
+            const btn = event.target; const originalText = btn.innerText; btn.innerText = "⌛";
             try {
                 const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
                 const results = await response.json();
-
                 if (results && results.length > 0) {
                     const bestMatch = results[0];
                     document.getElementById('inLat').value = parseFloat(bestMatch.lat).toFixed(4);
                     document.getElementById('inLng').value = parseFloat(bestMatch.lon).toFixed(4);
                     alert(`찾았습니다!\n${bestMatch.display_name}`);
-                } else {
-                    alert("검색 결과가 없습니다. 지명을 확인하거나 현대 지명(예: Xi'an)으로 검색해보세요.");
-                }
-            } catch (e) {
-                alert("검색 중 오류가 발생했습니다: " + e.message);
-            } finally {
-                btn.innerText = originalText;
+                } else { alert("검색 결과가 없습니다. 현대 지명으로 검색해보세요."); }
+            } catch (e) { alert("오류: " + e.message); } finally { btn.innerText = originalText; }
+        }
+
+        // [NEW] 연도 입력 시 시대 자동 감지 및 태그 추천
+        function detectEra() {
+            const y = parseInt(document.getElementById('inYear').value);
+            if (!y) return;
+
+            const found = tangChronology.find(item => y >= item.start && y <= item.end);
+            if (found) {
+                // 1. 시대 자동 입력
+                document.getElementById('inEra').value = found.era;
+                
+                // 2. 황제/연호 힌트 표시
+                const hintText = `💡 ${found.era} - ${found.emperor} (${found.reign})`;
+                const hintEl = document.getElementById('eraHint');
+                hintEl.innerHTML = `${hintText} <button onclick="addAutoTags('${found.emperor}', '${found.reign}')" style="border:1px solid #d63384; background:#fff; cursor:pointer; font-size:10px; border-radius:3px;">태그 추가</button>`;
             }
         }
 
-        // --- [UPDATED] Render 함수: 시대별 색상 적용 로직 추가 ---
+        function addAutoTags(emperor, reign) {
+            const tagsInput = document.getElementById('inTags');
+            let currentTags = tagsInput.value.split(',').map(t=>t.trim()).filter(t=>t);
+            
+            // 중복 방지하며 추가
+            if(emperor && !currentTags.includes(emperor)) currentTags.push(emperor);
+            
+            // 연호는 슬래시(/)로 구분되어 있을 수 있음
+            if(reign) {
+                const reigns = reign.split('/');
+                reigns.forEach(r => {
+                    if(r && !currentTags.includes(r)) currentTags.push(r);
+                });
+            }
+            
+            tagsInput.value = currentTags.join(', ');
+        }
+
+        // [UPDATED] UI 업데이트 (시인 vs 역사 모드에 따라 입력창 변경)
+        function updateFormUI() {
+            const type = document.getElementById('inType').value;
+            const deathInput = document.getElementById('inDeathYear');
+            const lblYear = document.getElementById('lblYear');
+            
+            if (type === 'poet') {
+                deathInput.style.display = 'block';
+                lblYear.innerText = "생몰년도 (출생 ~ 사망)";
+                document.getElementById('optLeft').selected = true;
+            } else {
+                deathInput.style.display = 'none';
+                lblYear.innerText = "연도 / 시대";
+                document.getElementById('inDeathYear').value = '';
+                document.getElementById('optRight').selected = true;
+            }
+        }
+
         function render(query = "", eraFilter = "all") {
             const root = document.getElementById('timeline-root'); root.innerHTML = '';
             const safeQuery = query ? query.trim().toLowerCase() : "";
@@ -609,22 +653,13 @@
             const filtered = db.filter(item => {
                 const eraMatch = eraFilter === 'all' || item.era === eraFilter;
                 if (!safeQuery) return eraMatch;
-
                 let textMatch = false;
-                if (item.name.toLowerCase().includes(safeQuery) ||
-                    item.desc.toLowerCase().includes(safeQuery) ||
-                    (item.tags && item.tags.join(" ").toLowerCase().includes(safeQuery))) {
-                    textMatch = true;
-                }
-                if (!textMatch && item.historyDetail && item.historyDetail.toLowerCase().includes(safeQuery)) {
-                    textMatch = true;
-                }
+                if ((item.name && item.name.toLowerCase().includes(safeQuery)) || 
+                    (item.desc && item.desc.toLowerCase().includes(safeQuery)) || 
+                    (item.tags && item.tags.join(" ").toLowerCase().includes(safeQuery))) textMatch = true;
+                if (!textMatch && item.historyDetail && item.historyDetail.toLowerCase().includes(safeQuery)) textMatch = true;
                 if (!textMatch && item.poems) {
-                    const poemMatch = item.poems.some(p => 
-                        (p.title && p.title.toLowerCase().includes(safeQuery)) ||
-                        (p.content && p.content.toLowerCase().includes(safeQuery))
-                    );
-                    if (poemMatch) textMatch = true;
+                    if(item.poems.some(p => (p.title && p.title.toLowerCase().includes(safeQuery)) || (p.content && p.content.toLowerCase().includes(safeQuery)))) textMatch = true;
                 }
                 return eraMatch && textMatch;
             });
@@ -634,25 +669,25 @@
                     const div = document.createElement('div'); div.className = item.type === 'poet' ? 'container left' : 'container right';
                     const imgTag = item.img ? `<img src="${item.img}" class="thumb-img">` : '';
                     
-                    // [COLOR LOGIC]
-                    // 1. 사용자 지정 색상 확인
                     let cardBg = item.cardColor; 
-                    
-                    // 2. 지정 색상이 없거나 기본값(흰색)인 경우 -> 시대별 테마 적용
                     if(!cardBg || cardBg === "#ffffff" || cardBg === "") {
-                        if (eraTheme[item.era]) {
-                            cardBg = eraTheme[item.era]; // 시대별 색상 적용
-                        } else {
-                            // 시대 정보도 없으면 글로벌 설정값 사용
-                            cardBg = (item.type === 'poet' ? config.leftCardColor : config.rightCardColor) || "#ffffff";
-                        }
+                        if (eraTheme[item.era]) cardBg = eraTheme[item.era];
+                        else cardBg = (item.type === 'poet' ? config.leftCardColor : config.rightCardColor) || "#ffffff";
                     }
 
                     let tagHtml = item.tags && item.tags.length > 0 ? '<div class="tag-container">' + item.tags.map(t => `<span class="tag-badge" onclick="searchTag('${t}')">#${t}</span>`).join('') + '</div>' : "";
-                    
                     const btns = isAdmin ? `<div class="action-btns" style="display:block;"><span class="btn-text btn-edit" onclick="editItem(${item.id})">[수정]</span><span class="btn-text btn-del" onclick="deleteItem(${item.id})">[삭제]</span></div>` : '';
 
-                    div.innerHTML = `<div class="year-bubble" onclick="openContextModal(${item.id})">${item.year}</div><div class="content clearfix" style="background-color:${cardBg};">${imgTag} <span class="era-tag">${item.era}</span><div class="title-text" onclick="openModal(${item.id})">${cleanTitle(item.name)}</div>${tagHtml} <small>${cleanTextForCard(item.desc)}</small>${btns}</div>`;
+                    // [UPDATED] 생몰년 표기 로직
+                    let dateDisplay = item.year;
+                    if (item.type === 'poet' && item.deathYear) {
+                        dateDisplay = `<span style="font-size:0.8em">${item.year}~${item.deathYear}</span>`;
+                    }
+
+                    // 이름 옆에 생몰년 표시 (카드는 정적 제목)
+                    const titleHtml = `${cleanTitle(item.name)} ${item.type==='poet' && item.deathYear ? `<span style='font-size:0.7em; font-weight:normal;'>(${item.year}~${item.deathYear})</span>` : ''}`;
+
+                    div.innerHTML = `<div class="year-bubble" onclick="openContextModal(${item.id})">${dateDisplay}</div><div class="content clearfix" style="background-color:${cardBg};">${imgTag} <span class="era-tag">${item.era}</span><div class="title-text" onclick="openModal(${item.id})">${titleHtml}</div>${tagHtml} <small>${cleanTextForCard(item.desc)}</small>${btns}</div>`;
                     root.appendChild(div);
                 } else {
                     const div = document.createElement('div'); div.className = 'minor-row';
@@ -669,11 +704,10 @@
             eras.forEach(era => { select.innerHTML += `<option value="${era}">${era}</option>`; });
         }
         function filterData() { render(document.getElementById('searchInput').value.toLowerCase(), document.getElementById('eraFilter').value); }
-        
         function openModalByName(name) {
             if(currentOpenId !== null) { modalHistory.push(currentOpenId); document.getElementById('backBtn').style.display = 'block'; }
             const item = db.find(d => d.name.trim() === name.trim());
-            if(item) openModal(item.id, true); else alert("링크된 카드 '" + name + "'이(가) 없습니다.");
+            if(item) openModal(item.id, true); else alert("없는 카드입니다.");
         }
         function goBack() { if(modalHistory.length > 0) { const prevId = modalHistory.pop(); if(modalHistory.length === 0) document.getElementById('backBtn').style.display = 'none'; openModal(prevId, true); } }
         function searchTag(tag) { document.getElementById('searchInput').value = tag; filterData(); }
@@ -682,11 +716,7 @@
         
         function toggleSimplified(id) { 
             const el = document.getElementById(id); 
-            if(el.style.display === 'none' || el.style.display === '') {
-                el.style.display = 'block';
-            } else {
-                el.style.display = 'none';
-            }
+            el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
         }
         
         function applyConfigUI() {
@@ -705,7 +735,6 @@
             document.body.style.backgroundColor = config.bgColor || "#fdfbf7";
             document.getElementById('stickyHeader').style.backgroundColor = config.bgColor || "#fdfbf7";
             document.getElementById('pageFooter').style.backgroundColor = config.bgColor || "#fdfbf7";
-
             if(config.bgImage) {
                 document.body.style.backgroundImage = `url('${config.bgImage}')`;
                 document.body.style.backgroundSize = config.bgRepeat === 'cover' ? 'cover' : 'auto';
@@ -722,30 +751,41 @@
             config.rightCardColor = document.getElementById('cfgRightColor').value;
             localStorage.setItem('tangTimelineConfig', JSON.stringify(config)); applyConfigUI(); render(); alert('저장됨');
         }
-        function updateFormUI() {}
+        function updateFormUI() {
+            const type = document.getElementById('inType').value;
+            const deathInput = document.getElementById('inDeathYear');
+            const lblYear = document.getElementById('lblYear');
+            
+            if (type === 'poet') {
+                deathInput.style.display = 'block';
+                lblYear.innerText = "생몰년도 (출생 ~ 사망)";
+            } else {
+                deathInput.style.display = 'none';
+                lblYear.innerText = "연도 / 시대";
+            }
+        }
 
-        /* 수정 모드 */
         function editItem(id) {
             const item = db.find(d => d.id === Number(id)); 
-            if (!item) { alert("항목을 찾을 수 없습니다."); return; }
-            
+            if (!item) { alert("오류"); return; }
             document.getElementById('adminPanel').style.display = 'block'; 
             document.getElementById('inShow').checked = item.isShow;
             document.getElementById('inType').value = item.type; 
+            updateFormUI(); // UI 갱신
+
             document.getElementById('inYear').value = item.year; 
+            document.getElementById('inDeathYear').value = item.deathYear || ""; // [NEW] 사망년도 로드
             document.getElementById('inEra').value = item.era;
             document.getElementById('inName').value = item.name; 
             document.getElementById('inTags').value = item.tags ? item.tags.join(", ") : "";
             document.getElementById('inDesc').value = item.desc; 
             document.getElementById('inImg').value = item.img || "";
             document.getElementById('inCardColor').value = item.cardColor || "#ffffff";
-            
             document.getElementById('inLat').value = item.lat || "";
             document.getElementById('inLng').value = item.lng || "";
             document.getElementById('inGeoName').value = item.geoName || "";
             document.getElementById('inGeoDesc').value = item.geoDesc || "";
-            
-            document.getElementById('inLocationSearch').value = ""; // 검색창 초기화
+            document.getElementById('inLocationSearch').value = "";
 
             const contentBox = document.getElementById('inContent');
             if (item.type === 'poet' && item.poems) {
@@ -756,7 +796,6 @@
                     return text;
                 }).join('\n\n===\n\n');
             } else { contentBox.value = item.historyDetail || ""; }
-            
             editingId = item.id; 
             document.getElementById('btnSave').innerText = "수정 완료"; 
             window.scrollTo(0, 0);
@@ -765,14 +804,15 @@
         function saveData() {
             const isShow = document.getElementById('inShow').checked; const type = document.getElementById('inType').value;
             const year = document.getElementById('inYear').value; const era = document.getElementById('inEra').value;
+            
+            // [NEW] 사망년도 저장
+            const deathYear = document.getElementById('inDeathYear').value;
+
             const name = document.getElementById('inName').value; const tags = document.getElementById('inTags').value.split(',').map(t=>t.trim()).filter(t=>t);
             const desc = document.getElementById('inDesc').value; const img = document.getElementById('inImg').value;
             const cardColor = document.getElementById('inCardColor').value; const rawContent = document.getElementById('inContent').value;
-            
-            const lat = document.getElementById('inLat').value;
-            const lng = document.getElementById('inLng').value;
-            const geoName = document.getElementById('inGeoName').value;
-            const geoDesc = document.getElementById('inGeoDesc').value;
+            const lat = document.getElementById('inLat').value; const lng = document.getElementById('inLng').value;
+            const geoName = document.getElementById('inGeoName').value; const geoDesc = document.getElementById('inGeoDesc').value;
 
             if (!year || !name) { alert('필수 항목 누락'); return; }
             
@@ -790,21 +830,24 @@
                 }).filter(p => p); 
             } else { historyDetail = rawContent.trim(); }
             
-            const newData = { id: editingId || Date.now(), year, era, type, name, tags, desc, img, isShow, cardColor, poems, historyDetail, lat, lng, geoName, geoDesc };
+            // [UPDATED] deathYear 추가
+            const newData = { id: editingId || Date.now(), year, deathYear, era, type, name, tags, desc, img, isShow, cardColor, poems, historyDetail, lat, lng, geoName, geoDesc };
             
             if (editingId) { const idx = db.findIndex(d => d.id === editingId); if (idx !== -1) db[idx] = newData; } else { db.push(newData); }
             saveToLocal(); render(); populateEraFilter(); clearForm();
         }
 
         function clearForm() {
-            document.getElementById('inYear').value = ''; document.getElementById('inName').value = '';
-            document.getElementById('inTags').value = ''; document.getElementById('inDesc').value = '';
-            document.getElementById('inImg').value = ''; document.getElementById('inContent').value = '';
-            document.getElementById('inLat').value = ''; document.getElementById('inLng').value = '';
-            document.getElementById('inGeoName').value = ''; document.getElementById('inGeoDesc').value = '';
-            document.getElementById('inLocationSearch').value = '';
+            document.getElementById('inYear').value = ''; document.getElementById('inDeathYear').value = ''; 
+            document.getElementById('inName').value = ''; document.getElementById('inTags').value = ''; 
+            document.getElementById('inDesc').value = ''; document.getElementById('inImg').value = ''; 
+            document.getElementById('inContent').value = ''; document.getElementById('inLat').value = ''; 
+            document.getElementById('inLng').value = ''; document.getElementById('inGeoName').value = ''; 
+            document.getElementById('inGeoDesc').value = ''; document.getElementById('inLocationSearch').value = '';
+            document.getElementById('eraHint').innerHTML = '';
             document.getElementById('inShow').checked = true; document.getElementById('inCardColor').value = "#ffffff";
             editingId = null; document.getElementById('btnSave').innerText = "저장";
+            updateFormUI();
         }
         function deleteItem(id) { if(confirm('삭제?')) { db = db.filter(i => i.id !== id); saveToLocal(); render(); populateEraFilter(); } }
         function resetAllData() { if(confirm('전체 삭제?')) { localStorage.removeItem('tangTimelineDB'); location.reload(); } }
@@ -815,9 +858,13 @@
             currentOpenId = id;
             document.getElementById('floatingCloseBtn').style.display = 'block';
             const query = document.getElementById('searchInput').value.trim().toLowerCase();
-
             const editBtnHtml = isAdmin ? `<div style="text-align:right; margin-bottom:10px;"><span class="btn-text btn-edit" onclick="editItem(${item.id}); closeModal('detailModal');">[수정]</span><span class="btn-text btn-del" onclick="deleteItem(${item.id}); closeModal('detailModal');">[삭제]</span></div>` : '';
-            document.getElementById('mName').innerHTML = `${cleanTitle(item.name)} <span style='font-size:0.7em; color:#888;'>(${item.year})</span>`;
+            
+            // [UPDATED] 모달 제목에 생몰년 표시
+            let dateStr = item.year;
+            if (item.type === 'poet' && item.deathYear) dateStr += ` ~ ${item.deathYear}`;
+            document.getElementById('mName').innerHTML = `${cleanTitle(item.name)} <span style='font-size:0.7em; color:#888;'>(${dateStr})</span>`;
+            
             document.getElementById('mDesc').innerHTML = editBtnHtml + parseText(item.desc, false);
             const tagsHtml = item.tags ? item.tags.map(t => `<span class="tag-badge">#${t}</span>`).join('') : "";
             document.getElementById('mTags').innerHTML = tagsHtml;
@@ -845,106 +892,27 @@
             
             const miniMapWrapper = document.getElementById('miniMapWrapper');
             const miniMapCaption = document.getElementById('miniMapCaption');
-            
             if(item.lat && item.lng) {
                 miniMapWrapper.style.display = 'block';
                 miniMapCaption.innerText = item.geoDesc || "";
-
                 setTimeout(() => {
-                    if (miniMap) {
-                        miniMap.remove(); 
-                    }
+                    if (miniMap) { miniMap.remove(); }
                     miniMap = L.map('miniMap').setView([item.lat, item.lng], 6);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: ''
-                    }).addTo(miniMap);
-                    
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(miniMap);
                     const markerText = item.geoName || item.name;
-                    L.marker([item.lat, item.lng]).addTo(miniMap)
-                     .bindPopup(`<b>${markerText}</b>`).openPopup();
+                    L.marker([item.lat, item.lng]).addTo(miniMap).bindPopup(`<b>${markerText}</b>`).openPopup();
                 }, 200);
-            } else {
-                miniMapWrapper.style.display = 'none';
-            }
+            } else { miniMapWrapper.style.display = 'none'; }
 
             document.getElementById('detailModal').style.display = "block";
         }
 
-        function openStatModal() {
-            const totalCards = db.length; 
-            const stats = {}; let totalPoems = 0;
-            db.forEach(item => { if (item.type === 'poet' && item.poems) { const key = cleanTitle(item.name); const count = item.poems.length; stats[key] = (stats[key] || 0) + count; totalPoems += count; } });
-            const sortedStats = Object.entries(stats).sort((a, b) => b[1] - a[1]);
-            let html = `<table class="stat-table"><tr><th>총 데이터(카드)</th><td>${totalCards}개</td></tr><tr><th>수록된 작품 수</th><td>${totalPoems}수</td></tr><tr><th colspan="2" style="text-align:center; background:#eee;">🏆 인물별 작품 수 랭킹</th></tr></table><div class="stat-scroll-box"><table class="stat-rank-table">`;
-            sortedStats.forEach((entry, index) => { html += `<tr><td class="rank-num">${index + 1}</td><td>${entry[0]}</td><td style="text-align:right; font-weight:bold;">${entry[1]}수</td></tr>`; });
-            if (sortedStats.length === 0) { html += `<tr><td colspan="3" style="text-align:center; padding:20px;">집계된 작품이 없습니다.</td></tr>`; }
-            html += `</table></div>`;
-            document.getElementById('statContent').innerHTML = html; 
-            document.getElementById('statModal').style.display = 'block';
-        }
-
-        function openMapModal() {
-            document.getElementById('mapModal').style.display = 'block';
-            setTimeout(() => {
-                if (!map) {
-                    map = L.map('map').setView([34.26, 108.94], 5);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap contributors'
-                    }).addTo(map);
-                    markersLayer = L.layerGroup().addTo(map);
-                } else {
-                    map.invalidateSize();
-                }
-                updateMarkers();
-            }, 100);
-        }
-
-        function updateMarkers() {
-            if(!markersLayer) return;
-            markersLayer.clearLayers();
-            db.forEach(item => {
-                if(item.lat && item.lng) {
-                    const marker = L.marker([item.lat, item.lng]);
-                    const markerText = item.geoName || cleanTitle(item.name);
-                    const popupContent = `<div style="text-align:center;"><b>${markerText}</b> (${item.year})<br><span style="font-size:0.8em; color:#666;">${item.era}</span><br><button onclick="closeModal('mapModal'); openModal(${item.id});" style="margin-top:5px; cursor:pointer; background:#eee; border:1px solid #ccc; padding:2px 5px; border-radius:3px;">상세보기</button></div>`;
-                    marker.bindPopup(popupContent);
-                    markersLayer.addLayer(marker);
-                }
-            });
-        }
-
-        function openContextModal(targetId) {
-            const targetItem = db.find(d => d.id === targetId); if (!targetItem) return;
-            const idx = db.findIndex(d => d.id === targetId);
-            document.getElementById('ctxTargetYear').innerText = targetItem.year;
-            const siblings = db.slice(Math.max(0, idx - 5), Math.min(db.length, idx + 6));
-            const list = document.getElementById('ctxList'); list.innerHTML = '';
-            siblings.forEach(item => {
-                const li = document.createElement('li'); const isMinor = !item.isShow;
-                li.className = `ctx-item ${item.id === targetId ? 'current' : ''} ${isMinor ? 'minor' : ''}`;
-                li.onclick = () => { closeModal('contextModal'); openModal(item.id); };
-                li.innerHTML = `<div class="ctx-year">${item.year}</div><div class="ctx-info"><div class="ctx-name">${item.name}</div><span class="ctx-desc">${item.desc.substring(0, 40)}...</span></div>`;
-                list.appendChild(li);
-            });
-            document.getElementById('contextModal').style.display = "block";
-        }
-        
         function closeModal(id) { 
             document.getElementById(id).style.display = "none"; 
             document.getElementById('floatingCloseBtn').style.display = 'none';
-
-            if (id === 'detailModal') {
-                document.getElementById('mContentArea').innerHTML = '';
-                document.getElementById('mDesc').innerHTML = '';
-            }
+            if (id === 'detailModal') { document.getElementById('mContentArea').innerHTML = ''; document.getElementById('mDesc').innerHTML = ''; }
         }
-        
-        window.onclick = function(e) { 
-            if(e.target.classList.contains('modal')) {
-                closeModal(e.target.id);
-            }
-        }
-        
+        window.onclick = function(e) { if(e.target.classList.contains('modal')) { closeModal(e.target.id); } }
         init();
     </script>
 </body>
