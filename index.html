@@ -23,7 +23,7 @@
             position: -webkit-sticky;
             position: sticky;
             top: 0;
-            z-index: 1000; /* 지도보다 위에 오도록 높임 */
+            z-index: 1000;
             background-color: #fdfbf7;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             padding-top: 20px;
@@ -39,7 +39,7 @@
         .filter-select { padding: 8px; border: 1px solid #ccc; border-radius: 5px; }
         .stat-btn, .print-btn, .map-btn { background: #555; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; }
         .print-btn { background: #333; }
-        .map-btn { background: #007bff; } /* 지도 버튼 파란색 */
+        .map-btn { background: #007bff; }
 
         /* --- 헤더 절대 좌표 고정 --- */
         .timeline-headers { 
@@ -228,6 +228,10 @@
 
         /* 지도 스타일 */
         #map { width: 100%; height: 500px; border-radius: 8px; border: 2px solid #333; }
+        
+        /* [NEW] 미니 지도 스타일 */
+        #miniMap { width: 100%; height: 200px; border-radius: 8px; border: 1px solid #ccc; margin-top: 10px; display:none; }
+
         /* Leaflet 모달 충돌 방지 */
         .leaflet-container { font-family: sans-serif !important; z-index: 1; }
 
@@ -303,19 +307,10 @@
         </div>
         
         <div class="form-group" style="background:#e8f5e9; padding:10px; border-radius:5px; border:1px solid #c8e6c9;">
-             <label>📍 지도 좌표 (위치 표시용)</label>
-             <div style="margin-bottom:5px;">
-                 <select id="geoPreset" onchange="applyGeoPreset()" style="font-size:12px; padding:5px;">
-                     <option value="">-- 주요 좌표 선택 --</option>
-                     <option value="34.2655,108.9531">장안 (시안)</option>
-                     <option value="34.6181,112.4540">낙양 (뤄양)</option>
-                     <option value="30.6635,104.0367">성도 (두보초당)</option>
-                     <option value="32.3931,119.4210">양주 (양저우)</option>
-                     <option value="30.5471,114.2974">황학루 (우한)</option>
-                     <option value="31.0450,109.5760">백제성 (봉절)</option>
-                     <option value="29.5630,115.9860">여산 (루산)</option>
-                     <option value="30.2741,120.1551">항주 (항저우)</option>
-                 </select>
+             <label>📍 지도 좌표 (자동 검색)</label>
+             <div style="display:flex; gap:5px; margin-bottom:5px;">
+                <input type="text" id="inLocationSearch" placeholder="예: 浙江省 義烏縣, 낙양, Xi'an" style="flex:1;">
+                <button type="button" onclick="searchLocation()" style="background:#4CAF50; color:white; border:none; border-radius:4px; cursor:pointer; width:60px;">🔍 찾기</button>
              </div>
              <div style="display:flex; gap:5px;">
                  <input type="number" id="inLat" step="0.0001" placeholder="위도(Lat)" style="flex:1;">
@@ -353,8 +348,21 @@
     <div class="login-trigger" onclick="adminLogin()">Admin</div>
 
     <div id="detailModal" class="modal">
-        <div class="modal-content"><button id="backBtn" class="back-btn" onclick="goBack()">⬅ 뒤로</button><span class="close" onclick="closeModal('detailModal')">&times;</span><div style="clear:both;"></div><img id="mImg" class="img-card" style="display:none; max-width:200px;"><h2 id="mName" style="text-align:center;"></h2><div id="mTags" style="text-align:center; margin-bottom:10px;"></div><div id="mDesc" style="background:#f5f5f5; padding:15px; border-radius:5px; white-space: pre-wrap;"></div><hr><div id="mContentArea"></div></div>
+        <div class="modal-content">
+            <button id="backBtn" class="back-btn" onclick="goBack()">⬅ 뒤로</button>
+            <span class="close" onclick="closeModal('detailModal')">&times;</span>
+            <div style="clear:both;"></div>
+            <img id="mImg" class="img-card" style="display:none; max-width:200px;">
+            <div id="miniMap"></div>
+            
+            <h2 id="mName" style="text-align:center;"></h2>
+            <div id="mTags" style="text-align:center; margin-bottom:10px;"></div>
+            <div id="mDesc" style="background:#f5f5f5; padding:15px; border-radius:5px; white-space: pre-wrap;"></div>
+            <hr>
+            <div id="mContentArea"></div>
+        </div>
     </div>
+    
     <div id="contextModal" class="modal"><div class="modal-content"><span class="close" onclick="closeModal('contextModal')">&times;</span><h3 style="text-align:center; border-bottom:2px solid #8B0000; padding-bottom:10px;">⌛ <span id="ctxTargetYear"></span>년 전후 기록</h3><ul id="ctxList" class="ctx-list"></ul></div></div>
     <div id="statModal" class="modal"><div class="modal-content"><span class="close" onclick="closeModal('statModal')">&times;</span><h3>📊 데이터 통계</h3><div id="statContent"></div></div></div>
 
@@ -362,7 +370,7 @@
         <div class="modal-content" style="max-width: 900px;">
             <span class="close" onclick="closeModal('mapModal')">&times;</span>
             <h3>🗺️ 역사 지도</h3>
-            <p style="font-size:0.9rem; color:#666;">등록된 사건 및 인물의 위치를 보여줍니다. (마커를 클릭하면 정보가 나옵니다)</p>
+            <p style="font-size:0.9rem; color:#666;">등록된 사건 및 인물의 위치를 보여줍니다.</p>
             <div id="map"></div>
         </div>
     </div>
@@ -372,9 +380,11 @@
         let db=[], config={}, editingId=null, modalHistory=[], currentOpenId=null;
         let isAdmin = false; 
         
-        // [NEW] 지도 관련 변수
         let map = null;
         let markersLayer = null;
+        // [NEW] 미니 지도 변수
+        let miniMap = null;
+        let miniMarker = null;
 
         async function init() {
             try {
@@ -452,7 +462,6 @@
             }; reader.readAsText(file);
         }
 
-        // --- 기능 함수들 (병음, 평측, 등) ---
         function autoPinyin() {
             const input = document.getElementById('inContent');
             const fullText = input.value;
@@ -514,7 +523,6 @@
             input.value = text.substring(0, start) + insertText + text.substring(end);
         }
 
-        // --- 텍스트 유틸리티 ---
         function cleanTitle(text) {
             if (!text) return "";
             return text.replace(/\[.*?\]/g, '').trim();
@@ -545,7 +553,36 @@
             return text;
         }
 
-        // --- 렌더링 ---
+        // --- [NEW] OpenStreetMap Nominatim API 좌표 검색 ---
+        async function searchLocation() {
+            const query = document.getElementById('inLocationSearch').value;
+            if (!query) { alert("검색할 지명이나 주소를 입력하세요."); return; }
+
+            // 검색 중 표시
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = "⌛";
+
+            try {
+                // Nominatim API 호출 (무료, 1초 1회 제한 권장)
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+                const results = await response.json();
+
+                if (results && results.length > 0) {
+                    const bestMatch = results[0];
+                    document.getElementById('inLat').value = parseFloat(bestMatch.lat).toFixed(4);
+                    document.getElementById('inLng').value = parseFloat(bestMatch.lon).toFixed(4);
+                    alert(`찾았습니다!\n${bestMatch.display_name}`);
+                } else {
+                    alert("검색 결과가 없습니다. 지명을 확인하거나 현대 지명(예: Xi'an)으로 검색해보세요.");
+                }
+            } catch (e) {
+                alert("검색 중 오류가 발생했습니다: " + e.message);
+            } finally {
+                btn.innerText = originalText;
+            }
+        }
+
         function render(query = "", eraFilter = "all") {
             const root = document.getElementById('timeline-root'); root.innerHTML = '';
             const safeQuery = query ? query.trim().toLowerCase() : "";
@@ -593,7 +630,6 @@
             setTimeout(adjustPadding, 100);
         }
 
-        // --- 기타 기능들 ---
         function populateEraFilter() {
             const eras = [...new Set(db.map(item => item.era).filter(e => e))].sort();
             const select = document.getElementById('eraFilter'); select.innerHTML = '<option value="all">모든 시대</option>';
@@ -654,16 +690,6 @@
             localStorage.setItem('tangTimelineConfig', JSON.stringify(config)); applyConfigUI(); render(); alert('저장됨');
         }
         function updateFormUI() {}
-        
-        // [NEW] 좌표 프리셋 적용
-        function applyGeoPreset() {
-            const val = document.getElementById('geoPreset').value;
-            if(val) {
-                const parts = val.split(',');
-                document.getElementById('inLat').value = parts[0];
-                document.getElementById('inLng').value = parts[1];
-            }
-        }
 
         /* 수정 모드 */
         function editItem(id) {
@@ -681,9 +707,9 @@
             document.getElementById('inImg').value = item.img || "";
             document.getElementById('inCardColor').value = item.cardColor || "#ffffff";
             
-            // [NEW] 좌표 불러오기
             document.getElementById('inLat').value = item.lat || "";
             document.getElementById('inLng').value = item.lng || "";
+            document.getElementById('inLocationSearch').value = ""; // 검색창 초기화
 
             const contentBox = document.getElementById('inContent');
             if (item.type === 'poet' && item.poems) {
@@ -707,7 +733,6 @@
             const desc = document.getElementById('inDesc').value; const img = document.getElementById('inImg').value;
             const cardColor = document.getElementById('inCardColor').value; const rawContent = document.getElementById('inContent').value;
             
-            // [NEW] 좌표 저장
             const lat = document.getElementById('inLat').value;
             const lng = document.getElementById('inLng').value;
 
@@ -738,7 +763,7 @@
             document.getElementById('inTags').value = ''; document.getElementById('inDesc').value = '';
             document.getElementById('inImg').value = ''; document.getElementById('inContent').value = '';
             document.getElementById('inLat').value = ''; document.getElementById('inLng').value = '';
-            document.getElementById('geoPreset').value = '';
+            document.getElementById('inLocationSearch').value = '';
             document.getElementById('inShow').checked = true; document.getElementById('inCardColor').value = "#ffffff";
             editingId = null; document.getElementById('btnSave').innerText = "저장";
         }
@@ -779,6 +804,26 @@
                 });
             } else if (item.historyDetail) { area.innerHTML = `<div class="poem-body">${parseText(item.historyDetail, false)}</div>`; }
             
+            // [NEW] 상세 화면 미니 지도 처리
+            const miniMapContainer = document.getElementById('miniMap');
+            if(item.lat && item.lng) {
+                miniMapContainer.style.display = 'block';
+                // 모달 렌더링 후 지도 초기화 (시간차 필요)
+                setTimeout(() => {
+                    if (miniMap) {
+                        miniMap.remove(); // 기존 지도 삭제 (중복 방지)
+                    }
+                    miniMap = L.map('miniMap').setView([item.lat, item.lng], 6);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: ''
+                    }).addTo(miniMap);
+                    L.marker([item.lat, item.lng]).addTo(miniMap)
+                     .bindPopup(`<b>${item.name}</b>`).openPopup();
+                }, 200);
+            } else {
+                miniMapContainer.style.display = 'none';
+            }
+
             document.getElementById('detailModal').style.display = "block";
         }
 
@@ -795,27 +840,18 @@
             document.getElementById('statModal').style.display = 'block';
         }
 
-        // [NEW] 지도 모달 열기 및 초기화
         function openMapModal() {
             document.getElementById('mapModal').style.display = 'block';
-            
-            // 모달이 열린 직후에는 사이즈 계산이 안될 수 있으므로 약간의 지연 후 렌더링
             setTimeout(() => {
                 if (!map) {
-                    // 지도 최초 생성 (중국 시안 중심)
                     map = L.map('map').setView([34.26, 108.94], 5);
-                    
-                    // 오픈스트리트맵 타일 사용
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '© OpenStreetMap contributors'
                     }).addTo(map);
-
                     markersLayer = L.layerGroup().addTo(map);
                 } else {
-                    map.invalidateSize(); // 모달 내부에서 지도 크기 재계산 (필수)
+                    map.invalidateSize();
                 }
-
-                // 마커 새로고침
                 updateMarkers();
             }, 100);
         }
@@ -823,19 +859,10 @@
         function updateMarkers() {
             if(!markersLayer) return;
             markersLayer.clearLayers();
-
             db.forEach(item => {
                 if(item.lat && item.lng) {
                     const marker = L.marker([item.lat, item.lng]);
-                    
-                    // 팝업 내용
-                    const popupContent = `
-                        <div style="text-align:center;">
-                            <b>${cleanTitle(item.name)}</b> (${item.year})<br>
-                            <span style="font-size:0.8em; color:#666;">${item.era}</span><br>
-                            <button onclick="closeModal('mapModal'); openModal(${item.id});" style="margin-top:5px; cursor:pointer; background:#eee; border:1px solid #ccc; padding:2px 5px; border-radius:3px;">상세보기</button>
-                        </div>
-                    `;
+                    const popupContent = `<div style="text-align:center;"><b>${cleanTitle(item.name)}</b> (${item.year})<br><span style="font-size:0.8em; color:#666;">${item.era}</span><br><button onclick="closeModal('mapModal'); openModal(${item.id});" style="margin-top:5px; cursor:pointer; background:#eee; border:1px solid #ccc; padding:2px 5px; border-radius:3px;">상세보기</button></div>`;
                     marker.bindPopup(popupContent);
                     markersLayer.addLayer(marker);
                 }
