@@ -229,7 +229,7 @@
         /* 지도 스타일 */
         #map { width: 100%; height: 500px; border-radius: 8px; border: 2px solid #333; }
         
-        /* [UPDATED] 미니 지도 스타일 & 위치 조정 */
+        /* 미니 지도 스타일 & 위치 조정 */
         #miniMapWrapper { width: 100%; margin: 15px 0; display: none; }
         #miniMap { width: 100%; height: 200px; border-radius: 8px; border: 1px solid #ccc; }
         #miniMapCaption { text-align: center; font-size: 0.85rem; color: #666; margin-top: 5px; font-weight: bold; }
@@ -721,7 +721,7 @@
             
             document.getElementById('inLat').value = item.lat || "";
             document.getElementById('inLng').value = item.lng || "";
-            // [UPDATED] 추가된 필드 로드
+            // 추가된 필드 로드
             document.getElementById('inGeoName').value = item.geoName || "";
             document.getElementById('inGeoDesc').value = item.geoDesc || "";
             
@@ -751,7 +751,7 @@
             
             const lat = document.getElementById('inLat').value;
             const lng = document.getElementById('inLng').value;
-            // [UPDATED] 추가된 필드 저장
+            // 추가된 필드 저장
             const geoName = document.getElementById('inGeoName').value;
             const geoDesc = document.getElementById('inGeoDesc').value;
 
@@ -771,7 +771,7 @@
                 }).filter(p => p); 
             } else { historyDetail = rawContent.trim(); }
             
-            // [UPDATED] 객체에 geoName, geoDesc 추가
+            // 객체에 geoName, geoDesc 추가
             const newData = { id: editingId || Date.now(), year, era, type, name, tags, desc, img, isShow, cardColor, poems, historyDetail, lat, lng, geoName, geoDesc };
             
             if (editingId) { const idx = db.findIndex(d => d.id === editingId); if (idx !== -1) db[idx] = newData; } else { db.push(newData); }
@@ -783,7 +783,7 @@
             document.getElementById('inTags').value = ''; document.getElementById('inDesc').value = '';
             document.getElementById('inImg').value = ''; document.getElementById('inContent').value = '';
             document.getElementById('inLat').value = ''; document.getElementById('inLng').value = '';
-            // [UPDATED] 추가 필드 초기화
+            // 추가 필드 초기화
             document.getElementById('inGeoName').value = ''; document.getElementById('inGeoDesc').value = '';
             
             document.getElementById('inLocationSearch').value = '';
@@ -827,7 +827,7 @@
                 });
             } else if (item.historyDetail) { area.innerHTML = `<div class="poem-body">${parseText(item.historyDetail, false)}</div>`; }
             
-            // [UPDATED] 상세 화면 미니 지도 처리
+            // 상세 화면 미니 지도 처리
             const miniMapWrapper = document.getElementById('miniMapWrapper');
             const miniMapCaption = document.getElementById('miniMapCaption');
             
@@ -846,7 +846,7 @@
                         attribution: ''
                     }).addTo(miniMap);
                     
-                    // [UPDATED] 마커 팝업에 geoName 사용 (없으면 기본 이름)
+                    // 마커 팝업에 geoName 사용 (없으면 기본 이름)
                     const markerText = item.geoName || item.name;
                     L.marker([item.lat, item.lng]).addTo(miniMap)
                      .bindPopup(`<b>${markerText}</b>`).openPopup();
@@ -893,7 +893,7 @@
             db.forEach(item => {
                 if(item.lat && item.lng) {
                     const marker = L.marker([item.lat, item.lng]);
-                    // [UPDATED] 지도 모달에서도 geoName 사용
+                    // 지도 모달에서도 geoName 사용
                     const markerText = item.geoName || cleanTitle(item.name);
                     const popupContent = `<div style="text-align:center;"><b>${markerText}</b> (${item.year})<br><span style="font-size:0.8em; color:#666;">${item.era}</span><br><button onclick="closeModal('mapModal'); openModal(${item.id});" style="margin-top:5px; cursor:pointer; background:#eee; border:1px solid #ccc; padding:2px 5px; border-radius:3px;">상세보기</button></div>`;
                     marker.bindPopup(popupContent);
@@ -918,15 +918,22 @@
             document.getElementById('contextModal').style.display = "block";
         }
         
+        // [UPDATED] 닫기 버튼: 상세 모달의 내용을 비워야 유튜브가 꺼짐
         function closeModal(id) { 
             document.getElementById(id).style.display = "none"; 
             document.getElementById('floatingCloseBtn').style.display = 'none';
+
+            // 상세 모달일 경우 내부 HTML을 비워 iframe(유튜브)을 종료시킴
+            if (id === 'detailModal') {
+                document.getElementById('mContentArea').innerHTML = '';
+                document.getElementById('mDesc').innerHTML = '';
+            }
         }
         
+        // [UPDATED] 배경 클릭 시에도 closeModal 함수를 호출하여 유튜브 종료
         window.onclick = function(e) { 
             if(e.target.classList.contains('modal')) {
-                e.target.style.display="none"; 
-                document.getElementById('floatingCloseBtn').style.display = 'none';
+                closeModal(e.target.id);
             }
         }
         
