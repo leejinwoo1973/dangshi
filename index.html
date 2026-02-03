@@ -190,7 +190,10 @@
         .crop-btn { padding:10px 20px; font-size:16px; background:white; border:none; cursor:pointer; margin:0 5px; border-radius:5px;}
         
         footer { text-align: center; padding: 20px; border-top: 1px solid #ddd; color: #888; font-size: 0.9rem; background-color: #fdfbf7; }
-        .source-credit { margin-top: 20px; text-align: right; border-top: 1px dashed #ddd; padding-top: 10px; font-size: 0.8rem; color: #888; display: block; }
+        /* [UPDATED] 라이선스 표기 스타일 개선 */
+        .source-credit { margin-top: 20px; text-align: right; border-top: 1px dashed #ddd; padding-top: 10px; font-size: 0.85rem; color: #666; display: block; }
+        .source-credit img { vertical-align: middle; margin-right: 5px; max-height: 18px; margin-bottom:2px; }
+        .source-credit a { text-decoration: none; color: #555; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -227,7 +230,7 @@
             </div>
         </div>
         <h3 style="margin-top:20px; border-top:2px solid #333; padding-top:10px;">데이터 입력</h3>
-        <div class="form-group" style="background:#fff3cd; padding:5px;"><label>🎨 강조색</label><input type="color" id="inCardColor" value="#ffffff" style="width:100%;"></div>
+        <div class="form-group" style="background:#fff3cd; padding:5px;"><label>🎨 강조색 (흰색은 자동색상 적용)</label><input type="color" id="inCardColor" value="#ffffff" style="width:100%;"></div>
         <div class="form-group"><label><input type="checkbox" id="inShow" checked> <strong>크게 보이기 (체크해제시 관계도 제외)</strong></label></div>
         
         <div class="form-group" style="background:#e8f5e9; padding:10px;">
@@ -364,19 +367,27 @@
 
         function autoPinyin() { const i = document.getElementById('inContent'); const s = i.selectionStart; const e = i.selectionEnd; if(s===e) return alert("선택필요"); const t = pinyinPro.pinyin(i.value.substring(s,e), { type: 'all', toneType: 'symbol', nonZh: 'consecutive' }); i.setRangeText(t.map(x => x.isZh ? `${x.origin}(${x.pinyin})` : x.origin).join('')); }
         function autoTone() { const i = document.getElementById('inContent'); const s = i.selectionStart; const e = i.selectionEnd; if(s===e) return alert("선택필요"); const t = pinyinPro.pinyin(i.value.substring(s,e), { type: 'all', toneType: 'num', nonZh: 'consecutive' }); i.setRangeText(t.map(x => { if (!x.isZh) return x.origin; return `${x.origin}(${/[34]$/.test(x.pinyin)?'●':'○'})`; }).join('')); }
-        function insertLicense() { document.getElementById('inContent').setRangeText(`\n### 자료출처: <a href='http://db.cyberseodang.or.kr'>동양고전종합DB</a> ###`); }
+        function insertLicense() { document.getElementById('inContent').setRangeText(`\n### 자료출처: <a href='http://db.cyberseodang.or.kr' target='_blank'><img src='http://db.cyberseodang.or.kr/images/front/logo_b.png'> 동양고전종합DB</a> ###`); }
         function insertAudio() { let u = prompt("오디오 URL"); if(u) { if(!u.startsWith('http')) u='https://tangshi.kr/mp3/'+u; document.getElementById('inContent').setRangeText(`{{오디오|${u}}}`); } }
 
         function cleanTitle(t) { return t ? t.replace(/\[.*?\]/g, '').trim() : ""; }
         function cleanTextForCard(t) { if(!t) return ""; return t.replace(/\{\{.*?\}\}/g, '').replace(/###.*?###/g, '').replace(/%%(.*?)%%/g, '$1').replace(/\$\$(.*?)\$\$/g, '$1').substring(0, 40)+"..."; }
-        function parseText(t, m=false) { if(!t) return ""; if(m) t = t.replace(/([\u4E00-\u9FFF])\(([^)]+)\)/g, "<ruby>$1<rt>$2</rt></ruby>"); return t.replace(/%%(.*?)%%/g, '<b>$1</b>').replace(/\$\$(.*?)\$\$/g, '<span style="color:#888;font-style:italic;">$1</span>').replace(/\{\{오디오\|(.*?)\}\}/g, '<audio controls src="$1" style="width:100%;margin-top:10px;"></audio>').replace(/\[\[(.*?)\]\]/g, '<span class="wiki-link" onclick="openModalByName(\'$1\')">$1</span>'); }
+        function parseText(t, m=false) { 
+            if(!t) return ""; 
+            if(m) t = t.replace(/([\u4E00-\u9FFF])\(([^)]+)\)/g, "<ruby>$1<rt>$2</rt></ruby>"); 
+            t = t.replace(/%%(.*?)%%/g, '<b>$1</b>')
+                 .replace(/\$\$(.*?)\$\$/g, '<span style="color:#888;font-style:italic;">$1</span>')
+                 .replace(/\{\{오디오\|(.*?)\}\}/g, '<audio controls src="$1" style="width:100%;margin-top:10px;"></audio>')
+                 .replace(/###(.*?)###/g, '<div class="source-credit">$1</div>')
+                 .replace(/\[\[(.*?)\]\]/g, '<span class="wiki-link" onclick="openModalByName(\'$1\')">$1</span>'); 
+            return t; 
+        }
 
         async function searchLocation() {
             const q = document.getElementById('inLocationSearch').value; if(!q) return;
             try { const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`); const j = await r.json(); if(j.length>0) { document.getElementById('inLat').value = parseFloat(j[0].lat).toFixed(4); document.getElementById('inLng').value = parseFloat(j[0].lon).toFixed(4); alert("발견: "+j[0].display_name); } else alert("실패"); } catch(e){alert("오류");}
         }
 
-        // 이미지 크롭 관련 로직
         function handleImageSelect(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -393,7 +404,6 @@
         }
         function performCrop() {
             if(!cropper) return;
-            // 150x150 사이즈로 저장
             const canvas = cropper.getCroppedCanvas({ width:150, height:150 });
             const base64 = canvas.toDataURL('image/jpeg', 0.8);
             document.getElementById('inImg').value = base64;
@@ -439,7 +449,12 @@
                 if (item.isShow) {
                     const div = document.createElement('div'); div.className = item.type === 'poet' ? 'container left' : 'container right';
                     const imgTag = item.img ? `<img src="${item.img}" class="thumb-img">` : '';
-                    let cardBg = item.cardColor || (eraTheme[item.era] || "#ffffff");
+                    
+                    // [FIX] 색상 로직 개선: 사용자가 지정한 색이 있고 흰색이 아니면 사용, 아니면 시대별 색상 적용
+                    const userColor = (item.cardColor && item.cardColor !== "#ffffff") ? item.cardColor : null;
+                    let cardBg = userColor || (eraTheme[item.era] || (item.type==='poet' ? config.leftCardColor : config.rightCardColor));
+                    if (!cardBg || cardBg === "#ffffff") cardBg = "#ffffff"; // 최후의 보루
+
                     let tagHtml = item.tags ? '<div class="tag-container">' + item.tags.map(t => `<span class="tag-badge" onclick="searchTag('${t}')">#${t}</span>`).join('') + '</div>' : "";
                     const btns = isAdmin ? `<div class="action-btns" style="display:block;"><span class="btn-text btn-edit" onclick="editItem(${item.id})">[수정]</span></div>` : '';
                     
@@ -479,46 +494,28 @@
             localStorage.setItem('tangTimelineConfig', JSON.stringify(config)); applyConfigUI(); render(); alert('저장됨');
         }
         
-        // [복구] 누락되었던 applyConfigUI 함수 복구
         function applyConfigUI() {
-            document.getElementById('pageTitle').innerText = config.title; 
-            document.getElementById('pageDesc').innerText = config.desc;
+            document.getElementById('pageTitle').innerText = config.title; document.getElementById('pageDesc').innerText = config.desc;
             document.title = config.title; 
-            
             document.getElementById('pageFooter').innerHTML = config.copyright || "";
             document.getElementById('cfgCopyright').value = config.copyright || "";
-
-            const badgeLeft = document.getElementById('badgeLeft');
-            const badgeRight = document.getElementById('badgeRight');
-            badgeLeft.innerText = config.leftLabel;
-            badgeRight.innerText = config.rightLabel;
-            badgeLeft.style.backgroundColor = config.leftCardColor || "#ffffff";
-            badgeRight.style.backgroundColor = config.rightCardColor || "#ffffff";
-
-            document.getElementById('cfgTitle').value = config.title; 
-            document.getElementById('cfgDesc').value = config.desc;
-            document.getElementById('cfgLabelLeft').value = config.leftLabel; 
-            document.getElementById('cfgLabelRight').value = config.rightLabel;
-            document.getElementById('cfgBgColor').value = config.bgColor || "#fdfbf7"; 
-            document.getElementById('cfgBgImage').value = config.bgImage || "";
-            document.getElementById('cfgLeftColor').value = config.leftCardColor || "#ffffff"; 
-            document.getElementById('cfgRightColor').value = config.rightCardColor || "#ffffff";
-            document.getElementById('optLeft').innerText = "왼쪽: " + config.leftLabel; 
-            document.getElementById('optRight').innerText = "오른쪽: " + config.rightLabel;
-            
+            const badgeLeft = document.getElementById('badgeLeft'); const badgeRight = document.getElementById('badgeRight');
+            badgeLeft.innerText = config.leftLabel; badgeRight.innerText = config.rightLabel;
+            badgeLeft.style.backgroundColor = config.leftCardColor || "#ffffff"; badgeRight.style.backgroundColor = config.rightCardColor || "#ffffff";
+            document.getElementById('cfgTitle').value = config.title; document.getElementById('cfgDesc').value = config.desc;
+            document.getElementById('cfgLabelLeft').value = config.leftLabel; document.getElementById('cfgLabelRight').value = config.rightLabel;
+            document.getElementById('cfgBgColor').value = config.bgColor || "#fdfbf7"; document.getElementById('cfgBgImage').value = config.bgImage || "";
+            document.getElementById('cfgLeftColor').value = config.leftCardColor || "#ffffff"; document.getElementById('cfgRightColor').value = config.rightCardColor || "#ffffff";
+            document.getElementById('optLeft').innerText = "왼쪽: " + config.leftLabel; document.getElementById('optRight').innerText = "오른쪽: " + config.rightLabel;
             document.body.style.backgroundColor = config.bgColor || "#fdfbf7";
             document.getElementById('stickyHeader').style.backgroundColor = config.bgColor || "#fdfbf7";
             document.getElementById('pageFooter').style.backgroundColor = config.bgColor || "#fdfbf7";
-
             if(config.bgImage) {
                 document.body.style.backgroundImage = `url('${config.bgImage}')`;
                 document.body.style.backgroundSize = config.bgRepeat === 'cover' ? 'cover' : 'auto';
                 document.body.style.backgroundRepeat = config.bgRepeat === 'cover' ? 'no-repeat' : 'repeat';
-            } else {
-                document.body.style.backgroundImage = 'none';
-            }
-            updateFormUI();
-            setTimeout(adjustPadding, 100);
+            } else { document.body.style.backgroundImage = 'none'; }
+            updateFormUI(); setTimeout(adjustPadding, 100);
         }
 
         function editItem(id) {
@@ -535,11 +532,9 @@
             document.getElementById('inLat').value = item.lat||""; document.getElementById('inLng').value = item.lng||"";
             document.getElementById('inGeoName').value = item.geoName||""; document.getElementById('inGeoDesc').value = item.geoDesc||"";
             
-            // 미리보기 복원
             if(item.img && item.img.startsWith('data:image')) {
                 const preview = document.getElementById('imgPreview');
-                preview.style.display = 'block';
-                preview.style.backgroundImage = `url(${item.img})`;
+                preview.style.display = 'block'; preview.style.backgroundImage = `url(${item.img})`;
             }
 
             const contentBox = document.getElementById('inContent');
@@ -599,6 +594,10 @@
         function resetAllData() { if(confirm('전체 삭제?')) { localStorage.removeItem('tangTimelineDB'); location.reload(); } }
 
         function openModal(id, keepHistory = false) {
+            // [FIX] 모달 열 때마다 이전 데이터(지도 설명, 지도) 초기화
+            document.getElementById('miniMapCaption').innerText = '';
+            document.getElementById('miniMap').innerHTML = '';
+            
             const item = db.find(d => d.id === id); if (!item) return;
             if (!keepHistory) { modalHistory = []; document.getElementById('backBtn').style.display = 'none'; }
             currentOpenId = id; document.getElementById('floatingCloseBtn').style.display = 'block';
@@ -623,7 +622,6 @@
                 });
             } else if (item.historyDetail) { area.innerHTML = `<div class="poem-body">${parseText(item.historyDetail, false)}</div>`; }
             
-            // 미니 지도 & 관련 인물 표시
             const miniMapWrapper = document.getElementById('miniMapWrapper');
             const relContainer = document.getElementById('relContainer');
             relContainer.innerHTML = '';
@@ -695,13 +693,12 @@
             }, 100);
         }
 
-        // [관계도] isShow가 true인 것만 표시 & 프로필 사진 적용
         function openRelModal() {
             document.getElementById('relModal').style.display = 'block';
             const nodes = []; const edges = []; const ids = new Set();
             
             db.forEach(item => {
-                if(!item.isShow) return; // 숨김 항목 제외
+                if(!item.isShow) return; 
                 if(item.type==='poet') {
                     const name = cleanTitle(item.name);
                     if(!ids.has(name)) { 
@@ -723,14 +720,9 @@
                             const p = r.split(':');
                             const target = p[0].trim();
                             if(!ids.has(target)) { 
-                                // 타겟 인물 정보 확인 (이미지 로드 위해)
                                 const tItem = db.find(d => cleanTitle(d.name) === target);
                                 const tOpt = { id: target, label: target, size: 20 };
-                                if (tItem && tItem.img) {
-                                    tOpt.shape = 'circularImage'; tOpt.image = tItem.img;
-                                } else {
-                                    tOpt.shape = 'dot'; tOpt.color = '#eee';
-                                }
+                                if (tItem && tItem.img) { tOpt.shape = 'circularImage'; tOpt.image = tItem.img; } else { tOpt.shape = 'dot'; tOpt.color = '#eee'; }
                                 nodes.push(tOpt); ids.add(target); 
                             }
                             edges.push({ from: name, to: target, label: p[1]||'', arrows:'to', color:'#ccc' });
