@@ -41,34 +41,49 @@
         .container { padding: 10px 50px; position: relative; width: 50%; }
         .left { left: 0; text-align: right; } .right { left: 50%; text-align: left; }
         
+        /* [카드 스타일 개편 - 텍스트 감싸기] */
         .content { 
             padding: 20px; position: relative; border-radius: 8px; 
             border: 1px solid rgba(0,0,0,0.05); box-shadow: 2px 2px 5px rgba(0,0,0,0.05); 
-            background: white; text-align: left;
+            background: white; text-align: left; /* 텍스트는 항상 왼쪽 정렬 */
             transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.4s ease;
             transform-origin: center center;
-            overflow: hidden; cursor: pointer; /* 클릭 가능 표시 */
+            overflow: hidden; cursor: pointer;
         }
-        .left .content { text-align: right; }
+        
         .content.active { transform: scale(1.1); box-shadow: 0 10px 25px rgba(139, 0, 0, 0.15); z-index: 50; border-color: rgba(139,0,0,0.2); }
         .content:hover, .content.active:hover { transform: scale(1.2) !important; box-shadow: 0 15px 30px rgba(0,0,0,0.2) !important; z-index: 100 !important; }
         
-        /* 이미지 Float 레이아웃 */
-        .thumb-img { float: left; margin-right: 15px; margin-bottom: 5px; max-width: 110px; max-height: 110px; border-radius: 5px; border: 1px solid #ddd; padding: 2px; background: #fff; object-fit: cover; }
+        /* 이미지를 왼쪽으로 띄움 (Float) */
+        .thumb-img { 
+            float: left; 
+            margin-right: 15px; 
+            margin-bottom: 5px; 
+            width: 120px; height: 120px; 
+            border-radius: 5px; border: 1px solid #ddd; 
+            padding: 2px; background: #fff; object-fit: cover; 
+        }
         
-        .title-text { font-size: 1.35em; font-weight: bold; color: #000; display: block; margin-bottom: 5px; line-height: 1.2; }
+        /* 제목 영역 */
+        .title-text { font-size: 1.4em; font-weight: bold; color: #000; display: inline; line-height: 1.3; }
         .title-text:hover { color: var(--line-color); text-decoration: underline; }
-        .era-tag { font-size: 0.8em; color: #666; font-weight:bold; margin-right: 5px; }
-        .tag-container { margin-bottom: 8px; line-height: 1.4; }
-        .tag-badge { display: inline-block; font-size: 0.7rem; background: #eef; color: #0044cc; padding: 1px 5px; border-radius: 3px; margin-right: 3px; }
-        .desc-text { font-size: 0.95rem; color: #444; line-height: 1.6; display: block; }
+        
+        .era-tag { font-size: 0.8em; color: #666; font-weight:bold; display: inline-block; margin-right: 5px; vertical-align: middle;}
+        
+        .tag-container { margin-bottom: 8px; line-height: 1.4; display: block; margin-top: 5px;}
+        .tag-badge { display: inline-block; font-size: 0.75rem; background: #eef; color: #0044cc; padding: 1px 6px; border-radius: 3px; margin-right: 3px; }
+        
+        /* 본문 텍스트가 이미지를 감싸게 됨 */
+        .desc-text { font-size: 0.95rem; color: #444; line-height: 1.6; display: block; margin-top: 5px;}
 
-        .action-btns { clear: both; margin-top: 10px; padding-top: 5px; border-top: 1px dashed #eee; text-align: right; font-size: 0.8rem; display: none; }
-        .btn-text { cursor: pointer; text-decoration: underline; margin-left: 10px; font-weight: bold; z-index: 200; position: relative;}
+        /* 수정/삭제 버튼 */
+        .action-btns { clear: both; margin-top: 10px; padding-top: 5px; border-top: 1px dashed #eee; text-align: right; font-size: 0.85rem; display: none; }
+        .btn-text { cursor: pointer; text-decoration: underline; margin-left: 10px; font-weight: bold; }
         .btn-edit { color: var(--edit-color); }
         .btn-del { color: #dc3545; }
 
-        .year-bubble { position: absolute; width: 50px; height: 50px; background-color: white; border: 3px solid var(--line-color); border-radius: 50%; z-index: 10; text-align: center; line-height: 50px; font-weight: bold; font-size: 13px; color: var(--line-color); top: 15px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); background:#fff; }
+        /* 연도 버블 (z-index 상향) */
+        .year-bubble { position: absolute; width: 50px; height: 50px; background-color: white; border: 3px solid var(--line-color); border-radius: 50%; z-index: 20; text-align: center; line-height: 50px; font-weight: bold; font-size: 13px; color: var(--line-color); top: 15px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); background:#fff; }
         .year-bubble:hover { background-color: var(--line-color); color: white; transform: scale(1.1); }
         .left .year-bubble { right: -25px; } .right .year-bubble { left: -25px; }
         
@@ -106,7 +121,6 @@
         #floatingCloseBtn { display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 3000; background-color: rgba(0, 0, 0, 0.75); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-size: 16px; font-weight: bold; cursor: pointer; }
         .back-btn { display: none; float: left; background: #eee; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; color: #333; }
         
-        /* [지도/통계/기타] */
         .stat-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem;}
         .stat-table th, .stat-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         .stat-table th { background-color: #f2f2f2; font-weight: bold; }
@@ -202,7 +216,12 @@
             <div style="display:flex; gap:5px;"><input type="number" id="inYear" placeholder="시작/출생" style="flex:1;" oninput="detectEra()"><input type="number" id="inDeathYear" placeholder="사망" style="flex:1; display:none;"><input type="text" id="inEra" placeholder="시대(자동)" style="flex:1;"></div>
             <div id="eraHint" style="font-size:0.8rem; color:#d63384; margin-top:5px; min-height:20px;"></div>
         </div>
-        <div class="form-group"><input type="text" id="inName" placeholder="제목/이름"></div>
+        
+        <div style="display:flex; gap:5px; margin-bottom:10px;">
+            <div style="flex:1"><label>제목 (한글)</label><input type="text" id="inName"></div>
+            <div style="flex:1" id="divHanja"><label>한자 이름</label><input type="text" id="inHanja" placeholder="李白"></div>
+        </div>
+
         <div class="form-group"><input type="text" id="inRelations" placeholder="관계 (이름:관계, ...)"></div>
         <div class="form-group"><input type="text" id="inTags" placeholder="태그 (쉼표 구분)"></div>
         <div class="form-group"><textarea id="inDesc" rows="3" placeholder="요약"></textarea></div>
@@ -251,9 +270,10 @@
     <div id="detailModal" class="modal">
         <div class="modal-content">
             <button class="back-btn" id="backBtn" onclick="goBack()">⬅ 뒤로</button><span class="close" onclick="closeModal('detailModal')">&times;</span><div style="clear:both;"></div>
-            <img id="mImg" class="img-card" style="display:none; max-width:200px;">
             <h2 id="mName" style="text-align:center;"></h2><div id="mTags" style="text-align:center; margin-bottom:10px;"></div>
+            
             <div id="mDesc" style="background:#f5f5f5; padding:15px; border-radius:5px; white-space: pre-wrap;"></div>
+            
             <div id="miniMapWrapper"><div id="miniMap"></div><div id="miniMapCaption"></div><div id="relContainer"></div></div><hr><div id="mContentArea"></div>
         </div>
     </div>
@@ -416,8 +436,9 @@
             const t = document.getElementById('inType').value;
             const d = document.getElementById('inDeathYear');
             const l = document.getElementById('lblYear');
-            if(t==='poet') { d.style.display='block'; l.innerText="생몰년도"; document.getElementById('optLeft').selected=true; } 
-            else { d.style.display='none'; l.innerText="연도"; document.getElementById('optRight').selected=true; }
+            const h = document.getElementById('divHanja');
+            if(t==='poet') { d.style.display='block'; l.innerText="생몰년도"; h.style.display='block'; document.getElementById('optLeft').selected=true; } 
+            else { d.style.display='none'; l.innerText="연도"; h.style.display='none'; document.getElementById('optRight').selected=true; }
         }
 
         function formatDate(y) { if(!y || y==='0') return '?'; return y; }
@@ -444,24 +465,30 @@
 
                     let tagHtml = item.tags ? '<div class="tag-container">' + item.tags.map(t => `<span class="tag-badge" onclick="searchTag('${t}')">#${t}</span>`).join('') + '</div>' : "";
                     
-                    // [삭제/수정 버튼]
+                    // 삭제/수정 버튼
                     const btns = isAdmin ? `
                         <div class="action-btns" style="display:block;">
                             <span class="btn-text btn-edit" onclick="event.stopPropagation(); editItem(${item.id})">[수정]</span>
                             <span class="btn-text btn-del" onclick="event.stopPropagation(); deleteItem(${item.id})">[삭제]</span>
                         </div>` : '';
                     
-                    let dateDisplay = formatDate(item.year);
-                    let titleDate = formatDate(item.year);
-                    if (item.type === 'poet') { 
-                        dateDisplay = `<span style="font-size:0.8em">${formatDate(item.year)}~${formatDate(item.deathYear)}</span>`; 
-                        titleDate = `${formatDate(item.year)}~${formatDate(item.deathYear)}`;
-                    }
+                    // [버블] 시작년도만 표시
+                    let bubbleDate = formatDate(item.year);
+                    
+                    // [타이틀] 이름 (한자, 생몰년)
+                    let titleHtml = cleanTitle(item.name);
                     const eraDisplay = eraMap[item.era] || item.era || "";
-                    const titleHtml = `${cleanTitle(item.name)} ${item.type==='poet' ? `<span style='font-size:0.7em; font-weight:normal;'>(${titleDate})</span>` : ''}`;
+                    
+                    if (item.type === 'poet') {
+                        let subInfo = [];
+                        if (item.hanja) subInfo.push(item.hanja);
+                        const dateRange = `${formatDate(item.year)}~${formatDate(item.deathYear)}`;
+                        subInfo.push(dateRange);
+                        titleHtml += ` <span style='font-size:0.7em; font-weight:normal;'>(${subInfo.join(', ')})</span>`;
+                    }
 
                     div.innerHTML = `
-                        <div class="year-bubble" onclick="openContextModal(${item.id})">${dateDisplay}</div>
+                        <div class="year-bubble" onclick="openContextModal(${item.id})">${bubbleDate}</div>
                         <div class="content clearfix" style="background-color:${cardBg};" onclick="openModal(${item.id})">
                             ${imgTag}
                             <div class="title-text">
@@ -536,6 +563,7 @@
             updateFormUI(); 
             document.getElementById('inYear').value = item.year; document.getElementById('inDeathYear').value = item.deathYear||"";
             document.getElementById('inEra').value = item.era; document.getElementById('inName').value = item.name; 
+            document.getElementById('inHanja').value = item.hanja||""; // [NEW] 한자 로드
             document.getElementById('inRelations').value = item.relations||""; document.getElementById('inTags').value = item.tags ? item.tags.join(", ") : "";
             document.getElementById('inDesc').value = item.desc; document.getElementById('inImg').value = item.img||"";
             document.getElementById('inCardColor').value = item.cardColor||"#ffffff";
@@ -563,6 +591,7 @@
             const isShow = document.getElementById('inShow').checked; const type = document.getElementById('inType').value;
             const year = document.getElementById('inYear').value; const deathYear = document.getElementById('inDeathYear').value;
             const era = document.getElementById('inEra').value; const name = document.getElementById('inName').value; 
+            const hanja = document.getElementById('inHanja').value; // [NEW] 한자 저장
             const tags = document.getElementById('inTags').value.split(',').map(t=>t.trim()).filter(t=>t);
             const relations = document.getElementById('inRelations').value; const desc = document.getElementById('inDesc').value; 
             const img = document.getElementById('inImg').value; const cardColor = document.getElementById('inCardColor').value; 
@@ -586,14 +615,15 @@
                 }).filter(p => p); 
             } else { historyDetail = rawContent.trim(); }
             
-            const newData = { id: editingId || Date.now(), year, deathYear, era, type, name, tags, relations, desc, img, isShow, cardColor, poems, historyDetail, lat, lng, geoName, geoDesc };
+            const newData = { id: editingId || Date.now(), year, deathYear, era, type, name, hanja, tags, relations, desc, img, isShow, cardColor, poems, historyDetail, lat, lng, geoName, geoDesc };
             if (editingId) { const idx = db.findIndex(d => d.id === editingId); if (idx !== -1) db[idx] = newData; } else { db.push(newData); }
             saveToLocal(); render(); populateEraFilter(); clearForm();
         }
 
         function clearForm() {
             document.getElementById('inYear').value = ''; document.getElementById('inDeathYear').value = ''; 
-            document.getElementById('inName').value = ''; document.getElementById('inTags').value = ''; document.getElementById('inRelations').value = '';
+            document.getElementById('inName').value = ''; document.getElementById('inHanja').value = '';
+            document.getElementById('inTags').value = ''; document.getElementById('inRelations').value = '';
             document.getElementById('inDesc').value = ''; document.getElementById('inImg').value = ''; document.getElementById('inContent').value = ''; 
             document.getElementById('inLat').value = ''; document.getElementById('inLng').value = ''; document.getElementById('inGeoName').value = ''; document.getElementById('inGeoDesc').value = '';
             document.getElementById('imgPreview').style.display = 'none'; document.getElementById('eraHint').innerHTML = '';
@@ -618,7 +648,18 @@
             currentOpenId = id; document.getElementById('floatingCloseBtn').style.display = 'block';
             
             let dateStr = formatDate(item.year); if (item.type === 'poet') dateStr += ` ~ ${formatDate(item.deathYear)}`;
-            document.getElementById('mName').innerHTML = `${cleanTitle(item.name)} <span style='font-size:0.7em; color:#888;'>(${dateStr})</span>`;
+            
+            // [NEW] 한자 이름 병기 (괄호 중복 방지)
+            let nameHtml = `${cleanTitle(item.name)}`;
+            if (item.type === 'poet') {
+                let subInfo = [];
+                if (item.hanja) subInfo.push(item.hanja);
+                subInfo.push(dateStr);
+                nameHtml += ` <span style='font-size:0.7em; color:#888;'>(${subInfo.join(', ')})</span>`;
+            } else {
+                nameHtml += ` <span style='font-size:0.7em; color:#888;'>(${item.year})</span>`;
+            }
+            document.getElementById('mName').innerHTML = nameHtml;
             
             const editBtn = isAdmin ? `<div style="text-align:right; margin-bottom:10px;"><span class="btn-text btn-edit" onclick="editItem(${item.id}); closeModal('detailModal');">[수정]</span><span class="btn-text btn-del" onclick="deleteItem(${item.id}); closeModal('detailModal');">[삭제]</span></div>` : '';
             document.getElementById('mDesc').innerHTML = editBtn + parseText(item.desc, false);
@@ -745,6 +786,25 @@
             const container = document.getElementById('network');
             const network = new vis.Network(container, { nodes, edges }, { nodes:{font:{size:16, face:'KoPub Batang'}}, physics:{stabilization:false} });
             network.on("click", function(p) { if(p.nodes.length) openModalByName(p.nodes[0]); });
+        }
+
+        // [FIXED] Context Modal 클릭 이벤트 복구
+        function openContextModal(targetId) {
+            const targetItem = db.find(d => d.id === targetId); if (!targetItem) return;
+            const idx = db.findIndex(d => d.id === targetId);
+            document.getElementById('ctxTargetYear').innerText = targetItem.year;
+            const siblings = db.slice(Math.max(0, idx - 5), Math.min(db.length, idx + 6));
+            
+            const list = document.getElementById('ctxList'); list.innerHTML = '';
+            siblings.forEach(item => {
+                const li = document.createElement('li'); 
+                const isMinor = !item.isShow;
+                li.className = `ctx-item ${item.id === targetId ? 'current' : ''} ${isMinor ? 'minor' : ''}`;
+                li.onclick = () => { closeModal('contextModal'); openModal(item.id); };
+                li.innerHTML = `<div class="ctx-year">${item.year}</div><div class="ctx-info"><div class="ctx-name">${item.name}</div><span class="ctx-desc">${item.desc.substring(0, 40)}...</span></div>`;
+                list.appendChild(li);
+            });
+            document.getElementById('contextModal').style.display = "block";
         }
 
         function closeModal(id) { 
