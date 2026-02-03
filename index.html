@@ -14,7 +14,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
     <style>
-        /* [기본 설정] */
+        /* [기본 스타일] */
         * { box-sizing: border-box !important; }
         :root { --line-color: #8B0000; --text-color: #333; --bg-color: #fdfbf7; }
         body { font-family: 'KoPub Batang', 'Noto Serif KR', serif; color: var(--text-color); margin: 0; padding: 0; background-color: var(--bg-color); transition: background 0.3s; }
@@ -35,18 +35,60 @@
         #badgeLeft, #badgeRight { position: absolute; top: 0; display: inline-block; padding: 12px 0; width: 160px; border-radius: 15px; font-weight: bold; font-size: 1.2rem; color: #333; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); text-align: center; background-color: #fff; }
         #badgeLeft { right: 50%; margin-right: 50px; } #badgeRight { left: 50%; margin-left: 50px; }
 
-        /* [타임라인] */
+        /* [타임라인 본문] */
         .timeline { position: relative; max-width: 1000px; margin: 0 auto; padding-bottom: 80px; padding-top: 20px; }
         .timeline::after { content: ''; position: absolute; width: 4px; background-color: var(--line-color); top: 0; bottom: 0; left: 50%; margin-left: -2px; z-index: 0; }
         .container { padding: 10px 50px; position: relative; width: 50%; }
         .left { left: 0; text-align: right; } .right { left: 50%; text-align: left; }
         
-        .content { padding: 15px; position: relative; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 2px 2px 5px rgba(0,0,0,0.05); background: white; text-align: left; transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.4s ease; transform-origin: center center; }
-        .left .content { text-align: right; }
+        /* [카드 스타일 개편 - Float Layout] */
+        .content { 
+            padding: 20px; /* 내부 여백 증가 */
+            position: relative; border-radius: 8px; 
+            border: 1px solid rgba(0,0,0,0.05); box-shadow: 2px 2px 5px rgba(0,0,0,0.05); 
+            background: white; text-align: left; /* 텍스트는 항상 왼쪽 정렬 */
+            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.4s ease;
+            transform-origin: center center;
+            overflow: hidden; /* 자식 요소 float 해제 */
+        }
+        
         .content.active { transform: scale(1.1); box-shadow: 0 10px 25px rgba(139, 0, 0, 0.15); z-index: 50; border-color: rgba(139,0,0,0.2); }
         .content:hover, .content.active:hover { transform: scale(1.2) !important; box-shadow: 0 15px 30px rgba(0,0,0,0.2) !important; z-index: 100 !important; }
         
-        .year-bubble { position: absolute; width: 50px; height: 50px; background-color: white; border: 3px solid var(--line-color); border-radius: 50%; z-index: 10; text-align: center; line-height: 50px; font-weight: bold; font-size: 13px; color: var(--line-color); top: 15px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        /* 이미지를 텍스트가 감싸도록 설정 (Float) */
+        .thumb-img { 
+            float: left; /* 왼쪽 부유 */
+            margin-right: 15px; 
+            margin-bottom: 5px; 
+            max-width: 110px; 
+            max-height: 110px; 
+            border-radius: 5px; 
+            border: 1px solid #ddd; 
+            padding: 2px; 
+            background: #fff; 
+            object-fit: cover;
+        }
+        
+        /* 오른쪽 카드일 때도 이미지는 왼쪽에 두고 텍스트가 흐르는게 읽기 편함. 
+           만약 오른쪽 카드는 이미지를 오른쪽에 두고 싶으면 .right .thumb-img { float: right; margin-left: 15px; margin-right: 0; } 사용 */
+
+        .title-text { font-size: 1.35em; font-weight: bold; cursor: pointer; color: #000; display: block; margin-bottom: 5px; line-height: 1.2; }
+        .title-text:hover { color: var(--line-color); text-decoration: underline; }
+        
+        .era-tag { font-size: 0.8em; color: #666; font-weight:bold; margin-right: 5px; }
+        
+        .tag-container { margin-bottom: 8px; line-height: 1.4; }
+        .tag-badge { display: inline-block; font-size: 0.7rem; background: #eef; color: #0044cc; padding: 1px 5px; border-radius: 3px; margin-right: 3px; cursor: pointer; }
+        
+        .desc-text { font-size: 0.95rem; color: #444; line-height: 1.6; display: block; }
+
+        .action-btns { clear: both; margin-top: 10px; padding-top: 5px; border-top: 1px dashed #eee; text-align: right; font-size: 0.8rem; display: none; }
+        .btn-text { cursor: pointer; text-decoration: underline; margin-left: 10px; font-weight: bold; }
+        .btn-edit { color: var(--edit-color); }
+        .btn-del { color: #dc3545; }
+
+        /* 연도 버블 */
+        .year-bubble { position: absolute; width: 50px; height: 50px; background-color: white; border: 3px solid var(--line-color); border-radius: 50%; z-index: 10; text-align: center; line-height: 50px; font-weight: bold; font-size: 13px; color: var(--line-color); top: 15px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); background:#fff; }
         .year-bubble:hover { background-color: var(--line-color); color: white; transform: scale(1.1); }
         .left .year-bubble { right: -25px; } .right .year-bubble { left: -25px; }
         
@@ -56,19 +98,7 @@
         .minor-dot::before { content: attr(data-tooltip); position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .minor-dot:hover::before { opacity: 1; }
 
-        .thumb-img { max-width: 80px; max-height: 80px; display: block; margin: 5px; border: 1px solid #ddd; padding: 2px; background: #fff; }
-        .left .thumb-img { float: left; margin-right: 15px; } .right .thumb-img { float: right; margin-left: 15px; }
-        .era-tag { font-size: 0.8em; color: #666; display: block; margin-bottom: 2px; font-weight:bold;}
-        .title-text { font-size: 1.3em; font-weight: bold; cursor: pointer; color: #000; border-bottom: 1px dashed #bbb; }
-        .title-text:hover { color: var(--line-color); border-bottom: 1px solid var(--line-color); }
-        .clearfix::after { content: ""; clear: both; display: table; }
-        .action-btns { margin-top: 5px; font-size: 0.8rem; display: none; }
-        .btn-text { cursor: pointer; text-decoration: underline; margin-left: 8px; }
-        .btn-del { color: red; } .btn-edit { color: var(--edit-color); }
-        .tag-container { margin-top: 5px; }
-        .tag-badge { display: inline-block; font-size: 0.75rem; background: #eef; color: #0044cc; padding: 2px 6px; border-radius: 4px; margin-right: 4px; cursor: pointer; }
-        
-        /* [관리자 패널 스타일 개선] */
+        /* [관리자 패널] */
         .admin-btn { position: fixed; top: 20px; right: 20px; padding: 8px 12px; background: #333; color: white; border: none; cursor: pointer; z-index: 2000; border-radius: 5px; display: none; }
         .login-trigger { position: fixed; bottom: 10px; right: 10px; opacity: 0.3; font-size: 12px; cursor: pointer; z-index: 2000;}
         #adminPanel { display: none; position: fixed; top: 60px; right: 20px; width: 500px; background: white; border: 2px solid #333; padding: 20px; z-index: 2100; box-shadow: 0 5px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; font-family: sans-serif; border-radius: 8px;}
@@ -76,14 +106,12 @@
         .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; font-size: 14px; border-radius: 4px; }
         textarea { resize: vertical; } input[type="color"] { padding: 0; height: 35px; cursor: pointer;}
         
-        /* 도움말 박스 복구 */
         .syntax-guide { font-size: 11px; color: #555; background: #f8f9fa; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px; line-height: 1.5; }
         .syntax-guide code { background: #fff; border: 1px solid #ccc; padding: 1px 4px; border-radius: 3px; color: #d63384; font-family: monospace; font-weight: bold; }
         
         .tool-btn { color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-right: 3px; margin-bottom: 3px; }
         .btn-green { background-color: #28a745; } .btn-blue { background-color: #007bff; } .btn-purple { background-color: #6f42c1; } .btn-orange { background-color: #fd7e14; }
 
-        /* [관리자 하단 버튼 정리] */
         .admin-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; }
         .admin-actions button, .admin-actions label { width: 100%; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-align: center; font-size: 14px; }
         .btn-save { background: #218838; color: white; grid-column: span 1; }
@@ -96,7 +124,7 @@
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
         .modal-content { background-color: #fff; margin: 2% auto; padding: 30px; border: 1px solid #888; width: 90%; max-width: 800px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; position: relative; }
         .close { color: #aaa; float: right; font-size: 32px; font-weight: bold; cursor: pointer; position: sticky; top: 0; right: 0; z-index: 10; background: rgba(255,255,255,0.9); padding: 0 10px; border-radius: 5px;}
-        #floatingCloseBtn { display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 3000; background-color: rgba(0, 0, 0, 0.75); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; backdrop-filter: blur(4px); transition: all 0.2s; }
+        #floatingCloseBtn { display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 3000; background-color: rgba(0, 0, 0, 0.75); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-size: 16px; font-weight: bold; cursor: pointer; }
         .back-btn { display: none; float: left; background: #eee; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; color: #333; }
         
         /* [지도/통계/기타] */
@@ -123,6 +151,14 @@
         .tag-cloud-box { background: #f8f9fa; border: 1px solid #eee; border-radius: 10px; padding: 20px; margin-bottom: 20px; text-align: center; line-height: 1.8; }
         .tag-cloud-item { display: inline-block; margin: 0 5px; cursor: pointer; color: #555; transition: all 0.2s; text-decoration: none; }
         .tag-cloud-item:hover { color: var(--line-color); transform: scale(1.2); text-decoration: underline; }
+        
+        .wiki-link { color: #d63384; font-weight: bold; cursor: pointer; border-bottom: 1px dotted #d63384; }
+        .poem-body { padding: 15px; white-space: pre-wrap; line-height: 2.2; color: #444; border-top: 1px solid #eee; }
+        .hanja-text { font-size: 1.2rem; color: #222; margin-bottom: 5px; font-family: 'KoPub Batang', serif; }
+        ruby { display: inline-block; text-align: center; margin: 0 2px; ruby-position: under; }
+        rt { font-size: 0.6em; color: #777; font-family: sans-serif; }
+        details.inner-details { border-top: 1px dashed #ddd; padding-top: 10px; margin-top: 10px; line-height: 1.6;}
+        summary.outer-summary { padding: 10px; cursor: pointer; background: #f9f9f9; font-weight: bold; list-style: none; }
 
         /* [크롭 모달] */
         #cropperModal { display:none; position:fixed; z-index:3000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.8); }
@@ -133,7 +169,7 @@
         @media (max-width: 768px) {
             .timeline-headers { display: flex; height: auto; padding: 0 10px; }
             #badgeLeft, #badgeRight { position: static; width: 48%; margin: 0 1%; padding: 10px 0; font-size: 1rem; }
-            .container { padding: 10px 30px; } .thumb-img, .tag-container, .content small { display: none !important; }
+            .container { padding: 10px 30px; } .thumb-img { display:none; } /* 모바일은 이미지 숨김 처리 또는 상단 배치 */
         }
     </style>
 </head>
@@ -165,15 +201,15 @@
                 <div class="form-group"><label>안내 문구</label> <textarea id="cfgDesc" rows="2"></textarea></div>
                 <div class="form-group"><label>바닥글(Copyright)</label> <input type="text" id="cfgCopyright"></div>
                 <div class="form-group" style="display:flex; gap:5px;"><div style="flex:1"><label>왼쪽 이름</label><input type="text" id="cfgLabelLeft"></div><div style="flex:1"><label>오른쪽 이름</label><input type="text" id="cfgLabelRight"></div></div>
-                <div class="form-group"><label>배경색 / 이미지URL</label> <div style="display:flex; gap:5px;"><input type="color" id="cfgBgColor"><input type="text" id="cfgBgImage" style="flex:1;"></div></div>
-                <div class="form-group"><label>좌/우 카드 기본색</label> <div style="display:flex; gap:5px;"><input type="color" id="cfgLeftColor"><input type="color" id="cfgRightColor"></div></div>
+                <div class="form-group"><label>배경색/이미지</label> <div style="display:flex; gap:5px;"><input type="color" id="cfgBgColor"><input type="text" id="cfgBgImage" placeholder="이미지URL" style="flex:1;"></div></div>
+                <div class="form-group"><label>좌우측 카드색</label> <div style="display:flex; gap:5px;"><input type="color" id="cfgLeftColor"><input type="color" id="cfgRightColor"></div></div>
                 <button class="btn-save" style="width:100%" onclick="saveConfig()">설정 저장</button>
             </div>
         </div>
         
         <h3 style="margin-top:20px; border-top:2px solid #333; padding-top:10px; margin-bottom:10px;">데이터 입력</h3>
         <div class="form-group" style="background:#fff3cd; padding:8px; border-radius:5px;"><label>🎨 개별 강조색 (흰색=자동)</label><input type="color" id="inCardColor" value="#ffffff" style="width:100%;"></div>
-        <div class="form-group"><label><input type="checkbox" id="inShow" checked> <strong>크게 보이기 (체크해제시 점으로 표시)</strong></label></div>
+        <div class="form-group"><label><input type="checkbox" id="inShow" checked> <strong>크게 보이기 (체크해제시 관계도 제외)</strong></label></div>
         
         <div class="form-group" style="background:#e8f5e9; padding:10px; border-radius:5px;">
              <label>📍 지도 위치</label>
@@ -237,9 +273,10 @@
     <div id="detailModal" class="modal">
         <div class="modal-content">
             <button class="back-btn" id="backBtn" onclick="goBack()">⬅ 뒤로</button><span class="close" onclick="closeModal('detailModal')">&times;</span><div style="clear:both;"></div>
-            <img id="mImg" class="img-card" style="display:none; max-width:200px;">
             <h2 id="mName" style="text-align:center;"></h2><div id="mTags" style="text-align:center; margin-bottom:10px;"></div>
+            
             <div id="mDesc" style="background:#f5f5f5; padding:15px; border-radius:5px; white-space: pre-wrap;"></div>
+            
             <div id="miniMapWrapper"><div id="miniMap"></div><div id="miniMapCaption"></div><div id="relContainer"></div></div><hr><div id="mContentArea"></div>
         </div>
     </div>
@@ -316,7 +353,6 @@
         function autoPinyin() { const i = document.getElementById('inContent'); const s = i.selectionStart; const e = i.selectionEnd; if(s===e) return alert("선택필요"); const t = pinyinPro.pinyin(i.value.substring(s,e), { type: 'all', toneType: 'symbol', nonZh: 'consecutive' }); i.setRangeText(t.map(x => x.isZh ? `${x.origin}(${x.pinyin})` : x.origin).join('')); }
         function autoTone() { const i = document.getElementById('inContent'); const s = i.selectionStart; const e = i.selectionEnd; if(s===e) return alert("선택필요"); const t = pinyinPro.pinyin(i.value.substring(s,e), { type: 'all', toneType: 'num', nonZh: 'consecutive' }); i.setRangeText(t.map(x => { if (!x.isZh) return x.origin; return `${x.origin}(${/[34]$/.test(x.pinyin)?'●':'○'})`; }).join('')); }
         
-        // [복구] 라이선스 선택 팝업 로직
         function insertLicense() {
             const choice = prompt("1.동양고전종합DB 2.나무위키 3.위키백과");
             if (!choice) return;
@@ -335,7 +371,6 @@
 
         function insertAudio() { let u = prompt("오디오 URL (파일명만 입력하면 자동경로)"); if(u) { if(!u.startsWith('http')) u='https://tangshi.kr/mp3/'+u; document.getElementById('inContent').setRangeText(`{{오디오|${u}}}`); } }
         
-        // [NEW] 이미지 태그 도우미
         function insertImageTag() {
             const url = prompt("이미지 주소(URL)를 입력하세요:");
             if(!url) return;
@@ -346,7 +381,6 @@
         function cleanTitle(t) { return t ? t.replace(/\[.*?\]/g, '').trim() : ""; }
         function cleanTextForCard(t) { if(!t) return ""; return t.replace(/\{\{.*?\}\}/g, '').replace(/###.*?###/g, '').replace(/%%(.*?)%%/g, '$1').replace(/\$\$(.*?)\$\$/g, '$1').substring(0, 40)+"..."; }
         
-        // [본문 파싱 로직 개선]
         function parseText(t, m=false) { 
             if(!t) return ""; 
             if(m) t = t.replace(/([\u4E00-\u9FFF])\(([^)]+)\)/g, "<ruby>$1<rt>$2</rt></ruby>"); 
@@ -427,13 +461,14 @@
                     const div = document.createElement('div'); div.className = item.type === 'poet' ? 'container left' : 'container right';
                     const imgTag = item.img ? `<img src="${item.img}" class="thumb-img">` : '';
                     
-                    // [색상 적용 순서] 1.개별지정(흰색아님) > 2.시대테마 > 3.글로벌설정 > 4.기본흰색
                     const userColor = (item.cardColor && item.cardColor !== "#ffffff") ? item.cardColor : null;
                     let cardBg = userColor || (eraTheme[item.era] || (item.type==='poet' ? config.leftCardColor : config.rightCardColor));
                     if (!cardBg || cardBg === "#ffffff") cardBg = "#ffffff"; 
 
                     let tagHtml = item.tags ? '<div class="tag-container">' + item.tags.map(t => `<span class="tag-badge" onclick="searchTag('${t}')">#${t}</span>`).join('') + '</div>' : "";
-                    const btns = isAdmin ? `<div class="action-btns" style="display:block;"><span class="btn-text btn-edit" onclick="editItem(${item.id})">[수정]</span></div>` : '';
+                    
+                    // [삭제 버튼 추가]
+                    const btns = isAdmin ? `<div class="action-btns" style="display:block;"><span class="btn-text btn-edit" onclick="editItem(${item.id})">[수정]</span><span class="btn-text btn-del" onclick="deleteItem(${item.id})">[삭제]</span></div>` : '';
                     
                     let dateDisplay = formatDate(item.year);
                     let titleDate = formatDate(item.year);
@@ -444,7 +479,18 @@
                     const eraDisplay = eraMap[item.era] || item.era || "";
                     const titleHtml = `${cleanTitle(item.name)} ${item.type==='poet' ? `<span style='font-size:0.7em; font-weight:normal;'>(${titleDate})</span>` : ''}`;
 
-                    div.innerHTML = `<div class="year-bubble" onclick="openContextModal(${item.id})">${dateDisplay}</div><div class="content clearfix" style="background-color:${cardBg};">${imgTag} <span class="era-tag">${eraDisplay}</span><div class="title-text" onclick="openModal(${item.id})">${titleHtml}</div>${tagHtml} <small>${cleanTextForCard(item.desc)}</small>${btns}</div>`;
+                    // [레이아웃 개편] thumb-img를 content div 맨 앞에 배치하여 float 효과 적용
+                    div.innerHTML = `
+                        <div class="year-bubble" onclick="openContextModal(${item.id})">${dateDisplay}</div>
+                        <div class="content clearfix" style="background-color:${cardBg};">
+                            ${imgTag}
+                            <div class="title-text" onclick="openModal(${item.id})">
+                                <span class="era-tag">${eraDisplay}</span> ${titleHtml}
+                            </div>
+                            ${tagHtml}
+                            <span class="desc-text">${cleanTextForCard(item.desc)}</span>
+                            ${btns}
+                        </div>`;
                     root.appendChild(div);
                 } else {
                     const div = document.createElement('div'); div.className = 'minor-row';
@@ -481,7 +527,6 @@
             const badgeLeft = document.getElementById('badgeLeft'); const badgeRight = document.getElementById('badgeRight');
             badgeLeft.innerText = config.leftLabel; badgeRight.innerText = config.rightLabel;
             
-            // 글로벌 색상 적용 (기본값 설정)
             const lColor = config.leftCardColor || "#ffffff"; const rColor = config.rightCardColor || "#ffffff";
             badgeLeft.style.backgroundColor = lColor; badgeRight.style.backgroundColor = rColor;
 
@@ -575,7 +620,16 @@
             document.getElementById('inShow').checked = true; document.getElementById('inCardColor').value = "#ffffff";
             editingId = null; document.getElementById('btnSave').innerText = "저장"; updateFormUI();
         }
-        function deleteItem(id) { if(confirm('삭제?')) { db = db.filter(i => i.id !== id); saveToLocal(); render(); populateEraFilter(); } }
+        
+        function deleteItem(id) { 
+            if(confirm('정말 삭제하시겠습니까?')) { 
+                db = db.filter(i => i.id !== id); 
+                saveToLocal(); render(); populateEraFilter(); 
+                // 모달이 열려있다면 닫기
+                if(currentOpenId === id) closeModal('detailModal');
+            } 
+        }
+        
         function resetAllData() { if(confirm('전체 삭제?')) { localStorage.removeItem('tangTimelineDB'); location.reload(); } }
 
         function openModal(id, keepHistory = false) {
@@ -587,7 +641,7 @@
             let dateStr = formatDate(item.year); if (item.type === 'poet') dateStr += ` ~ ${formatDate(item.deathYear)}`;
             document.getElementById('mName').innerHTML = `${cleanTitle(item.name)} <span style='font-size:0.7em; color:#888;'>(${dateStr})</span>`;
             
-            const editBtn = isAdmin ? `<div style="text-align:right; margin-bottom:10px;"><span class="btn-text btn-edit" onclick="editItem(${item.id}); closeModal('detailModal');">[수정]</span></div>` : '';
+            const editBtn = isAdmin ? `<div style="text-align:right; margin-bottom:10px;"><span class="btn-text btn-edit" onclick="editItem(${item.id}); closeModal('detailModal');">[수정]</span><span class="btn-text btn-del" onclick="deleteItem(${item.id})">[삭제]</span></div>` : '';
             document.getElementById('mDesc').innerHTML = editBtn + parseText(item.desc, false);
             document.getElementById('mTags').innerHTML = item.tags ? item.tags.map(t => `<span class="tag-badge">#${t}</span>`).join('') : "";
             const mImg = document.getElementById('mImg'); if(item.img) { mImg.src = item.img; mImg.style.display = 'block'; } else { mImg.style.display = 'none'; }
