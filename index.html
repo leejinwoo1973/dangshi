@@ -229,8 +229,10 @@
         /* 지도 스타일 */
         #map { width: 100%; height: 500px; border-radius: 8px; border: 2px solid #333; }
         
-        /* [NEW] 미니 지도 스타일 */
-        #miniMap { width: 100%; height: 200px; border-radius: 8px; border: 1px solid #ccc; margin-top: 10px; display:none; }
+        /* [UPDATED] 미니 지도 스타일 & 위치 조정 */
+        #miniMapWrapper { width: 100%; margin: 15px 0; display: none; }
+        #miniMap { width: 100%; height: 200px; border-radius: 8px; border: 1px solid #ccc; }
+        #miniMapCaption { text-align: center; font-size: 0.85rem; color: #666; margin-top: 5px; font-weight: bold; }
 
         /* Leaflet 모달 충돌 방지 */
         .leaflet-container { font-family: sans-serif !important; z-index: 1; }
@@ -307,14 +309,18 @@
         </div>
         
         <div class="form-group" style="background:#e8f5e9; padding:10px; border-radius:5px; border:1px solid #c8e6c9;">
-             <label>📍 지도 좌표 (자동 검색)</label>
+             <label>📍 지도 및 위치 정보</label>
              <div style="display:flex; gap:5px; margin-bottom:5px;">
-                <input type="text" id="inLocationSearch" placeholder="예: 浙江省 義烏縣, 낙양, Xi'an" style="flex:1;">
+                <input type="text" id="inLocationSearch" placeholder="좌표 검색 (예: Xi'an, 낙양)" style="flex:1;">
                 <button type="button" onclick="searchLocation()" style="background:#4CAF50; color:white; border:none; border-radius:4px; cursor:pointer; width:60px;">🔍 찾기</button>
              </div>
-             <div style="display:flex; gap:5px;">
+             <div style="display:flex; gap:5px; margin-bottom:5px;">
                  <input type="number" id="inLat" step="0.0001" placeholder="위도(Lat)" style="flex:1;">
                  <input type="number" id="inLng" step="0.0001" placeholder="경도(Lng)" style="flex:1;">
+             </div>
+             <div style="display:flex; gap:5px;">
+                 <input type="text" id="inGeoName" placeholder="장소명 (마커용, 예: 浙江省 義烏縣)" style="flex:1;">
+                 <input type="text" id="inGeoDesc" placeholder="지도 설명 (예: <낙빈왕 출생지>)" style="flex:1;">
              </div>
         </div>
 
@@ -352,12 +358,18 @@
             <button id="backBtn" class="back-btn" onclick="goBack()">⬅ 뒤로</button>
             <span class="close" onclick="closeModal('detailModal')">&times;</span>
             <div style="clear:both;"></div>
-            <img id="mImg" class="img-card" style="display:none; max-width:200px;">
-            <div id="miniMap"></div>
             
+            <img id="mImg" class="img-card" style="display:none; max-width:200px;">
             <h2 id="mName" style="text-align:center;"></h2>
             <div id="mTags" style="text-align:center; margin-bottom:10px;"></div>
+            
             <div id="mDesc" style="background:#f5f5f5; padding:15px; border-radius:5px; white-space: pre-wrap;"></div>
+            
+            <div id="miniMapWrapper">
+                <div id="miniMap"></div>
+                <div id="miniMapCaption"></div>
+            </div>
+
             <hr>
             <div id="mContentArea"></div>
         </div>
@@ -382,7 +394,7 @@
         
         let map = null;
         let markersLayer = null;
-        // [NEW] 미니 지도 변수
+        // 미니 지도 변수
         let miniMap = null;
         let miniMarker = null;
 
@@ -553,7 +565,7 @@
             return text;
         }
 
-        // --- [NEW] OpenStreetMap Nominatim API 좌표 검색 ---
+        // --- OpenStreetMap Nominatim API 좌표 검색 ---
         async function searchLocation() {
             const query = document.getElementById('inLocationSearch').value;
             if (!query) { alert("검색할 지명이나 주소를 입력하세요."); return; }
@@ -709,6 +721,10 @@
             
             document.getElementById('inLat').value = item.lat || "";
             document.getElementById('inLng').value = item.lng || "";
+            // [UPDATED] 추가된 필드 로드
+            document.getElementById('inGeoName').value = item.geoName || "";
+            document.getElementById('inGeoDesc').value = item.geoDesc || "";
+            
             document.getElementById('inLocationSearch').value = ""; // 검색창 초기화
 
             const contentBox = document.getElementById('inContent');
@@ -735,6 +751,9 @@
             
             const lat = document.getElementById('inLat').value;
             const lng = document.getElementById('inLng').value;
+            // [UPDATED] 추가된 필드 저장
+            const geoName = document.getElementById('inGeoName').value;
+            const geoDesc = document.getElementById('inGeoDesc').value;
 
             if (!year || !name) { alert('필수 항목 누락'); return; }
             
@@ -752,7 +771,8 @@
                 }).filter(p => p); 
             } else { historyDetail = rawContent.trim(); }
             
-            const newData = { id: editingId || Date.now(), year, era, type, name, tags, desc, img, isShow, cardColor, poems, historyDetail, lat, lng };
+            // [UPDATED] 객체에 geoName, geoDesc 추가
+            const newData = { id: editingId || Date.now(), year, era, type, name, tags, desc, img, isShow, cardColor, poems, historyDetail, lat, lng, geoName, geoDesc };
             
             if (editingId) { const idx = db.findIndex(d => d.id === editingId); if (idx !== -1) db[idx] = newData; } else { db.push(newData); }
             saveToLocal(); render(); populateEraFilter(); clearForm();
@@ -763,6 +783,9 @@
             document.getElementById('inTags').value = ''; document.getElementById('inDesc').value = '';
             document.getElementById('inImg').value = ''; document.getElementById('inContent').value = '';
             document.getElementById('inLat').value = ''; document.getElementById('inLng').value = '';
+            // [UPDATED] 추가 필드 초기화
+            document.getElementById('inGeoName').value = ''; document.getElementById('inGeoDesc').value = '';
+            
             document.getElementById('inLocationSearch').value = '';
             document.getElementById('inShow').checked = true; document.getElementById('inCardColor').value = "#ffffff";
             editingId = null; document.getElementById('btnSave').innerText = "저장";
@@ -804,24 +827,32 @@
                 });
             } else if (item.historyDetail) { area.innerHTML = `<div class="poem-body">${parseText(item.historyDetail, false)}</div>`; }
             
-            // [NEW] 상세 화면 미니 지도 처리
-            const miniMapContainer = document.getElementById('miniMap');
+            // [UPDATED] 상세 화면 미니 지도 처리
+            const miniMapWrapper = document.getElementById('miniMapWrapper');
+            const miniMapCaption = document.getElementById('miniMapCaption');
+            
             if(item.lat && item.lng) {
-                miniMapContainer.style.display = 'block';
-                // 모달 렌더링 후 지도 초기화 (시간차 필요)
+                miniMapWrapper.style.display = 'block';
+                // 캡션 설정
+                miniMapCaption.innerText = item.geoDesc || "";
+
+                // 모달 렌더링 후 지도 초기화
                 setTimeout(() => {
                     if (miniMap) {
-                        miniMap.remove(); // 기존 지도 삭제 (중복 방지)
+                        miniMap.remove(); // 기존 지도 삭제
                     }
                     miniMap = L.map('miniMap').setView([item.lat, item.lng], 6);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: ''
                     }).addTo(miniMap);
+                    
+                    // [UPDATED] 마커 팝업에 geoName 사용 (없으면 기본 이름)
+                    const markerText = item.geoName || item.name;
                     L.marker([item.lat, item.lng]).addTo(miniMap)
-                     .bindPopup(`<b>${item.name}</b>`).openPopup();
+                     .bindPopup(`<b>${markerText}</b>`).openPopup();
                 }, 200);
             } else {
-                miniMapContainer.style.display = 'none';
+                miniMapWrapper.style.display = 'none';
             }
 
             document.getElementById('detailModal').style.display = "block";
@@ -862,7 +893,9 @@
             db.forEach(item => {
                 if(item.lat && item.lng) {
                     const marker = L.marker([item.lat, item.lng]);
-                    const popupContent = `<div style="text-align:center;"><b>${cleanTitle(item.name)}</b> (${item.year})<br><span style="font-size:0.8em; color:#666;">${item.era}</span><br><button onclick="closeModal('mapModal'); openModal(${item.id});" style="margin-top:5px; cursor:pointer; background:#eee; border:1px solid #ccc; padding:2px 5px; border-radius:3px;">상세보기</button></div>`;
+                    // [UPDATED] 지도 모달에서도 geoName 사용
+                    const markerText = item.geoName || cleanTitle(item.name);
+                    const popupContent = `<div style="text-align:center;"><b>${markerText}</b> (${item.year})<br><span style="font-size:0.8em; color:#666;">${item.era}</span><br><button onclick="closeModal('mapModal'); openModal(${item.id});" style="margin-top:5px; cursor:pointer; background:#eee; border:1px solid #ccc; padding:2px 5px; border-radius:3px;">상세보기</button></div>`;
                     marker.bindPopup(popupContent);
                     markersLayer.addLayer(marker);
                 }
