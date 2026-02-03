@@ -387,16 +387,25 @@
         </div>
     </div>
 
-    <script>
+<script>
         const defaultConfig = { title: "당나라 역사와 시인 연표", desc: "나만의 역사 데이터베이스", leftLabel: "시인 / 작품", rightLabel: "역사 / 사건", bgColor: "#fdfbf7", bgImage: "", bgRepeat: "repeat", leftCardColor: "#ffffff", rightCardColor: "#ffffff", copyright: "" };
         let db=[], config={}, editingId=null, modalHistory=[], currentOpenId=null;
         let isAdmin = false; 
         
         let map = null;
         let markersLayer = null;
-        // 미니 지도 변수
         let miniMap = null;
         let miniMarker = null;
+
+        // [NEW] 시대별 자동 색상 테마 정의 (가독성을 위해 연한 파스텔톤 사용)
+        const eraTheme = {
+            "초당": "#f1f8e9", // 연한 초록 (시작)
+            "성당": "#fff8e1", // 연한 금색 (전성기)
+            "중당": "#e3f2fd", // 연한 파랑 (변화)
+            "만당": "#f3e5f5", // 연한 보라 (쇠퇴)
+            "오대": "#eceff1", // 연한 회색 (혼란)
+            "수나라": "#e0f2f1" // 청록색
+        };
 
         async function init() {
             try {
@@ -565,18 +574,15 @@
             return text;
         }
 
-        // --- OpenStreetMap Nominatim API 좌표 검색 ---
         async function searchLocation() {
             const query = document.getElementById('inLocationSearch').value;
             if (!query) { alert("검색할 지명이나 주소를 입력하세요."); return; }
 
-            // 검색 중 표시
             const btn = event.target;
             const originalText = btn.innerText;
             btn.innerText = "⌛";
 
             try {
-                // Nominatim API 호출 (무료, 1초 1회 제한 권장)
                 const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
                 const results = await response.json();
 
@@ -595,6 +601,7 @@
             }
         }
 
+        // --- [UPDATED] Render 함수: 시대별 색상 적용 로직 추가 ---
         function render(query = "", eraFilter = "all") {
             const root = document.getElementById('timeline-root'); root.innerHTML = '';
             const safeQuery = query ? query.trim().toLowerCase() : "";
@@ -626,7 +633,21 @@
                 if (item.isShow) {
                     const div = document.createElement('div'); div.className = item.type === 'poet' ? 'container left' : 'container right';
                     const imgTag = item.img ? `<img src="${item.img}" class="thumb-img">` : '';
-                    let cardBg = item.cardColor; if(!cardBg || cardBg === "#ffffff" || cardBg === "") cardBg = (item.type === 'poet' ? config.leftCardColor : config.rightCardColor) || "#ffffff";
+                    
+                    // [COLOR LOGIC]
+                    // 1. 사용자 지정 색상 확인
+                    let cardBg = item.cardColor; 
+                    
+                    // 2. 지정 색상이 없거나 기본값(흰색)인 경우 -> 시대별 테마 적용
+                    if(!cardBg || cardBg === "#ffffff" || cardBg === "") {
+                        if (eraTheme[item.era]) {
+                            cardBg = eraTheme[item.era]; // 시대별 색상 적용
+                        } else {
+                            // 시대 정보도 없으면 글로벌 설정값 사용
+                            cardBg = (item.type === 'poet' ? config.leftCardColor : config.rightCardColor) || "#ffffff";
+                        }
+                    }
+
                     let tagHtml = item.tags && item.tags.length > 0 ? '<div class="tag-container">' + item.tags.map(t => `<span class="tag-badge" onclick="searchTag('${t}')">#${t}</span>`).join('') + '</div>' : "";
                     
                     const btns = isAdmin ? `<div class="action-btns" style="display:block;"><span class="btn-text btn-edit" onclick="editItem(${item.id})">[수정]</span><span class="btn-text btn-del" onclick="deleteItem(${item.id})">[삭제]</span></div>` : '';
@@ -721,7 +742,6 @@
             
             document.getElementById('inLat').value = item.lat || "";
             document.getElementById('inLng').value = item.lng || "";
-            // 추가된 필드 로드
             document.getElementById('inGeoName').value = item.geoName || "";
             document.getElementById('inGeoDesc').value = item.geoDesc || "";
             
@@ -751,7 +771,6 @@
             
             const lat = document.getElementById('inLat').value;
             const lng = document.getElementById('inLng').value;
-            // 추가된 필드 저장
             const geoName = document.getElementById('inGeoName').value;
             const geoDesc = document.getElementById('inGeoDesc').value;
 
@@ -771,7 +790,6 @@
                 }).filter(p => p); 
             } else { historyDetail = rawContent.trim(); }
             
-            // 객체에 geoName, geoDesc 추가
             const newData = { id: editingId || Date.now(), year, era, type, name, tags, desc, img, isShow, cardColor, poems, historyDetail, lat, lng, geoName, geoDesc };
             
             if (editingId) { const idx = db.findIndex(d => d.id === editingId); if (idx !== -1) db[idx] = newData; } else { db.push(newData); }
@@ -783,9 +801,7 @@
             document.getElementById('inTags').value = ''; document.getElementById('inDesc').value = '';
             document.getElementById('inImg').value = ''; document.getElementById('inContent').value = '';
             document.getElementById('inLat').value = ''; document.getElementById('inLng').value = '';
-            // 추가 필드 초기화
             document.getElementById('inGeoName').value = ''; document.getElementById('inGeoDesc').value = '';
-            
             document.getElementById('inLocationSearch').value = '';
             document.getElementById('inShow').checked = true; document.getElementById('inCardColor').value = "#ffffff";
             editingId = null; document.getElementById('btnSave').innerText = "저장";
@@ -827,26 +843,22 @@
                 });
             } else if (item.historyDetail) { area.innerHTML = `<div class="poem-body">${parseText(item.historyDetail, false)}</div>`; }
             
-            // 상세 화면 미니 지도 처리
             const miniMapWrapper = document.getElementById('miniMapWrapper');
             const miniMapCaption = document.getElementById('miniMapCaption');
             
             if(item.lat && item.lng) {
                 miniMapWrapper.style.display = 'block';
-                // 캡션 설정
                 miniMapCaption.innerText = item.geoDesc || "";
 
-                // 모달 렌더링 후 지도 초기화
                 setTimeout(() => {
                     if (miniMap) {
-                        miniMap.remove(); // 기존 지도 삭제
+                        miniMap.remove(); 
                     }
                     miniMap = L.map('miniMap').setView([item.lat, item.lng], 6);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: ''
                     }).addTo(miniMap);
                     
-                    // 마커 팝업에 geoName 사용 (없으면 기본 이름)
                     const markerText = item.geoName || item.name;
                     L.marker([item.lat, item.lng]).addTo(miniMap)
                      .bindPopup(`<b>${markerText}</b>`).openPopup();
@@ -893,7 +905,6 @@
             db.forEach(item => {
                 if(item.lat && item.lng) {
                     const marker = L.marker([item.lat, item.lng]);
-                    // 지도 모달에서도 geoName 사용
                     const markerText = item.geoName || cleanTitle(item.name);
                     const popupContent = `<div style="text-align:center;"><b>${markerText}</b> (${item.year})<br><span style="font-size:0.8em; color:#666;">${item.era}</span><br><button onclick="closeModal('mapModal'); openModal(${item.id});" style="margin-top:5px; cursor:pointer; background:#eee; border:1px solid #ccc; padding:2px 5px; border-radius:3px;">상세보기</button></div>`;
                     marker.bindPopup(popupContent);
@@ -918,19 +929,16 @@
             document.getElementById('contextModal').style.display = "block";
         }
         
-        // [UPDATED] 닫기 버튼: 상세 모달의 내용을 비워야 유튜브가 꺼짐
         function closeModal(id) { 
             document.getElementById(id).style.display = "none"; 
             document.getElementById('floatingCloseBtn').style.display = 'none';
 
-            // 상세 모달일 경우 내부 HTML을 비워 iframe(유튜브)을 종료시킴
             if (id === 'detailModal') {
                 document.getElementById('mContentArea').innerHTML = '';
                 document.getElementById('mDesc').innerHTML = '';
             }
         }
         
-        // [UPDATED] 배경 클릭 시에도 closeModal 함수를 호출하여 유튜브 종료
         window.onclick = function(e) { 
             if(e.target.classList.contains('modal')) {
                 closeModal(e.target.id);
