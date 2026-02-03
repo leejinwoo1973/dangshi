@@ -24,8 +24,17 @@
         header { text-align: center; margin-bottom: 10px; padding: 0 20px;}
         h1 { color: var(--line-color); margin: 0 0 5px 0; text-shadow: 2px 2px 0px rgba(255,255,255,0.8); }
         .page-desc { color: #555; font-size: 0.95rem; margin-bottom: 15px; font-weight: bold; }
-        .search-bar { display: flex; justify-content: center; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
-        .search-input { padding: 8px 15px; border: 2px solid var(--line-color); border-radius: 20px; width: 250px; outline: none; }
+        
+        /* [검색창 개선] */
+        .search-bar { display: flex; justify-content: center; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; position: relative; }
+        .search-wrapper { position: relative; display: inline-block; }
+        .search-input { padding: 8px 30px 8px 15px; border: 2px solid var(--line-color); border-radius: 20px; width: 250px; outline: none; }
+        .search-clear { 
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%); 
+            cursor: pointer; color: #999; font-weight: bold; display: none; /* 기본 숨김 */
+        }
+        .search-clear:hover { color: #333; }
+
         .filter-select { padding: 8px; border: 1px solid #ccc; border-radius: 5px; }
         .btn-common { background: #555; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; transition: transform 0.1s;}
         .btn-common:active { transform: scale(0.95); }
@@ -178,7 +187,10 @@
             <h1 id="pageTitle">나만의 역사 연표</h1>
             <p id="pageDesc" class="page-desc">로딩 중...</p>
             <div class="search-bar">
-                <input type="text" id="searchInput" class="search-input" placeholder="이름, 내용, 태그 검색..." onkeyup="filterData()">
+                <div class="search-wrapper">
+                    <input type="text" id="searchInput" class="search-input" placeholder="이름, 내용, 태그 검색..." onkeyup="filterData()">
+                    <span id="clearSearchBtn" class="search-clear" onclick="clearSearch()">✖</span>
+                </div>
                 <select id="eraFilter" class="filter-select" onchange="filterData()"> <option value="all">모든 시대</option> </select>
                 <button class="btn-common btn-rel" onclick="openRelModal()">🕸️ 관계도</button>
                 <button class="btn-common btn-map" onclick="openMapModal()">🗺️ 지도</button>
@@ -284,9 +296,7 @@
             <div id="miniMapWrapper"><div id="miniMap"></div><div id="miniMapCaption"></div><div id="relContainer"></div></div><hr><div id="mContentArea"></div>
         </div>
     </div>
-    
     <div id="contextModal" class="modal"><div class="modal-content"><span class="close" onclick="closeModal('contextModal')">&times;</span><h3 style="text-align:center; border-bottom:2px solid #8B0000; padding-bottom:15px; margin-bottom:15px;">⌛ <span id="ctxTargetYear"></span>년 타임라인</h3><ul id="ctxList" class="ctx-list"></ul></div></div>
-    
     <div id="statModal" class="modal"><div class="modal-content"><span class="close" onclick="closeModal('statModal')">&times;</span><h3>📊 데이터 통계</h3><div id="statContent"></div></div></div>
     <div id="mapModal" class="modal"><div class="modal-content" style="max-width: 900px;"><span class="close" onclick="closeModal('mapModal')">&times;</span><h3>🗺️ 역사 지도</h3><div id="map"></div></div></div>
     <div id="relModal" class="modal"><div class="modal-content" style="max-width: 1000px;"><span class="close" onclick="closeModal('relModal')">&times;</span><h3>🕸️ 인물 관계도</h3><div id="network"></div></div></div>
@@ -452,9 +462,20 @@
 
         function formatDate(y) { if(!y || y==='0') return '?'; return y; }
 
+        // [검색 초기화 기능]
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('clearSearchBtn').style.display = 'none';
+            filterData();
+        }
+
         function render(q="", f="all") {
             const root = document.getElementById('timeline-root'); root.innerHTML = '';
             const safeQ = q.trim().toLowerCase();
+            
+            // 검색 X 버튼 토글
+            document.getElementById('clearSearchBtn').style.display = safeQ.length > 0 ? 'block' : 'none';
+
             const filtered = db.filter(i => {
                 const eraMatch = f === 'all' || i.era === f;
                 if (!safeQ) return eraMatch;
@@ -493,9 +514,10 @@
                         titleHtml += ` <span style='font-size:0.7em; font-weight:normal;'>(${subInfo.join(', ')})</span>`;
                     }
 
+                    // [FIX] onclick에 ID 따옴표 추가: openModal('${item.id}')
                     div.innerHTML = `
-                        <div class="year-bubble" onclick="openContextModal(${item.id})">${bubbleDate}</div>
-                        <div class="content clearfix" style="background-color:${cardBg};" onclick="openModal(${item.id})">
+                        <div class="year-bubble" onclick="openContextModal('${item.id}')">${bubbleDate}</div>
+                        <div class="content clearfix" style="background-color:${cardBg};" onclick="openModal('${item.id}')">
                             ${imgTag}
                             <div class="title-text">
                                 <span class="era-tag">${eraDisplay}</span> ${titleHtml}
@@ -507,7 +529,8 @@
                     root.appendChild(div);
                 } else {
                     const div = document.createElement('div'); div.className = 'minor-row';
-                    div.innerHTML = `<div class="minor-dot" data-tooltip="${formatDate(item.year)} : ${item.name}" onclick="openModal(${item.id})"></div>`;
+                    // [FIX] Minor dot onclick에도 따옴표 추가
+                    div.innerHTML = `<div class="minor-dot" data-tooltip="${formatDate(item.year)} : ${item.name}" onclick="openModal('${item.id}')"></div>`;
                     root.appendChild(div);
                 }
             });
@@ -561,6 +584,7 @@
             updateFormUI(); setTimeout(adjustPadding, 100);
         }
 
+        // [FIX] ID 비교 로직 수정 (느슨한 비교 == 사용)
         function editItem(id) {
             const item = db.find(d => d.id == id); if (!item) return;
             document.getElementById('adminPanel').style.display = 'block'; 
@@ -791,7 +815,7 @@
             network.on("click", function(p) { if(p.nodes.length) openModalByName(p.nodes[0]); });
         }
 
-        // [FIXED] 타임라인 문맥(Context) 팝업 기능 복구
+        // [FIXED] Context Modal 클릭 이벤트 복구 (ID 비교 느슨하게)
         function openContextModal(targetId) {
             const targetItem = db.find(d => d.id == targetId); if (!targetItem) return;
             const idx = db.findIndex(d => d.id == targetId);
