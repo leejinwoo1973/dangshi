@@ -110,7 +110,6 @@
         #floatingCloseBtn { display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 3000; background-color: rgba(0, 0, 0, 0.75); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-size: 16px; font-weight: bold; cursor: pointer; }
         .back-btn { display: none; float: left; background: #eee; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; color: #333; }
         
-        /* [상세 모달 이미지 스타일 - 중앙 정렬] */
         #mImg { display: block; margin: 0 auto 20px auto; max-width: 250px; max-height: 300px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
 
         /* [개선된 타임라인 문맥 팝업 스타일] */
@@ -169,10 +168,19 @@
         .crop-controls { text-align:center; margin-top:10px; }
         .crop-btn { padding:10px 20px; font-size:16px; background:white; border:none; cursor:pointer; margin:0 5px; border-radius:5px;}
 
+        /* [모바일 최적화 수정 - 상세 내용 및 태그 숨기기] */
         @media (max-width: 768px) {
             .timeline-headers { display: flex; height: auto; padding: 0 10px; }
             #badgeLeft, #badgeRight { position: static; width: 48%; margin: 0 1%; padding: 10px 0; font-size: 1rem; }
-            .container { padding: 10px 30px; } .thumb-img { display:none; }
+            .container { padding: 10px 30px; } 
+            
+            /* 모바일에서 숨길 항목들 */
+            .thumb-img, .desc-text, .tag-container, .era-tag { display:none !important; }
+            
+            /* 카드를 아주 심플하게 */
+            .content { padding: 15px; text-align: center; display: flex; justify-content: center; align-items: center; min-height: 60px; }
+            .title-text { font-size: 1.1em; margin: 0; }
+            .left .content, .right .content { text-align: center; }
         }
     </style>
 </head>
