@@ -41,7 +41,7 @@
         .stat-btn, .print-btn, .map-btn, .rel-btn { background: #555; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; }
         .print-btn { background: #333; }
         .map-btn { background: #007bff; }
-        .rel-btn { background: #6f42c1; } /* 보라색 버튼 */
+        .rel-btn { background: #6f42c1; }
 
         /* --- 헤더 절대 좌표 고정 --- */
         .timeline-headers { 
@@ -77,9 +77,29 @@
         .container { padding: 10px 50px; position: relative; width: 50%; }
         .left { left: 0; text-align: right; } .right { left: 50%; text-align: left; }
         
-        .content { padding: 15px; position: relative; transition: transform 0.2s; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 2px 2px 5px rgba(0,0,0,0.05); background: white; text-align: left; }
+        .content { 
+            padding: 15px; 
+            position: relative; 
+            border-radius: 8px; 
+            border: 1px solid rgba(0,0,0,0.05); 
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.05); 
+            background: white; 
+            text-align: left;
+            /* [NEW] 애니메이션 속성 추가 */
+            transition: transform 0.4s ease, box-shadow 0.4s ease; 
+            transform-origin: center center;
+        }
+        
+        /* [NEW] 화면 중앙에 왔을 때 활성화되는 클래스 */
+        .content.active {
+            transform: scale(1.08); /* 1.08배 확대 */
+            box-shadow: 0 10px 25px rgba(139, 0, 0, 0.15); /* 그림자 강조 */
+            z-index: 50;
+            border: 1px solid rgba(139, 0, 0, 0.2);
+        }
+
         .left .content { text-align: right; }
-        .content:hover { transform: scale(1.02); box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 10; }
+        .content:hover { transform: scale(1.02); box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 100; }
         
         .year-bubble { position: absolute; width: 50px; height: 50px; background-color: white; border: 3px solid var(--line-color); border-radius: 50%; z-index: 10; text-align: center; line-height: 50px; font-weight: bold; font-size: 14px; color: var(--line-color); top: 15px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .year-bubble:hover { background-color: var(--line-color); color: white; transform: scale(1.1); }
@@ -93,7 +113,7 @@
 
         .thumb-img { max-width: 80px; max-height: 80px; display: block; margin: 5px; border: 1px solid #ddd; padding: 2px; background: #fff; }
         .left .thumb-img { float: left; margin-right: 15px; } .right .thumb-img { float: right; margin-left: 15px; }
-        .era-tag { font-size: 0.8em; color: #666; display: block; margin-bottom: 2px;}
+        .era-tag { font-size: 0.8em; color: #666; display: block; margin-bottom: 2px; font-weight:bold;}
         .title-text { font-size: 1.3em; font-weight: bold; cursor: pointer; color: #000; border-bottom: 1px dashed #bbb; }
         .title-text:hover { color: var(--line-color); border-bottom: 1px solid var(--line-color); }
         .clearfix::after { content: ""; clear: both; display: table; }
@@ -234,7 +254,18 @@
         #miniMap { width: 100%; height: 200px; border-radius: 8px; border: 1px solid #ccc; }
         #miniMapCaption { text-align: center; font-size: 0.85rem; color: #666; margin-top: 5px; font-weight: bold; }
 
-        /* [NEW] 관계도 스타일 */
+        /* [NEW] 관련인물 배지 스타일 */
+        #relContainer { text-align:center; margin-top:10px; }
+        .rel-badge { 
+            display:inline-block; padding: 5px 10px; margin: 3px; 
+            border: 1px solid #ccc; background: #fff; border-radius: 20px; 
+            cursor: pointer; font-size: 0.9rem; box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+        }
+        .rel-badge:hover { background: var(--tag-bg); border-color: var(--tag-text); color: var(--tag-text); transform: scale(1.05); }
+        .rel-badge small { color: #888; font-size: 0.8em; margin-left: 4px; }
+
+        /* 관계도 스타일 */
         #network { width: 100%; height: 600px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px; }
 
         /* Leaflet 모달 충돌 방지 */
@@ -341,12 +372,7 @@
         </div>
 
         <div class="form-group"><label>제목</label> <input type="text" id="inName"></div>
-        
-        <div class="form-group">
-            <label>🕸️ 인물 관계 (이름:관계, 이름:관계)</label> 
-            <input type="text" id="inRelations" placeholder="예: 두보:우정, 맹호연:존경">
-        </div>
-
+        <div class="form-group"><label>🕸️ 인물 관계 (이름:관계, 이름:관계)</label> <input type="text" id="inRelations" placeholder="예: 두보:우정, 맹호연:존경"></div>
         <div class="form-group"><label>태그 (쉼표 구분)</label> <input type="text" id="inTags" placeholder="예: 전쟁, 이별, 유배"></div>
         <div class="form-group"><label>요약 (4줄)</label> <textarea id="inDesc" rows="4"></textarea></div>
         <div class="form-group"><label>이미지</label> <input type="text" id="inImg"></div>
@@ -388,6 +414,7 @@
             <div id="miniMapWrapper">
                 <div id="miniMap"></div>
                 <div id="miniMapCaption"></div>
+                <div id="relContainer"></div>
             </div>
 
             <hr>
@@ -411,7 +438,7 @@
         <div class="modal-content" style="max-width: 1000px;">
             <span class="close" onclick="closeModal('relModal')">&times;</span>
             <h3>🕸️ 인물 관계도</h3>
-            <p style="font-size:0.9rem; color:#666;">인물 간의 관계를 시각화하여 보여줍니다. (노드를 클릭하면 상세 정보로 이동)</p>
+            <p style="font-size:0.9rem; color:#666;">인물 간의 관계를 시각화하여 보여줍니다.</p>
             <div id="network"></div>
         </div>
     </div>
@@ -428,6 +455,12 @@
 
         const eraTheme = {
             "초당": "#f1f8e9", "성당": "#fff8e1", "중당": "#e3f2fd", "만당": "#f3e5f5", "오대": "#eceff1", "수나라": "#e0f2f1"
+        };
+        
+        // [NEW] 시대 명칭 한자 매핑
+        const eraMap = {
+            "초당": "초당(初唐)", "성당": "성당(盛唐)", "중당": "중당(中唐)",
+            "만당": "만당(晚唐)", "오대": "오대(五代)", "수나라": "수(隋)"
         };
 
         const tangChronology = [
@@ -651,6 +684,12 @@
             }
         }
 
+        // [NEW] 날짜 포맷 함수 (불분명한 연도 처리)
+        function formatDate(y) {
+            if (!y || y === 0 || y === '0') return '?';
+            return y;
+        }
+
         function render(query = "", eraFilter = "all") {
             const root = document.getElementById('timeline-root'); root.innerHTML = '';
             const safeQuery = query ? query.trim().toLowerCase() : "";
@@ -683,19 +722,54 @@
                     let tagHtml = item.tags && item.tags.length > 0 ? '<div class="tag-container">' + item.tags.map(t => `<span class="tag-badge" onclick="searchTag('${t}')">#${t}</span>`).join('') + '</div>' : "";
                     const btns = isAdmin ? `<div class="action-btns" style="display:block;"><span class="btn-text btn-edit" onclick="editItem(${item.id})">[수정]</span><span class="btn-text btn-del" onclick="deleteItem(${item.id})">[삭제]</span></div>` : '';
 
-                    let dateDisplay = item.year;
-                    if (item.type === 'poet' && item.deathYear) { dateDisplay = `<span style="font-size:0.8em">${item.year}~${item.deathYear}</span>`; }
-                    const titleHtml = `${cleanTitle(item.name)} ${item.type==='poet' && item.deathYear ? `<span style='font-size:0.7em; font-weight:normal;'>(${item.year}~${item.deathYear})</span>` : ''}`;
+                    // [UPDATED] 날짜 및 시대 표시 로직
+                    let dateDisplay = formatDate(item.year);
+                    let titleDate = formatDate(item.year);
+                    
+                    if (item.type === 'poet') { 
+                        dateDisplay = `<span style="font-size:0.8em">${formatDate(item.year)}~${formatDate(item.deathYear)}</span>`; 
+                        titleDate = `${formatDate(item.year)}~${formatDate(item.deathYear)}`;
+                    }
+                    
+                    const eraDisplay = eraMap[item.era] || item.era; // 한자 병기
+                    const titleHtml = `${cleanTitle(item.name)} ${item.type==='poet' ? `<span style='font-size:0.7em; font-weight:normal;'>(${titleDate})</span>` : ''}`;
 
-                    div.innerHTML = `<div class="year-bubble" onclick="openContextModal(${item.id})">${dateDisplay}</div><div class="content clearfix" style="background-color:${cardBg};">${imgTag} <span class="era-tag">${item.era}</span><div class="title-text" onclick="openModal(${item.id})">${titleHtml}</div>${tagHtml} <small>${cleanTextForCard(item.desc)}</small>${btns}</div>`;
+                    div.innerHTML = `<div class="year-bubble" onclick="openContextModal(${item.id})">${dateDisplay}</div><div class="content clearfix" style="background-color:${cardBg};">${imgTag} <span class="era-tag">${eraDisplay}</span><div class="title-text" onclick="openModal(${item.id})">${titleHtml}</div>${tagHtml} <small>${cleanTextForCard(item.desc)}</small>${btns}</div>`;
                     root.appendChild(div);
                 } else {
                     const div = document.createElement('div'); div.className = 'minor-row';
-                    div.innerHTML = `<div class="minor-dot" data-tooltip="${item.year} : ${item.name}" onclick="openModal(${item.id})"></div>`;
+                    div.innerHTML = `<div class="minor-dot" data-tooltip="${formatDate(item.year)} : ${item.name}" onclick="openModal(${item.id})"></div>`;
                     root.appendChild(div);
                 }
             });
-            setTimeout(adjustPadding, 100);
+            setTimeout(() => {
+                adjustPadding();
+                setupScrollAnimation(); // [NEW] 렌더링 후 애니메이션 설정
+            }, 100);
+        }
+
+        // [NEW] 스크롤 애니메이션 (Intersection Observer)
+        function setupScrollAnimation() {
+            const observerOptions = {
+                root: null,
+                rootMargin: "-40% 0px -40% 0px", // 화면 정중앙 20% 영역만 감지
+                threshold: 0
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const contentBox = entry.target.querySelector('.content');
+                    if (contentBox) {
+                        if (entry.isIntersecting) {
+                            contentBox.classList.add('active');
+                        } else {
+                            contentBox.classList.remove('active');
+                        }
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.container').forEach(el => observer.observe(el));
         }
 
         function populateEraFilter() {
@@ -777,7 +851,7 @@
             document.getElementById('inDeathYear').value = item.deathYear || ""; 
             document.getElementById('inEra').value = item.era;
             document.getElementById('inName').value = item.name; 
-            document.getElementById('inRelations').value = item.relations || ""; // [NEW] 관계 로드
+            document.getElementById('inRelations').value = item.relations || ""; 
             document.getElementById('inTags').value = item.tags ? item.tags.join(", ") : "";
             document.getElementById('inDesc').value = item.desc; 
             document.getElementById('inImg').value = item.img || "";
@@ -807,7 +881,7 @@
             const year = document.getElementById('inYear').value; const era = document.getElementById('inEra').value;
             const deathYear = document.getElementById('inDeathYear').value;
             const name = document.getElementById('inName').value; const tags = document.getElementById('inTags').value.split(',').map(t=>t.trim()).filter(t=>t);
-            const relations = document.getElementById('inRelations').value; // [NEW] 관계 저장
+            const relations = document.getElementById('inRelations').value; 
             const desc = document.getElementById('inDesc').value; const img = document.getElementById('inImg').value;
             const cardColor = document.getElementById('inCardColor').value; const rawContent = document.getElementById('inContent').value;
             const lat = document.getElementById('inLat').value; const lng = document.getElementById('inLng').value;
@@ -859,8 +933,8 @@
             const query = document.getElementById('searchInput').value.trim().toLowerCase();
             const editBtnHtml = isAdmin ? `<div style="text-align:right; margin-bottom:10px;"><span class="btn-text btn-edit" onclick="editItem(${item.id}); closeModal('detailModal');">[수정]</span><span class="btn-text btn-del" onclick="deleteItem(${item.id}); closeModal('detailModal');">[삭제]</span></div>` : '';
             
-            let dateStr = item.year;
-            if (item.type === 'poet' && item.deathYear) dateStr += ` ~ ${item.deathYear}`;
+            let dateStr = formatDate(item.year);
+            if (item.type === 'poet') dateStr += ` ~ ${formatDate(item.deathYear)}`;
             document.getElementById('mName').innerHTML = `${cleanTitle(item.name)} <span style='font-size:0.7em; color:#888;'>(${dateStr})</span>`;
             
             document.getElementById('mDesc').innerHTML = editBtnHtml + parseText(item.desc, false);
@@ -888,6 +962,24 @@
                 });
             } else if (item.historyDetail) { area.innerHTML = `<div class="poem-body">${parseText(item.historyDetail, false)}</div>`; }
             
+            // [NEW] 관련 인물 배지 생성 로직
+            const relContainer = document.getElementById('relContainer');
+            relContainer.innerHTML = ''; // 초기화
+            if (item.relations) {
+                const rels = item.relations.split(',').map(r => r.trim());
+                rels.forEach(r => {
+                    const parts = r.split(':');
+                    const targetName = parts[0].trim();
+                    const relType = parts[1] ? parts[1].trim() : '';
+                    // 배지 HTML 생성
+                    const badge = document.createElement('span');
+                    badge.className = 'rel-badge';
+                    badge.innerHTML = `${targetName} <small>${relType}</small>`;
+                    badge.onclick = () => openModalByName(targetName);
+                    relContainer.appendChild(badge);
+                });
+            }
+
             const miniMapWrapper = document.getElementById('miniMapWrapper');
             const miniMapCaption = document.getElementById('miniMapCaption');
             if(item.lat && item.lng) {
@@ -911,14 +1003,13 @@
             
             const nodes = [];
             const edges = [];
-            const ids = new Set(); // 중복 노드 방지용
+            const ids = new Set(); 
 
             // 1. 모든 인물을 노드로 추가
             db.forEach(item => {
                 if(item.type === 'poet') {
                     const cleanName = cleanTitle(item.name);
                     if(!ids.has(cleanName)) {
-                        // 시대별 색상 적용
                         let color = eraTheme[item.era] || '#ddd';
                         nodes.push({ id: cleanName, label: cleanName, color: { background: color }, shape: 'dot', size: 25 });
                         ids.add(cleanName);
@@ -930,7 +1021,6 @@
             db.forEach(item => {
                 const source = cleanTitle(item.name);
                 if(item.relations) {
-                    // "이름:관계, 이름:관계" 파싱
                     const rels = item.relations.split(',').map(r => r.trim());
                     rels.forEach(r => {
                         const parts = r.split(':');
@@ -938,7 +1028,6 @@
                             const target = parts[0].trim();
                             const label = parts[1] ? parts[1].trim() : "";
                             
-                            // 타겟 노드가 DB에 없어도 노드 생성 (가상 인물 등)
                             if(!ids.has(target)) {
                                 nodes.push({ id: target, label: target, color: '#eee', shape: 'dot', size: 15 });
                                 ids.add(target);
@@ -960,15 +1049,13 @@
             const container = document.getElementById('network');
             const network = new vis.Network(container, data, options);
 
-            // 노드 클릭 시 해당 인물 모달 열기
             network.on("click", function (params) {
                 if (params.nodes.length > 0) {
                     const nodeName = params.nodes[0];
-                    // 이름으로 DB 검색 (노드 이름이 곧 ID)
                     const item = db.find(d => cleanTitle(d.name) === nodeName);
                     if(item) {
-                        closeModal('relModal'); // 관계도 닫고
-                        openModal(item.id);     // 상세 모달 열기
+                        closeModal('relModal'); 
+                        openModal(item.id);     
                     }
                 }
             });
