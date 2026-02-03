@@ -5,113 +5,290 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>나만의 타임라인 DB</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=KoPub+Batang:wght@400;700&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://unpkg.com/pinyin-pro"></script>
-
     <style>
-        /* [기본 스타일] */
+        /* 레이아웃 오차 제거 */
         * { box-sizing: border-box !important; }
-        :root { --line-color: #8B0000; --text-color: #333; --edit-color: #0056b3; --bg-color: #fdfbf7; }
-        body { font-family: 'KoPub Batang', 'Noto Serif KR', serif; color: var(--text-color); margin: 0; padding: 0; background-color: var(--bg-color); transition: background 0.3s; }
+
+        /* --- 1. 기본 스타일 --- */
+        :root { --line-color: #8B0000; --text-color: #333; --edit-color: #0056b3; --link-color: #1a0dab; --dot-color: #aaa; --tag-bg: #eef; --tag-text: #0044cc; }
         
-        /* [헤더] */
-        #stickyHeader { position: -webkit-sticky; position: sticky; top: 0; z-index: 1000; background-color: var(--bg-color); box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding-top: 20px; transition: background 0.3s; }
+        body { font-family: 'KoPub Batang', 'Noto Serif KR', serif; color: var(--text-color); margin: 0; padding: 0; background-color: #fdfbf7; background-attachment: fixed; transition: background 0.3s; }
+        
+        /* --- 상단 고정 영역 (Sticky) --- */
+        #stickyHeader {
+            position: -webkit-sticky;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #fdfbf7;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding-top: 20px;
+            transition: background 0.3s;
+        }
+
         header { text-align: center; margin-bottom: 10px; padding: 0 20px;}
-        h1 { color: var(--line-color); margin: 0 0 5px 0; text-shadow: 2px 2px 0px rgba(255,255,255,0.8); }
-        .page-desc { color: #555; font-size: 0.95rem; margin-bottom: 15px; font-weight: bold; }
+        h1 { color: var(--line-color); word-break: keep-all; margin-bottom: 5px; text-shadow: 2px 2px 0px rgba(255,255,255,0.8); margin-top: 0;}
+        .page-desc { color: #555; font-size: 0.95rem; margin-bottom: 15px; font-weight: bold; text-shadow: 1px 1px 0px rgba(255,255,255,0.8); }
         
-        .search-bar { display: flex; justify-content: center; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; position: relative; }
-        .search-wrapper { position: relative; display: inline-block; }
-        .search-input { padding: 8px 30px 8px 15px; border: 2px solid var(--line-color); border-radius: 20px; width: 220px; outline: none; }
-        .search-clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #999; display: none; }
-        .search-clear:hover { color: red; }
-
+        .search-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .search-input { padding: 8px; border: 2px solid var(--line-color); border-radius: 20px; width: 250px; outline: none; }
         .filter-select { padding: 8px; border: 1px solid #ccc; border-radius: 5px; }
-        .btn-common { background: #555; color: white; border: none; padding: 8px 12px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; font-weight: bold; transition: transform 0.1s; }
-        .btn-common:hover { transform: scale(1.05); }
-        .btn-map { background: #28a745; } .btn-rel { background: #6f42c1; } .btn-stat { background: #17a2b8; }
+        .stat-btn, .print-btn { background: #555; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; }
+        .print-btn { background: #333; }
 
-        .timeline-headers { position: relative; max-width: 1000px; width: 100%; height: 60px; margin: 0 auto; padding-bottom: 15px; }
-        #badgeLeft, #badgeRight { position: absolute; top: 0; display: inline-block; padding: 12px 0; width: 160px; border-radius: 15px; font-weight: bold; font-size: 1.2rem; color: #333; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); text-align: center; background-color: #fff; }
-        #badgeLeft { right: 50%; margin-right: 50px; } #badgeRight { left: 50%; margin-left: 50px; }
+        /* --- 헤더 절대 좌표 고정 --- */
+        .timeline-headers { 
+            position: relative; 
+            max-width: 1000px; 
+            width: 100%;
+            height: 60px; 
+            margin: 0 auto; 
+            padding-bottom: 15px;
+        }
+        
+        #badgeLeft {
+            position: absolute;
+            right: 50%; 
+            top: 0;
+            margin-right: 50px; 
+            display: inline-block; 
+            padding: 12px 0; 
+            width: 160px; 
+            border-radius: 15px; 
+            font-weight: bold; 
+            font-size: 1.2rem; 
+            color: #333; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            border: 1px solid rgba(0,0,0,0.05); 
+            text-align: center; 
+            background-color: #fff;
+        }
 
-        /* [타임라인] */
+        #badgeRight {
+            position: absolute;
+            left: 50%; 
+            top: 0;
+            margin-left: 50px; 
+            display: inline-block; 
+            padding: 12px 0; 
+            width: 160px; 
+            border-radius: 15px; 
+            font-weight: bold; 
+            font-size: 1.2rem; 
+            color: #333; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            border: 1px solid rgba(0,0,0,0.05); 
+            text-align: center; 
+            background-color: #fff;
+        }
+
+        /* --- 타임라인 본문 --- */
         .timeline { position: relative; max-width: 1000px; margin: 0 auto; padding-bottom: 80px; padding-top: 20px; }
         .timeline::after { content: ''; position: absolute; width: 4px; background-color: var(--line-color); top: 0; bottom: 0; left: 50%; margin-left: -2px; z-index: 0; }
         .container { padding: 10px 50px; position: relative; width: 50%; }
         .left { left: 0; text-align: right; } .right { left: 50%; text-align: left; }
         
-        .content { padding: 15px; position: relative; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 2px 2px 5px rgba(0,0,0,0.05); background: white; text-align: left; transition: transform 0.2s; cursor: pointer; }
+        .content { padding: 15px; position: relative; transition: transform 0.2s; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 2px 2px 5px rgba(0,0,0,0.05); background: white; text-align: left; }
         .left .content { text-align: right; }
         .content:hover { transform: scale(1.02); box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 10; }
         
-        .year-bubble { position: absolute; width: 50px; height: 50px; background-color: white; border: 3px solid var(--line-color); border-radius: 50%; z-index: 10; text-align: center; line-height: 50px; font-weight: bold; font-size: 14px; color: var(--line-color); top: 15px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;}
+        .year-bubble { position: absolute; width: 50px; height: 50px; background-color: white; border: 3px solid var(--line-color); border-radius: 50%; z-index: 10; text-align: center; line-height: 50px; font-weight: bold; font-size: 14px; color: var(--line-color); top: 15px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .year-bubble:hover { background-color: var(--line-color); color: white; transform: scale(1.1); }
         .left .year-bubble { right: -25px; } .right .year-bubble { left: -25px; }
+        
         .minor-row { width: 100%; height: 20px; position: relative; margin: 5px 0; }
-        .minor-dot { position: absolute; left: 50%; margin-left: -6px; width: 12px; height: 12px; background-color: white; border: 2px solid #aaa; border-radius: 50%; cursor: pointer; z-index: 5; }
-        .minor-dot:hover { background-color: var(--edit-color); transform: scale(1.5); }
+        .minor-dot { position: absolute; left: 50%; margin-left: -6px; width: 12px; height: 12px; background-color: white; border: 2px solid var(--dot-color); border-radius: 50%; cursor: pointer; z-index: 5; transition: all 0.2s; }
+        .minor-dot:hover { background-color: var(--edit-color); border-color: var(--edit-color); transform: scale(1.5); }
+        .minor-dot::before { content: attr(data-tooltip); position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .minor-dot:hover::before { opacity: 1; }
 
-        .thumb-img { max-width: 80px; max-height: 80px; display: block; margin: 5px; border: 1px solid #ddd; padding: 2px; background: #fff; float: left; margin-right: 10px;}
+        .thumb-img { max-width: 80px; max-height: 80px; display: block; margin: 5px; border: 1px solid #ddd; padding: 2px; background: #fff; }
         .left .thumb-img { float: left; margin-right: 15px; } .right .thumb-img { float: right; margin-left: 15px; }
-        .era-tag { font-size: 0.8em; color: #666; display: block; margin-bottom: 2px; font-weight: bold;}
-        .title-text { font-size: 1.3em; font-weight: bold; color: #000; border-bottom: 1px dashed #bbb; }
-        .tag-container { margin-top: 5px; }
-        .tag-badge { display: inline-block; font-size: 0.75rem; background: #eef; color: #0044cc; padding: 2px 6px; border-radius: 4px; margin-right: 4px; }
+        .era-tag { font-size: 0.8em; color: #666; display: block; margin-bottom: 2px;}
+        .title-text { font-size: 1.3em; font-weight: bold; cursor: pointer; color: #000; border-bottom: 1px dashed #bbb; }
+        .title-text:hover { color: var(--line-color); border-bottom: 1px solid var(--line-color); }
         .clearfix::after { content: ""; clear: both; display: table; }
+        .action-btns { margin-top: 5px; font-size: 0.8rem; display: none; }
+        .btn-text { cursor: pointer; text-decoration: underline; margin-left: 8px; }
+        .btn-del { color: red; } .btn-edit { color: var(--edit-color); }
+        .tag-container { margin-top: 5px; }
+        .tag-badge { display: inline-block; font-size: 0.75rem; background: var(--tag-bg); color: var(--tag-text); padding: 2px 6px; border-radius: 4px; margin-right: 4px; cursor: pointer; }
+        .tag-badge:hover { background: #dcebff; text-decoration: underline; }
+        .wiki-link { color: #d63384; font-weight: bold; cursor: pointer; border-bottom: 1px dotted #d63384; }
+        .wiki-link:hover { background-color: #ffeef5; }
+        a:not(.img-card) { color: var(--link-color); text-decoration: none; font-weight: bold; }
+        a:not(.img-card):hover { text-decoration: underline; background-color: #eee; border-radius: 3px;}
 
-        /* [관리자 패널] */
-        .admin-btn { position: fixed; top: 20px; right: 20px; padding: 8px 12px; background: #333; color: white; border: none; cursor: pointer; z-index: 2000; border-radius: 5px; display: none; }
-        .login-trigger { position: fixed; bottom: 10px; right: 10px; opacity: 0.3; font-size: 12px; cursor: pointer; z-index: 2000;}
-        #adminPanel { display: none; position: fixed; top: 60px; right: 20px; width: 500px; background: white; border: 2px solid #333; padding: 20px; z-index: 2100; box-shadow: 0 5px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; font-family: sans-serif; border-radius: 8px;}
-        .form-group { margin-bottom: 10px; } .form-group label { display: block; font-weight: bold; font-size: 13px; margin-bottom: 4px;}
-        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; font-size: 14px; border-radius: 4px; }
-        
-        .tool-btn { color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-right: 3px; margin-bottom: 3px; }
-        .btn-green { background-color: #28a745; } .btn-blue { background-color: #007bff; } .btn-purple { background-color: #6f42c1; } .btn-orange { background-color: #fd7e14; }
-        .admin-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; }
-        .admin-actions button { padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color:white;}
-        .btn-save { background: #218838; grid-column: span 1; } .btn-cancel { background: #666; grid-column: span 1; }
-        .btn-down { background: #007bff; } .btn-reset { background: #dc3545; grid-column: span 2; }
-        
-        /* [모달 및 기능창] */
-        .modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(3px); }
-        .modal-content { background-color: #fff; margin: 3% auto; padding: 30px; border: 1px solid #888; width: 90%; max-width: 800px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; position: relative; }
-        .close { float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-        #floatingCloseBtn { display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 3100; background-color: rgba(0, 0, 0, 0.8); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-weight: bold; cursor: pointer; }
-        
-        /* [특수 기능 스타일] */
-        #map { width: 100%; height: 500px; border-radius: 8px; border: 2px solid #333; }
-        #network { width: 100%; height: 600px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px; }
-        #miniMap { width: 100%; height: 200px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 10px; margin-top: 10px;}
-        #cropperModal { display:none; position:fixed; z-index:4000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.9); }
-        .crop-container { width:90%; height:70vh; margin:5vh auto; }
-        .crop-controls { text-align:center; margin-top:10px; }
-        .rel-badge { display:inline-block; padding: 3px 8px; margin: 2px; border: 1px solid #ccc; background: #f8f9fa; border-radius: 15px; cursor: pointer; font-size: 0.8rem; }
-        .rel-badge:hover { background: #e2e6ea; }
+        /* --- 모바일 최적화 --- */
+        @media (max-width: 768px) {
+            .thumb-img, .tag-container, .content small, .action-btns { display: none !important; }
+            .content { padding: 10px 15px; min-height: auto; display: flex; flex-direction: column; justify-content: center; }
+            .title-text { font-size: 1.15rem; margin-bottom: 0; border-bottom: none; line-height: 1.3; }
+            .era-tag { font-size: 0.85rem; margin-bottom: 3px; color: #666; font-weight: bold; }
+            
+            .timeline-headers { display: flex; height: auto; padding: 0 10px; }
+            #badgeLeft, #badgeRight {
+                position: static; 
+                width: 48%; 
+                margin: 0 1%;
+                padding: 10px 0;
+                font-size: 1rem;
+            }
+            .container { padding: 10px 30px; } 
+            .left .content { align-items: flex-end; text-align: right; }
+            .right .content { align-items: flex-start; text-align: left; }
+        }
 
-        /* 텍스트 스타일 */
+        /* --- 관리자 패널 --- */
+        .admin-btn { position: fixed; top: 20px; right: 20px; padding: 8px 12px; background: #333; color: white; border: none; cursor: pointer; z-index: 200; border-radius: 5px; display: none; }
+        .login-trigger { position: fixed; bottom: 10px; right: 10px; opacity: 0.3; font-size: 12px; cursor: pointer; z-index: 200;}
+        
+        #adminPanel { display: none; position: fixed; top: 60px; right: 20px; width: 500px; background: white; border: 2px solid #333; padding: 25px; z-index: 200; box-shadow: 0 5px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; font-family: sans-serif; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-weight: bold; font-size: 13px; margin-bottom: 5px;}
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; font-size: 14px; }
+        textarea { resize: vertical; } input[type="color"] { padding: 0; height: 35px; cursor: pointer;}
+        .btn-group { display: flex; gap: 5px; margin-top: 10px; }
+        .btn-save { background-color: var(--line-color); color: white; border: none; padding: 12px; flex: 1; cursor: pointer; font-weight: bold; font-size: 14px;}
+        .btn-save.editing { background-color: var(--edit-color); }
+        .btn-reset { background-color: #666; color: white; border: none; padding: 12px; cursor: pointer;}
+        .config-section { background: #eef; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #ccd; }
+        .config-toggle { width: 100%; text-align: left; background: none; border: none; cursor: pointer; font-weight: bold; padding: 0; }
+        .syntax-guide { font-size: 11px; color: #555; background: #f8f9fa; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 5px; line-height: 1.5; letter-spacing: -0.5px; }
+        .syntax-guide code { background: #fff; border: 1px solid #ccc; padding: 1px 4px; border-radius: 3px; color: #d63384; font-family: monospace; font-weight: bold; }
+        
+        .pinyin-btn { background-color: #28a745; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
+        .pinyin-btn:hover { background-color: #218838; }
+        
+        .tone-btn-input { background-color: #007bff; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
+        .tone-btn-input:hover { background-color: #0056b3; }
+        
+        .license-btn { background-color: #6f42c1; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
+        .license-btn:hover { background-color: #59359a; }
+
+        .audio-btn { background-color: #fd7e14; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 5px; }
+        .audio-btn:hover { background-color: #e36a05; }
+
+        /* --- 모달 --- */
+        .modal { display: none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
+        .modal-content { background-color: #fff; margin: 2% auto; padding: 30px; border: 1px solid #888; width: 90%; max-width: 800px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; position: relative; }
+        .close { color: #aaa; float: right; font-size: 32px; font-weight: bold; cursor: pointer; position: sticky; top: 0; right: 0; z-index: 10; background: rgba(255,255,255,0.9); padding: 0 10px; border-radius: 5px;}
+        .close:hover { color: #000; }
+        
+        /* [v12.3] 하단 고정 닫기 버튼 스타일 */
+        #floatingCloseBtn {
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 300;
+            background-color: rgba(0, 0, 0, 0.75);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            transition: all 0.2s;
+        }
+        #floatingCloseBtn:active { transform: translateX(-50%) scale(0.95); background-color: black; }
+
+        .back-btn { display: none; float: left; background: #eee; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; color: #333; }
+        .back-btn:hover { background: #ddd; }
+        
+        /* [v12.4] 통계 모달 스타일 */
+        .stat-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem;}
+        .stat-table th, .stat-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .stat-table th { background-color: #f2f2f2; font-weight: bold; }
+        .stat-scroll-box { max-height: 300px; overflow-y: auto; border: 1px solid #eee; margin-top: 10px; }
+        .stat-rank-table { width: 100%; border-collapse: collapse; }
+        .stat-rank-table td { padding: 8px; border-bottom: 1px solid #f0f0f0; }
+        .stat-rank-table tr:hover { background-color: #f9f9f9; }
+        .rank-num { font-weight: bold; color: #8B0000; width: 30px; text-align: center; }
+        
+        #contextModal .modal-content { max-width: 600px; background: #fdfdfd; }
+        .ctx-list { list-style: none; padding: 0; margin-top: 20px; }
+        .ctx-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; align-items: center; }
+        .ctx-item:hover { background: #f0f0f0; }
+        .ctx-item.current { background: #fff0f0; border-left: 4px solid var(--line-color); }
+        .ctx-item.minor .ctx-name { color: #888; font-size: 0.95em; font-weight: normal; }
+        .ctx-item.minor .ctx-year { color: #aaa; font-size: 1em; }
+        .ctx-item.minor { opacity: 0.9; }
+        .ctx-year { font-weight: bold; color: var(--line-color); width: 60px; font-size: 1.1em;}
+        .ctx-info { flex: 1; }
+        .ctx-name { font-weight: bold; font-size: 1.1em; color: #333; }
+        .ctx-desc { font-size: 0.85em; color: #666; display: block;}
+        
+        /* [v12.6] 모달 내 이미지 레이아웃 변경 (신문기사형) */
+        .img-card { display: block; border: 1px solid #ddd; padding: 5px; background: #fff; max-width: 90%; text-decoration: none !important; color: inherit !important; }
+        /* 상세 모달용 메인 이미지 */
+        #mImg {
+            float: left; 
+            margin-right: 20px; 
+            margin-bottom: 10px; 
+            max-width: 200px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 15px 0; background: #000; clear: both; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        
+        details.outer-details { margin-bottom: 10px; border: 1px solid #eee; clear: both; }
+        summary.outer-summary { padding: 10px; cursor: pointer; background: #f9f9f9; font-weight: bold; list-style: none; }
+        summary.outer-summary::before { content: '📜 '; }
         .poem-body { padding: 15px; white-space: pre-wrap; line-height: 2.2; color: #444; border-top: 1px solid #eee; }
         .hanja-text { font-size: 1.2rem; color: #222; margin-bottom: 5px; font-family: 'KoPub Batang', serif; }
-        .source-credit { font-size: 0.8rem; color: #888; text-align: right; border-top: 1px dashed #ddd; padding-top: 5px; margin-top: 15px;}
-        ruby { display: inline-block; text-align: center; margin: 0 2px; ruby-position: under; } rt { font-size: 0.6em; color: #777; }
-        .img-card { display: block; margin: 15px auto; text-align: center; max-width: 90%; } .img-card img { max-width: 100%; border-radius: 5px;}
-        .stat-table { width: 100%; border-collapse: collapse; margin-top: 10px;} .stat-table th, .stat-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        details.inner-details { border-top: 1px dashed #ddd; padding-top: 10px; margin-top: 10px; line-height: 1.6;}
+        summary.inner-summary { font-size: 0.9rem; color: #666; cursor: pointer; list-style: none;}
+        summary.inner-summary::before { content: '🔽 '; }
+        
+        .simp-btn { font-size: 0.8rem; background: #fff0f5; color: #d63384; border: 1px solid #d63384; border-radius: 3px; cursor: pointer; padding: 2px 5px; margin-top: 5px; display: inline-block; margin-right: 5px;}
+        .simp-btn:hover { background: #d63384; color: white; }
+        
+        .simplified-box { display: none; font-family: 'Noto Serif SC', serif; color: #555; background: #f9f9f9; padding: 15px; border-radius: 5px; margin-top: 10px; border-left: 4px solid #d63384; line-height: 1.8; }
+        
+        ruby { display: inline-block; text-align: center; margin: 0 2px; ruby-position: under; }
+        rt { font-size: 0.6em; color: #777; font-family: sans-serif; display: block; line-height: 1.2; user-select: none; }
+        
+        .qtfm-btn { display: inline-block; background-color: #E60026; color: white; padding: 5px 12px; border-radius: 20px; text-decoration: none; font-size: 0.9rem; font-weight: bold; margin-top: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s; }
+        .qtfm-btn:hover { transform: scale(1.05); background-color: #cc0022; text-decoration: none; color: white; }
 
-        /* 모바일 최적화 */
+        footer { text-align: center; padding: 20px; border-top: 1px solid #ddd; color: #888; font-size: 0.9rem; font-family: 'Noto Serif KR', serif; background-color: #fdfbf7; }
+
+        /* 모바일에서는 이미지를 다시 가운데로 (선택 사항) */
         @media (max-width: 768px) {
-            .timeline-headers { display: flex; padding: 0 10px; }
-            #badgeLeft, #badgeRight { position: static; width: 48%; margin: 0 1%; }
-            .container { padding: 10px 20px; }
-            .thumb-img, .tag-container, .action-btns { display: none !important; }
-            .content { text-align: center; padding: 10px; }
-            .left .content, .right .content { text-align: center; }
+            #mImg { float: none; display: block; margin: 0 auto 15px auto; max-width: 70%; }
+            .thumb-img, .tag-container, .content small, .action-btns { display: none !important; }
+            .content { padding: 10px 15px; min-height: auto; display: flex; flex-direction: column; justify-content: center; }
+            .title-text { font-size: 1.15rem; margin-bottom: 0; border-bottom: none; line-height: 1.3; }
+            .era-tag { font-size: 0.85rem; margin-bottom: 3px; color: #666; font-weight: bold; }
+            
+            .timeline-headers { display: flex; height: auto; padding: 0 10px; }
+            #badgeLeft, #badgeRight { position: static; width: 48%; margin: 0 1%; padding: 10px 0; font-size: 1rem; }
+            .container { padding: 10px 30px; } 
+            .left .content { align-items: flex-end; text-align: right; }
+            .right .content { align-items: flex-start; text-align: left; }
         }
+        
+        @media print {
+            .admin-btn, .search-bar, .action-btns, .config-section, .btn-group, .help-trigger, .modal, .simp-btn, .pinyin-btn, .tts-btn, .login-trigger, #floatingCloseBtn { display: none !important; }
+            #stickyHeader { position: static; box-shadow: none; }
+            body { background: white !important; color: black; padding-top: 0 !important; }
+            .content { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
+            .timeline::after { background-color: #ccc; }
+            .year-bubble { border-color: #333; color: #333; }
+        }
+        
+        .source-credit { margin-top: 20px; text-align: right; border-top: 1px dashed #ddd; padding-top: 10px; font-size: 0.8rem; color: #888; display: block; clear: both; }
+        .source-credit:hover { opacity: 1; color: #333; }
+        .source-credit a { color: #555; text-decoration: none; border-bottom: 1px dotted #888; }
+        .source-credit img { vertical-align: middle; margin-right: 3px; max-height: 20px; }
     </style>
 </head>
 <body>
@@ -120,430 +297,760 @@
             <h1 id="pageTitle">나만의 역사 연표</h1>
             <p id="pageDesc" class="page-desc">로딩 중...</p>
             <div class="search-bar">
-                <div class="search-wrapper">
-                    <input type="text" id="searchInput" class="search-input" placeholder="검색..." onkeyup="filterData()">
-                    <span id="clearSearchBtn" class="search-clear" onclick="clearSearch()">✖</span>
-                </div>
+                <input type="text" id="searchInput" class="search-input" placeholder="이름, 내용, 태그 검색..." onkeyup="filterData()">
                 <select id="eraFilter" class="filter-select" onchange="filterData()"> <option value="all">모든 시대</option> </select>
-                <button class="btn-common btn-rel" onclick="openRelModal()">🕸️ 관계도</button>
-                <button class="btn-common btn-map" onclick="openMapModal()">🗺️ 지도</button>
-                <button class="btn-common btn-stat" onclick="openStatModal()">📊 통계</button>
-                <button class="btn-common" style="background:#333" onclick="window.print()">🖨️ 인쇄</button>
+                <button class="stat-btn" onclick="openStatModal()">📊 통계</button>
+                <button class="print-btn" onclick="window.print()">🖨️ 인쇄</button>
             </div>
         </header>
-        <div class="timeline-headers"><span id="badgeLeft">Left</span><span id="badgeRight">Right</span></div>
+        
+        <div class="timeline-headers">
+            <span class="header-badge" id="badgeLeft">Label Left</span>
+            <span class="header-badge" id="badgeRight">Label Right</span>
+        </div>
     </div>
 
     <button id="floatingCloseBtn" onclick="closeModal('detailModal')">❌ 닫기</button>
-    <button id="adminToggle" class="admin-btn" onclick="toggleAdmin()">⚙️ 관리</button>
+
+    <button id="adminToggle" class="admin-btn" onclick="toggleAdmin()">⚙️ 관리/설정</button>
 
     <div id="adminPanel">
         <div class="config-section">
-            <button class="config-toggle" onclick="document.getElementById('configForm').style.display='block'" style="width:100%; padding:5px;">🛠️ 설정 열기</button>
+            <button class="config-toggle" onclick="toggleConfig()">🛠️ 디자인 및 설정 (펼치기)</button>
             <div id="configForm" style="display:none; margin-top:10px;">
-                <div class="form-group"><label>제목</label><input type="text" id="cfgTitle"></div>
-                <div class="form-group"><label>안내문</label><textarea id="cfgDesc" rows="2"></textarea></div>
-                <div class="form-group"><label>저작권</label><input type="text" id="cfgCopyright"></div>
-                <div class="form-group" style="display:flex; gap:5px;"><div style="flex:1"><label>좌측명</label><input type="text" id="cfgLabelLeft"></div><div style="flex:1"><label>우측명</label><input type="text" id="cfgLabelRight"></div></div>
-                <button class="btn-save" style="width:100%" onclick="saveConfig()">설정 저장</button>
+                <div class="form-group"><label>메인 제목</label> <input type="text" id="cfgTitle"></div>
+                <div class="form-group"><label>안내 문구</label> <textarea id="cfgDesc" rows="2"></textarea></div>
+                <div class="form-group"><label>바닥글(Copyright) 내용</label> <input type="text" id="cfgCopyright" placeholder="예: Copyright © 2026. All rights reserved."></div>
+                <div class="form-group" style="display:flex; gap:5px;">
+                    <div style="flex:1;"><label>왼쪽 이름</label><input type="text" id="cfgLabelLeft"></div>
+                    <div style="flex:1;"><label>오른쪽 이름</label><input type="text" id="cfgLabelRight"></div>
+                </div>
+                <div class="form-group"><label>배경색</label> <input type="color" id="cfgBgColor" style="width:100%;"></div>
+                <div class="form-group"><label>배경 이미지</label> <input type="text" id="cfgBgImage"></div>
+                <div class="form-group"><label>반복</label> <select id="cfgBgRepeat"><option value="repeat">반복</option><option value="cover">꽉 채우기</option></select></div>
+                <div class="form-group" style="display:flex; gap:5px;">
+                    <div style="flex:1;"><label>좌측 색</label><input type="color" id="cfgLeftColor" style="width:100%;"></div>
+                    <div style="flex:1;"><label>우측 색</label><input type="color" id="cfgRightColor" style="width:100%;"></div>
+                </div>
+                <button class="btn-save" onclick="saveConfig()">설정 저장</button>
             </div>
         </div>
-        <hr>
-        <h3 style="margin-top:10px;">데이터 입력</h3>
-        <div class="form-group" style="background:#fff3cd; padding:5px; border-radius:5px;"><label>🎨 카드색</label><input type="color" id="inCardColor" value="#ffffff" style="width:100%;"></div>
-        <div class="form-group"><label><input type="checkbox" id="inShow" checked> 크게 보이기</label></div>
-        
-        <div class="form-group" style="background:#e8f5e9; padding:10px; border-radius:5px;">
-             <label>📍 지도 위치</label>
-             <div style="display:flex; gap:5px; margin-bottom:5px;"><input type="text" id="inLocationSearch" placeholder="예: Chang'an" style="flex:1;"><button type="button" onclick="searchLocation()" class="btn-green" style="color:white;">🔍</button></div>
-             <div style="display:flex; gap:5px;"><input type="number" id="inLat" placeholder="위도"><input type="number" id="inLng" placeholder="경도"></div>
-             <input type="text" id="inGeoName" placeholder="장소명" style="margin-top:5px;">
+        <h3 id="formTitle" style="margin-top:20px; border-top:2px solid #333; padding-top:10px;">데이터 입력</h3>
+        <div class="form-group" style="background:#fff3cd; padding:10px; border-radius:5px; border:1px solid #ffeeba; display:flex; gap:10px;">
+            <div style="flex:1;"><label>🎨 강조색</label><input type="color" id="inCardColor" value="#ffffff" style="width:100%;"></div>
+            <div style="flex:0 0 auto;"><button type="button" onclick="document.getElementById('inCardColor').value = '';" style="font-size:11px;">기본값</button></div>
         </div>
-
-        <div class="form-group"><select id="inType"><option value="poet">왼쪽</option><option value="history">오른쪽</option></select></div>
-        <div class="form-group"><div style="display:flex; gap:5px;"><input type="number" id="inYear" placeholder="연도" style="flex:1;" oninput="detectEra()"><input type="text" id="inEra" placeholder="시대 (자동)" style="flex:1;"></div></div>
-        <div class="form-group"><div id="eraHint" style="font-size:0.8rem; color:#d63384;"></div></div>
+        <div class="form-group" style="background:#f0f8ff; padding:10px; border-radius:5px; border:1px solid #cceeff;">
+            <label style="margin-bottom:0;"><input type="checkbox" id="inShow" checked> <strong>크게 보이기</strong></label>
+        </div>
+        <div class="form-group"><label>위치</label> <select id="inType" onchange="updateFormUI()"><option value="poet" id="optLeft">왼쪽</option><option value="history" id="optRight">오른쪽</option></select></div>
         
-        <div class="form-group"><input type="text" id="inName" placeholder="이름/제목"></div>
-        <div class="form-group"><label>🕸️ 인물 관계</label><input type="text" id="inRelations" placeholder="예: 두보:친구, 맹호연:존경"></div>
-        
-        <div class="form-group"><input type="text" id="inTags" placeholder="태그 (쉼표 구분)"></div>
-        <div class="form-group"><textarea id="inDesc" rows="2" placeholder="요약"></textarea></div>
-        
-        <div class="form-group">
-            <label>이미지</label>
-            <input type="text" id="inImg" placeholder="이미지 URL">
-            <div style="margin-top:5px; display:flex; gap:5px; align-items:center;">
-                <button type="button" onclick="document.getElementById('imgInput').click()" style="background:#666; color:white; border:none; padding:5px 10px; border-radius:3px;">📷 사진 업로드</button>
-                <input type="file" id="imgInput" accept="image/*" style="display:none;" onchange="handleImageSelect(this)">
+        <div class="form-group"><label>연도 (시작 ~ 종료)</label>
+            <div style="display:flex; gap:5px;">
+                <input type="number" id="inYear" placeholder="시작(출생)" style="flex:1;">
+                <span style="padding-top:10px;">~</span>
+                <input type="number" id="inDeathYear" placeholder="종료(사망)" style="flex:1;">
+                <input type="text" id="inEra" placeholder="시대" style="flex:1;">
             </div>
         </div>
-
+        
+        <div class="form-group"><label>제목/이름</label>
+            <div style="display:flex; gap:5px;">
+                <input type="text" id="inName" placeholder="한글 이름" style="flex:1;">
+                <input type="text" id="inHanja" placeholder="한자 (선택)" style="flex:1;">
+            </div>
+        </div>
+        
+        <div class="form-group"><label>태그 (쉼표 구분)</label> <input type="text" id="inTags" placeholder="예: 전쟁, 이별, 유배"></div>
+        <div class="form-group"><label>요약 (4줄)</label> <textarea id="inDesc" rows="4"></textarea></div>
+        <div class="form-group"><label>이미지</label> <input type="text" id="inImg"></div>
         <div class="form-group">
-            <label>상세 내용 (도구)</label>
+            <label id="detailLabel" style="display:inline-block; margin-bottom:5px;">상세 내용</label>
             <div style="margin-bottom:5px;">
-                <button class="tool-btn btn-green" onclick="autoPinyin()">병음</button> 
-                <button class="tool-btn btn-blue" onclick="autoTone()">평측</button> 
-                <button class="tool-btn btn-orange" onclick="insertAudio()">오디오</button> 
-                <button class="tool-btn btn-purple" onclick="insertLicense()">출처</button>
+                <button type="button" class="pinyin-btn" onclick="autoPinyin()">🔠 선택구간 병음</button>
+                <button type="button" class="tone-btn-input" onclick="autoTone()">🔲 선택구간 평측</button>
+                <button type="button" class="audio-btn" onclick="insertAudio()">🎵 오디오 연결</button>
+                <button type="button" class="license-btn" onclick="insertLicense()">📜 라이선스 삽입</button>
             </div>
-            <textarea id="inContent" rows="8" placeholder="내용 입력"></textarea>
+            <div class="syntax-guide"><code>[글자](주소)</code> (링크) &nbsp; <code>{{이미지|주소|설명}}</code> &nbsp; <code>{{오디오|주소}}</code><br><code>제목 | 내용</code> (첫줄) &nbsp; <code>---</code> (해설) &nbsp; <code>===</code> (구분) &nbsp; <code>+++</code> (간체) <br><code>### 내용 ###</code> (저작권/출처 표기) <br><code>%%강조%%</code> (굵게) &nbsp; <code>$$회색기울임$$</code></div>
+            <textarea id="inContent" rows="15"></textarea>
         </div>
-
-        <div class="admin-actions">
-            <button id="btnSave" class="btn-save" onclick="saveData()">저장</button>
-            <button class="btn-cancel" onclick="clearForm()">취소</button>
-            <button class="btn-down" onclick="exportData()">💾 DB 다운로드</button>
-            <button class="btn-reset" onclick="resetAllData()">⚠️ 초기화</button>
-        </div>
+        <div class="btn-group"><button id="btnSave" class="btn-save" onclick="saveData()">저장</button><button class="btn-reset" onclick="clearForm()">취소</button></div>
+        <hr>
+        <div class="btn-group"><button class="btn-download" onclick="exportData()">💾 DB 다운로드 (업로드용)</button><input type="file" id="fileInput" onchange="importData(this)" style="display:none;"><button class="btn-reset" style="width:100%;" onclick="document.getElementById('fileInput').click()">📂 DB 불러오기</button></div>
+        <button class="btn-reset" style="width:100%; background:darkred; margin-top:5px;" onclick="resetAllData()">⚠️ 로컬 초기화</button>
     </div>
     
     <div class="timeline" id="timeline-root"></div>
+    
     <footer id="pageFooter"></footer>
+    
     <div class="login-trigger" onclick="adminLogin()">Admin</div>
 
     <div id="detailModal" class="modal">
-        <div class="modal-content">
-            <button class="back-btn" id="backBtn" onclick="goBack()">⬅ 뒤로</button><span class="close" onclick="closeModal('detailModal')">&times;</span>
-            <div style="clear:both;"></div><img id="mImg" class="img-card" style="display:none;">
-            <h2 id="mName" style="text-align:center;"></h2><div id="mTags" style="text-align:center; margin-bottom:10px;"></div>
-            <div id="mDesc" style="background:#f5f5f5; padding:15px; border-radius:5px; white-space: pre-wrap;"></div>
+        <div class="modal-content"><button id="backBtn" class="back-btn" onclick="goBack()">⬅ 뒤로</button><span class="close" onclick="closeModal('detailModal')">&times;</span><div style="clear:both;"></div>
             
-            <div id="miniMapWrapper" style="display:none;">
-                <div id="miniMap"></div><div id="miniMapCaption" style="text-align:center; font-size:0.8rem; color:#666;"></div>
-            </div>
-            <div id="relContainer" style="text-align:center; margin-top:10px;"></div>
-            <hr>
-            <div id="mContentArea"></div>
+            <h2 id="mName" style="text-align:center;"></h2><div id="mTags" style="text-align:center; margin-bottom:20px;"></div>
+            
+            <div style="background:#f5f5f5; padding:20px; border-radius:8px; min-height:150px;">
+                <img id="mImg" class="img-card" style="display:none;"> <div id="mDesc" style="white-space: pre-wrap; line-height:1.8;"></div>
+                <div style="clear:both;"></div> </div>
+            
+            <hr><div id="mContentArea"></div>
         </div>
     </div>
-    
-    <div id="contextModal" class="modal"><div class="modal-content"><span class="close" onclick="closeModal('contextModal')">&times;</span><h3 style="text-align:center;">⌛ <span id="ctxTargetYear"></span>년 전후</h3><ul id="ctxList" class="ctx-list"></ul></div></div>
+    <div id="contextModal" class="modal"><div class="modal-content"><span class="close" onclick="closeModal('contextModal')">&times;</span><h3 style="text-align:center; border-bottom:2px solid #8B0000; padding-bottom:10px;">⌛ <span id="ctxTargetYear"></span>년 전후 기록</h3><ul id="ctxList" class="ctx-list"></ul></div></div>
     <div id="statModal" class="modal"><div class="modal-content"><span class="close" onclick="closeModal('statModal')">&times;</span><h3>📊 데이터 통계</h3><div id="statContent"></div></div></div>
-    <div id="mapModal" class="modal"><div class="modal-content" style="max-width: 900px;"><span class="close" onclick="closeModal('mapModal')">&times;</span><h3>🗺️ 역사 지도</h3><div id="map"></div></div></div>
-    <div id="relModal" class="modal"><div class="modal-content" style="max-width: 1000px;"><span class="close" onclick="closeModal('relModal')">&times;</span><h3>🕸️ 인물 관계도</h3><div id="network"></div></div></div>
-    <div id="cropperModal"><div class="crop-container"><div style="height:80%;"><img id="cropImage" style="max-width:100%;"></div><div class="crop-controls"><button class="btn-green tool-btn" style="font-size:16px;" onclick="performCrop()">✂️ 자르기 & 저장</button><button class="btn-cancel tool-btn" style="font-size:16px;" onclick="document.getElementById('cropperModal').style.display='none'">취소</button></div></div></div>
 
     <script>
         const defaultConfig = { title: "당나라 역사와 시인 연표", desc: "나만의 역사 데이터베이스", leftLabel: "시인 / 작품", rightLabel: "역사 / 사건", bgColor: "#fdfbf7", bgImage: "", bgRepeat: "repeat", leftCardColor: "#ffffff", rightCardColor: "#ffffff", copyright: "" };
-        const tangChronology = [{s:618,e:626,n:"초당"},{s:627,e:712,n:"초당"},{s:713,e:765,n:"성당"},{s:766,e:835,n:"중당"},{s:836,e:907,n:"만당"}];
         let db=[], config={}, editingId=null, modalHistory=[], currentOpenId=null;
         let isAdmin = false; 
-        let map = null; let miniMap = null; let markersLayer = null; let cropper = null; 
 
         async function init() {
             try {
-                try { const r = await fetch('database.json'); if(r.ok) { const j = await r.json(); db = j.data || []; config = j.config || defaultConfig; } else throw new Error("No DB"); } 
-                catch (e) { const s = localStorage.getItem('tangTimelineDB'); db = s ? JSON.parse(s) : []; const c = localStorage.getItem('tangTimelineConfig'); config = c ? JSON.parse(c) : {...defaultConfig}; }
+                try {
+                    const response = await fetch('database.json');
+                    if (response.ok) {
+                        const jsonData = await response.json();
+                        db = jsonData.data || [];
+                        config = jsonData.config || defaultConfig;
+                    } else { throw new Error("No external DB"); }
+                } catch (err) {
+                    const savedData = localStorage.getItem('tangTimelineDB'); db = savedData ? JSON.parse(savedData) : [];
+                    const savedConfig = localStorage.getItem('tangTimelineConfig'); config = savedConfig ? JSON.parse(savedConfig) : {...defaultConfig};
+                }
                 applyConfigUI(); populateEraFilter(); render();
-                document.getElementById('pageDesc').innerText = config.desc; document.getElementById('adminToggle').style.display = 'none';
-                adjustPadding(); window.addEventListener('resize', adjustPadding);
-            } catch (e) { console.error(e); render(); }
+                document.getElementById('pageDesc').innerText = config.desc;
+                document.getElementById('adminToggle').style.display = 'none';
+                
+                // [NEW] 창 크기 바뀔 때마다 상단 여백 재계산
+                adjustPadding();
+                window.addEventListener('resize', adjustPadding);
+
+            } catch (e) { alert("초기화 오류: " + e.message); }
         }
 
-        function adjustPadding() { document.getElementById('timeline-root').style.paddingTop = '20px'; }
-        
+        // [NEW] 상단 헤더 높이에 맞춰 본문 여백 자동 조절
+        function adjustPadding() {
+            const headerHeight = document.getElementById('stickyHeader').offsetHeight;
+            document.getElementById('timeline-root').style.paddingTop = '20px'; 
+        }
+
+        // [보안 강화 버전] 관리자 로그인
         async function adminLogin() {
             if (isAdmin) return;
-            const p = prompt("비밀번호:"); if (!p) return;
-            const h = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(p)))).map(b => b.toString(16).padStart(2, '0')).join('');
-            if (h === "6eb20c53054a7218e6731761b7539d9e38f6f5e39e53c2d78e0edd732de650f2") { isAdmin = true; document.getElementById('adminToggle').style.display = 'block'; alert("관리자 모드"); render(); } else alert("오류");
-        }
+            const password = prompt("관리자 비밀번호를 입력하세요:");
+            if (!password) return;
 
-        function saveToLocal() { db.sort((a, b) => a.year - b.year); localStorage.setItem('tangTimelineDB', JSON.stringify(db)); }
-        function exportData() { const d = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ data: db, config: config })); const n = document.createElement('a'); n.href = d; n.download = "database.json"; document.body.appendChild(n); n.click(); n.remove(); }
-        
-        // [v13.1 복구] 자동 시대 계산
-        function detectEra() {
-            const y = parseInt(document.getElementById('inYear').value); if(!y) return;
-            const f = tangChronology.find(i => y >= i.s && y <= i.e);
-            if(f) { document.getElementById('inEra').value = f.n; document.getElementById('eraHint').innerText = `💡 ${f.n} 시기입니다.`; }
-        }
+            const msgBuffer = new TextEncoder().encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-        // [기능] 지도 검색
-        async function searchLocation() {
-            const q = document.getElementById('inLocationSearch').value; if(!q) return;
-            try { const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`); const j = await r.json(); if(j.length>0) { document.getElementById('inLat').value = parseFloat(j[0].lat).toFixed(4); document.getElementById('inLng').value = parseFloat(j[0].lon).toFixed(4); alert("발견: "+j[0].display_name); } else alert("실패"); } catch(e){alert("오류");}
-        }
+            const mySecret = "6eb20c53054a7218e6731761b7539d9e38f6f5e39e53c2d78e0edd732de650f2"; 
 
-        // [기능] 이미지 크롭
-        function handleImageSelect(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('cropperModal').style.display = 'block';
-                    const img = document.getElementById('cropImage'); img.src = e.target.result;
-                    if(cropper) cropper.destroy();
-                    cropper = new Cropper(img, { aspectRatio: 1, viewMode: 1 });
-                };
-                reader.readAsDataURL(input.files[0]);
+            if (hashHex === mySecret) {
+                isAdmin = true;
+                document.getElementById('adminToggle').style.display = 'block';
+                alert("관리자 모드 활성화!");
+                render();
+            } else {
+                alert("비밀번호가 틀렸습니다.");
             }
         }
-        function performCrop() {
-            if(!cropper) return;
-            const canvas = cropper.getCroppedCanvas({ width:150, height:150 });
-            document.getElementById('inImg').value = canvas.toDataURL('image/jpeg', 0.8);
-            document.getElementById('cropperModal').style.display='none';
+
+        // --- 데이터 저장/관리 ---
+        function saveToLocal() {
+            db.sort((a, b) => a.year - b.year);
+            localStorage.setItem('tangTimelineDB', JSON.stringify(db));
         }
 
-        // [기능] 도구 모음
-        function autoPinyin() { const i = document.getElementById('inContent'); const s = i.selectionStart; const e = i.selectionEnd; if(s===e) return alert("선택필요"); const t = pinyinPro.pinyin(i.value.substring(s,e), { type: 'all', toneType: 'symbol', nonZh: 'consecutive' }); i.setRangeText(t.map(x => x.isZh ? `${x.origin}(${x.pinyin})` : x.origin).join('')); }
-        function autoTone() { const i = document.getElementById('inContent'); const s = i.selectionStart; const e = i.selectionEnd; if(s===e) return alert("선택필요"); const t = pinyinPro.pinyin(i.value.substring(s,e), { type: 'all', toneType: 'num', nonZh: 'consecutive' }); i.setRangeText(t.map(x => { if (!x.isZh) return x.origin; return `${x.origin}(${/[34]$/.test(x.pinyin)?'●':'○'})`; }).join('')); }
-        function insertAudio() { let u = prompt("오디오 파일명 (확장자포함)"); if(u) { if(!u.startsWith('http')) u='https://tangshi.kr/mp3/'+u; document.getElementById('inContent').setRangeText(`{{오디오|${u}}}`); } }
-        function insertLicense() { document.getElementById('inContent').setRangeText(`\n### 자료출처: 동양고전종합DB ###`); }
-
-        // [텍스트 처리]
-        function cleanTitle(t) { return t ? t.replace(/\[.*?\]/g, '').trim() : ""; }
-        function cleanTextForCard(t) { if(!t) return ""; return t.replace(/\{\{.*?\}\}/g, '').replace(/###.*?###/g, '').replace(/%%(.*?)%%/g, '$1').replace(/\$\$(.*?)\$\$/g, '$1').substring(0, 40)+"..."; }
-        function parseText(t, m=false) { 
-            if(!t) return "";
-            if(m) t = t.replace(/([\u4E00-\u9FFF])\(([^)]+)\)/g, "<ruby>$1<rt>$2</rt></ruby>"); 
-            return t.replace(/\{\{이미지\|(.*?)\|(.*?)\}\}/g, '<div class="img-card"><img src="$1"><br><small>$2</small></div>')
-                    .replace(/%%(.*?)%%/g, '<b>$1</b>').replace(/\$\$(.*?)\$\$/g, '<span style="color:#888;font-style:italic;">$1</span>')
-                    .replace(/\{\{오디오\|(.*?)\}\}/g, '<audio controls src="$1" style="width:100%;margin-top:10px;"></audio>')
-                    .replace(/###(.*?)###/g, '<div class="source-credit">$1</div>')
-                    .replace(/\[\[(.*?)\]\]/g, '<span class="wiki-link" onclick="openModalByName(\'$1\')">$1</span>'); 
+        function exportData() {
+            const exportObj = { data: db, config: config };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
+            const node = document.createElement('a'); node.href = dataStr; node.download = "database.json";
+            document.body.appendChild(node); node.click(); node.remove();
         }
 
-        // [관리자 기능]
+        function importData(input) {
+            const file = input.files[0]; if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const loaded = JSON.parse(e.target.result);
+                    if(loaded.data) { db = loaded.data; config = loaded.config || defaultConfig; } 
+                    else { if(Array.isArray(loaded)) db = loaded; }
+                    localStorage.setItem('tangTimelineConfig', JSON.stringify(config));
+                    saveToLocal(); applyConfigUI(); alert('데이터 불러오기 완료!');
+                } catch(err) { alert('오류: ' + err.message); }
+            }; reader.readAsText(file);
+        }
+
+        // --- 스마트 병음 변환기 (선택 영역 지원) ---
+        function autoPinyin() {
+            const input = document.getElementById('inContent');
+            const fullText = input.value;
+            
+            if (!fullText) { alert('내용을 입력하세요.'); return; }
+            if (typeof pinyinPro === 'undefined') { alert('인터넷 연결을 확인해주세요.'); return; }
+
+            const { pinyin } = pinyinPro;
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            
+            if (start === end) { alert("변환할 글자를 드래그해서 선택해주세요."); return; }
+
+            const selectedText = fullText.substring(start, end);
+            const converted = convertToPinyinString(selectedText, pinyin);
+            input.setRangeText(converted);
+        }
+
+        function convertToPinyinString(str, pinyinFunc) {
+            const result = pinyinFunc(str, { type: 'all', toneType: 'symbol', nonZh: 'consecutive' });
+            return result.map(item => item.isZh ? `${item.origin}(${item.pinyin})` : item.origin).join('');
+        }
+
+        // --- [v10.3] 선택 영역 평측 변환기 (입력창엔 단순 텍스트로) ---
+        function autoTone() {
+            const input = document.getElementById('inContent');
+            const fullText = input.value;
+            
+            if (!fullText) { alert('내용을 입력하세요.'); return; }
+            if (typeof pinyinPro === 'undefined') { alert('인터넷 연결을 확인해주세요.'); return; }
+
+            const { pinyin } = pinyinPro;
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            
+            if (start === end) { alert("평측을 적용할 글자를 드래그해서 선택해주세요."); return; }
+
+            const selectedText = fullText.substring(start, end);
+            
+            // 1. type: 'all'로 토큰 분리
+            const tokens = pinyin(selectedText, { type: 'all', toneType: 'num', nonZh: 'consecutive' });
+            
+            // [중요 수정] 태그(<ruby>) 대신 '한자(●)' 형태로 변환
+            const converted = tokens.map(t => {
+                if (!t.isZh) return t.origin; // 한자 아니면 그대로
+                
+                const isZe = /[34]$/.test(t.pinyin); 
+                const symbol = isZe ? '●' : '○'; // 3,4성은 측성(●), 나머지는 평성(○)
+                
+                return `${t.origin}(${symbol})`; // HTML 태그 아님! 텍스트임!
+            }).join('');
+
+            input.setRangeText(converted);
+        }
+        
+        // --- [v11.0] 라이선스 삽입기 ---
+        function insertLicense() {
+            const choice = prompt("삽입할 라이선스를 선택하세요 (번호 입력):\n1. 동양고전종합DB\n2. 나무위키\n3. 위키백과");
+            if (!choice) return;
+
+            let creditHtml = "";
+            if (choice === '1') {
+                creditHtml = "자료출처: <a href='http://db.cyberseodang.or.kr' target='_blank'><img src='http://db.cyberseodang.or.kr/images/front/logo_b.png'> 동양고전종합DB</a>";
+            } else if (choice === '2') {
+                creditHtml = "출처: <a href='https://namu.wiki' target='_blank'>나무위키</a> (CC BY-NC-SA 2.0 KR)";
+            } else if (choice === '3') {
+                creditHtml = "출처: <a href='https://ko.wikipedia.org' target='_blank'>위키백과</a> (CC BY-SA 3.0)";
+            } else {
+                alert("잘못된 입력입니다.");
+                return;
+            }
+
+            // 커서 위치에 삽입 (줄바꿈 포함)
+            const input = document.getElementById('inContent');
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const text = input.value;
+            const insertText = `\n### ${creditHtml} ###`;
+            
+            input.value = text.substring(0, start) + insertText + text.substring(end);
+        }
+
+        // --- [v12.0] 오디오 간편 삽입기 ---
+        function insertAudio() {
+            let url = prompt("오디오 파일명(예: song.mp3) 또는 전체 주소를 입력하세요.\n(파일명만 입력하면 'https://tangshi.kr/mp3/'가 자동으로 붙습니다.)");
+            if (!url) return;
+
+            // http로 시작하지 않으면 자동으로 경로 완성
+            if (!url.startsWith('http')) {
+                url = 'https://tangshi.kr/mp3/' + url;
+            }
+
+            const input = document.getElementById('inContent');
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const text = input.value;
+            // 문법: {{오디오|주소}}
+            const insertText = `{{오디오|${url}}}`;
+            
+            input.value = text.substring(0, start) + insertText + text.substring(end);
+        }
+
+        // --- [v12.2] 태그 정리 함수 (Clean Title) ---
+        function cleanTitle(text) {
+            if (!text) return "";
+            return text.replace(/\[.*?\]/g, '').trim();
+        }
+        
+        // --- [v12.5] 카드 미리보기용 텍스트 클리너 ---
+        function cleanTextForCard(text) {
+            if (!text) return "";
+            // 오디오/이미지 태그 제거
+            text = text.replace(/\{\{.*?\}\}/g, '');
+            // 라이선스 태그 제거
+            text = text.replace(/###.*?###/g, '');
+            // 강조 구문 기호 제거 (글자는 남김)
+            text = text.replace(/%%(.*?)%%/g, '$1');
+            text = text.replace(/\$\$(.*?)\$\$/g, '$1');
+            text = text.replace(/\[\[(.*?)\]\]/g, '$1');
+            
+            return text.substring(0, 40) + (text.length > 40 ? "..." : "");
+        }
+
+        // --- 렌더링 (관리자 모드 반영) ---
+        function render(query = "", eraFilter = "all") {
+            const root = document.getElementById('timeline-root'); root.innerHTML = '';
+            const safeQuery = query ? query.trim().toLowerCase() : "";
+
+            const filtered = db.filter(item => {
+                const eraMatch = eraFilter === 'all' || item.era === eraFilter;
+                if (!safeQuery) return eraMatch;
+
+                let textMatch = false;
+                if (item.name.toLowerCase().includes(safeQuery) ||
+                    item.desc.toLowerCase().includes(safeQuery) ||
+                    (item.tags && item.tags.join(" ").toLowerCase().includes(safeQuery))) {
+                    textMatch = true;
+                }
+                if (!textMatch && item.historyDetail && item.historyDetail.toLowerCase().includes(safeQuery)) {
+                    textMatch = true;
+                }
+                if (!textMatch && item.poems) {
+                    const poemMatch = item.poems.some(p => 
+                        (p.title && p.title.toLowerCase().includes(safeQuery)) ||
+                        (p.content && p.content.toLowerCase().includes(safeQuery))
+                    );
+                    if (poemMatch) textMatch = true;
+                }
+                return eraMatch && textMatch;
+            });
+
+            filtered.forEach(item => {
+                if (item.isShow) {
+                    const div = document.createElement('div'); div.className = item.type === 'poet' ? 'container left' : 'container right';
+                    const imgTag = item.img ? `<img src="${item.img}" class="thumb-img">` : '';
+                    let cardBg = item.cardColor; if(!cardBg || cardBg === "#ffffff" || cardBg === "") cardBg = (item.type === 'poet' ? config.leftCardColor : config.rightCardColor) || "#ffffff";
+                    let tagHtml = item.tags && item.tags.length > 0 ? '<div class="tag-container">' + item.tags.map(t => `<span class="tag-badge" onclick="searchTag('${t}')">#${t}</span>`).join('') + '</div>' : "";
+                    
+                    const btns = isAdmin ? `<div class="action-btns" style="display:block;"><span class="btn-text btn-edit" onclick="editItem(${item.id})">[수정]</span><span class="btn-text btn-del" onclick="deleteItem(${item.id})">[삭제]</span></div>` : '';
+
+                    // [v12.6] 카드 제목 형식 변경: 한글이름 (한자 생년~몰년)
+                    let titleHtml = cleanTitle(item.name);
+                    if (item.type === 'poet') {
+                        let subInfo = [];
+                        if (item.hanja) subInfo.push(item.hanja);
+                        if (item.deathYear) { subInfo.push(`${item.year}~${item.deathYear}`); }
+                        else { subInfo.push(item.year); }
+                        
+                        if (subInfo.length > 0) {
+                            titleHtml += ` <span style='font-size:0.7em; font-weight:normal;'>(${subInfo.join(' ')})</span>`;
+                        }
+                    }
+
+                    // [v12.6] 연도 버블은 '시작 연도'만 표시
+                    div.innerHTML = `<div class="year-bubble" onclick="openContextModal(${item.id})">${item.year}</div><div class="content clearfix" style="background-color:${cardBg};">${imgTag} <span class="era-tag">${item.era}</span><div class="title-text" onclick="openModal(${item.id})">${titleHtml}</div>${tagHtml} <small>${cleanTextForCard(item.desc)}</small>${btns}</div>`;
+                    root.appendChild(div);
+                } else {
+                    const div = document.createElement('div'); div.className = 'minor-row';
+                    div.innerHTML = `<div class="minor-dot" data-tooltip="${item.year} : ${item.name}" onclick="openModal(${item.id})"></div>`;
+                    root.appendChild(div);
+                }
+            });
+            
+            setTimeout(adjustPadding, 100);
+        }
+
+        // --- 기타 기능들 ---
+        function populateEraFilter() {
+            const eras = [...new Set(db.map(item => item.era).filter(e => e))].sort();
+            const select = document.getElementById('eraFilter'); select.innerHTML = '<option value="all">모든 시대</option>';
+            eras.forEach(era => { select.innerHTML += `<option value="${era}">${era}</option>`; });
+        }
+        function filterData() { render(document.getElementById('searchInput').value.toLowerCase(), document.getElementById('eraFilter').value); }
+        
+        // --- [v12.4] 텍스트 렌더링 함수 (강조, 이탤릭 추가) ---
+        function parseText(text, isPoetMode = false) {
+            if (!text) return "";
+            
+            // 1. '한자(기호/병음)' 패턴을 찾아서 <ruby> 태그로 자동 변환 
+            if (isPoetMode) { 
+                text = text.replace(/([\u2E80-\u2EFF\u31C0-\u31EF\u3200-\u32FF\u3400-\u4DBF\u4E00-\u9FBF\uF900-\uFAFF])\(([^)]+)\)/g, "<ruby>$1<rt>$2</rt></ruby>"); 
+            }
+            
+            // [v12.4] 텍스트 강조 기능
+            text = text.replace(/%%(.*?)%%/g, '<b>$1</b>'); // %%강조%% -> Bold
+            text = text.replace(/\$\$(.*?)\$\$/g, '<span style="color:#888; font-style:italic;">$1</span>'); // $$독백$$ -> Gray Italic
+
+            // [v12.1] 오디오 태그 {{오디오|...}} 변환 (위치 상관없이)
+            text = text.replace(/\{\{오디오\|(.*?)\}\}/g, '<div style="margin-top:10px;"><audio controls src="$1" style="width:100%; border-radius:20px;"></audio></div>');
+
+            // [v11.0] ### 내용 ### 패턴을 찾아서 source-credit 클래스로 변환
+            text = text.replace(/###(.*?)###/g, '<div class="source-credit">$1</div>');
+            
+            // 2. 다른 마크다운 처리
+            text = text.replace(/\[\[(.+?)\]\]/g, '<span class="wiki-link" onclick="openModalByName(\'$1\')">$1</span>');
+            text = text.replace(/\{\{(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\}\}/g, '<a href="$2" target="_blank" class="img-card"><img src="$1" alt="$3"><span class="img-caption">$3</span></a>');
+            text = text.replace(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([\w-]{11})(?:[&?][^"\s]*)?/g, '<div class="video-container"><iframe src="https://www.youtube.com/embed/$1" title="YouTube" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>');
+            text = text.replace(/(https?:\/\/www\.qtfm\.cn\S+)/g, '<a href="$1" target="_blank" class="qtfm-btn">🎧 蜻蜓FM 낭송 듣기</a>');
+            text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">🔗 $1</a>');
+            return text;
+        }
+
+        function openModalByName(name) {
+            if(currentOpenId !== null) { modalHistory.push(currentOpenId); document.getElementById('backBtn').style.display = 'block'; }
+            const item = db.find(d => d.name.trim() === name.trim());
+            if(item) openModal(item.id, true); else alert("링크된 카드 '" + name + "'이(가) 없습니다.");
+        }
+        function goBack() { if(modalHistory.length > 0) { const prevId = modalHistory.pop(); if(modalHistory.length === 0) document.getElementById('backBtn').style.display = 'none'; openModal(prevId, true); } }
+        function searchTag(tag) { document.getElementById('searchInput').value = tag; filterData(); }
+        function toggleAdmin() { document.getElementById('adminPanel').style.display = document.getElementById('adminPanel').style.display === 'block' ? 'none' : 'block'; }
+        function toggleConfig() { document.getElementById('configForm').style.display = document.getElementById('configForm').style.display === 'none' ? 'block' : 'none'; }
+        
+        function toggleSimplified(id) { 
+            const el = document.getElementById(id); 
+            if(el.style.display === 'none' || el.style.display === '') {
+                el.style.display = 'block';
+            } else {
+                el.style.display = 'none';
+            }
+        }
+        
+        function applyConfigUI() {
+            document.getElementById('pageTitle').innerText = config.title; document.getElementById('pageDesc').innerText = config.desc;
+            document.title = config.title; 
+            
+            document.getElementById('pageFooter').innerHTML = config.copyright || "";
+            document.getElementById('cfgCopyright').value = config.copyright || "";
+
+            const badgeLeft = document.getElementById('badgeLeft');
+            const badgeRight = document.getElementById('badgeRight');
+            badgeLeft.innerText = config.leftLabel;
+            badgeRight.innerText = config.rightLabel;
+            badgeLeft.style.backgroundColor = config.leftCardColor || "#ffffff";
+            badgeRight.style.backgroundColor = config.rightCardColor || "#ffffff";
+
+            document.getElementById('cfgTitle').value = config.title; document.getElementById('cfgDesc').value = config.desc;
+            document.getElementById('cfgLabelLeft').value = config.leftLabel; document.getElementById('cfgLabelRight').value = config.rightLabel;
+            document.getElementById('cfgBgColor').value = config.bgColor || "#fdfbf7"; document.getElementById('cfgBgImage').value = config.bgImage || "";
+            document.getElementById('cfgLeftColor').value = config.leftCardColor || "#ffffff"; document.getElementById('cfgRightColor').value = config.rightCardColor || "#ffffff";
+            document.getElementById('optLeft').innerText = "왼쪽: " + config.leftLabel; document.getElementById('optRight').innerText = "오른쪽: " + config.rightLabel;
+            
+            document.body.style.backgroundColor = config.bgColor || "#fdfbf7";
+            document.getElementById('stickyHeader').style.backgroundColor = config.bgColor || "#fdfbf7";
+            document.getElementById('pageFooter').style.backgroundColor = config.bgColor || "#fdfbf7";
+
+            if(config.bgImage) {
+                document.body.style.backgroundImage = `url('${config.bgImage}')`;
+                document.body.style.backgroundSize = config.bgRepeat === 'cover' ? 'cover' : 'auto';
+                document.body.style.backgroundRepeat = config.bgRepeat === 'cover' ? 'no-repeat' : 'repeat';
+            } else {
+                document.body.style.backgroundImage = 'none';
+            }
+            updateFormUI();
+            
+            setTimeout(adjustPadding, 100);
+        }
+        function saveConfig() {
+            config.title = document.getElementById('cfgTitle').value; config.desc = document.getElementById('cfgDesc').value;
+            config.copyright = document.getElementById('cfgCopyright').value;
+
+            config.leftLabel = document.getElementById('cfgLabelLeft').value; config.rightLabel = document.getElementById('cfgLabelRight').value;
+            config.bgColor = document.getElementById('cfgBgColor').value; config.bgImage = document.getElementById('cfgBgImage').value;
+            config.bgRepeat = document.getElementById('cfgBgRepeat').value; config.leftCardColor = document.getElementById('cfgLeftColor').value;
+            config.rightCardColor = document.getElementById('cfgRightColor').value;
+            localStorage.setItem('tangTimelineConfig', JSON.stringify(config)); applyConfigUI(); render(); alert('저장됨');
+        }
         function updateFormUI() {}
+        
+        /* [수정 모드 진입 함수] */
         function editItem(id) {
-            const item = db.find(d => d.id == id); if (!item) return;
+            const item = db.find(d => d.id === Number(id)); 
+            if (!item) { alert("항목을 찾을 수 없습니다."); return; }
+            
             document.getElementById('adminPanel').style.display = 'block'; 
             document.getElementById('inShow').checked = item.isShow;
             document.getElementById('inType').value = item.type; 
-            document.getElementById('inYear').value = item.year; document.getElementById('inEra').value = item.era; 
-            document.getElementById('inName').value = item.name; document.getElementById('inTags').value = item.tags ? item.tags.join(", ") : "";
-            document.getElementById('inRelations').value = item.relations || ""; 
-            document.getElementById('inDesc').value = item.desc; document.getElementById('inImg').value = item.img||"";
-            document.getElementById('inCardColor').value = item.cardColor||"#ffffff";
-            document.getElementById('inLat').value = item.lat || ""; document.getElementById('inLng').value = item.lng || "";
-            document.getElementById('inGeoName').value = item.geoName || "";
-
+            
+            // [v12.6] 새로운 입력 필드에 값 채우기
+            document.getElementById('inYear').value = item.year; 
+            document.getElementById('inDeathYear').value = item.deathYear || ""; 
+            
+            document.getElementById('inEra').value = item.era;
+            document.getElementById('inName').value = item.name; 
+            document.getElementById('inHanja').value = item.hanja || "";
+            
+            document.getElementById('inTags').value = item.tags ? item.tags.join(", ") : "";
+            document.getElementById('inDesc').value = item.desc; 
+            document.getElementById('inImg').value = item.img || "";
+            document.getElementById('inCardColor').value = item.cardColor || "#ffffff";
+            
             const contentBox = document.getElementById('inContent');
             if (item.type === 'poet' && item.poems) {
+                // 저장된 시 데이터를 +++ --- 형식으로 복원
                 contentBox.value = item.poems.map(p => {
                     let text = `${p.title}|${p.content}`;
                     if (p.simplified) text += `\n\n+++\n${p.simplified}`;
                     if (p.desc) text += `\n\n---\n${p.desc}`;
                     return text;
                 }).join('\n\n===\n\n');
-            } else { contentBox.value = item.historyDetail || ""; }
-            editingId = item.id; document.getElementById('btnSave').innerText = "수정 완료"; window.scrollTo(0, 0);
+            } else {
+                contentBox.value = item.historyDetail || "";
+            }
+            
+            editingId = item.id; 
+            document.getElementById('btnSave').innerText = "수정 완료"; 
+            window.scrollTo(0, 0);
         }
 
         function saveData() {
             const isShow = document.getElementById('inShow').checked; const type = document.getElementById('inType').value;
-            const year = document.getElementById('inYear').value; const era = document.getElementById('inEra').value;
-            const name = document.getElementById('inName').value; const tags = document.getElementById('inTags').value.split(',').map(t=>t.trim()).filter(t=>t);
-            const relations = document.getElementById('inRelations').value;
+            
+            // [v12.6] 새로운 입력 필드 값 가져오기
+            const year = document.getElementById('inYear').value; 
+            const deathYear = document.getElementById('inDeathYear').value;
+            
+            const era = document.getElementById('inEra').value; 
+            const name = document.getElementById('inName').value; 
+            const hanja = document.getElementById('inHanja').value;
+            
+            const tags = document.getElementById('inTags').value.split(',').map(t=>t.trim()).filter(t=>t);
             const desc = document.getElementById('inDesc').value; const img = document.getElementById('inImg').value;
             const cardColor = document.getElementById('inCardColor').value; const rawContent = document.getElementById('inContent').value;
-            const lat = document.getElementById('inLat').value; const lng = document.getElementById('inLng').value;
-            const geoName = document.getElementById('inGeoName').value;
-
             if (!year || !name) { alert('필수 항목 누락'); return; }
             
             let poems = []; let historyDetail = "";
-            if (type === 'poet') {
-                if (rawContent.trim()) {
-                    const blocks = rawContent.split('==='); 
-                    poems = blocks.map(b => { 
-                        let temp = b; let pDesc = ""; const descParts = temp.split('---');
-                        if (descParts.length > 1) { pDesc = descParts.slice(1).join('---').trim(); temp = descParts[0]; }
-                        let pSimp = ""; const simpParts = temp.split('+++');
-                        if (simpParts.length > 1) { pSimp = simpParts.slice(1).join('+++').trim(); temp = simpParts[0]; }
-                        const idx = temp.indexOf('|'); 
-                        if (idx !== -1) return { title: temp.substring(0, idx).trim(), content: temp.substring(idx + 1).trim(), simplified: pSimp, desc: pDesc }; 
-                        return { title: '내용', content: temp.trim(), simplified: pSimp, desc: pDesc }; 
-                    }).filter(p => p);
-                }
-            } else { historyDetail = rawContent.trim(); }
+            if (type === 'poet' && rawContent.trim()) { 
+                const blocks = rawContent.split('==='); 
+                poems = blocks.map(b => { 
+                    // 구조: 제목|내용 -> +++간체 -> ---해설
+                    let temp = b;
+                    let pDesc = "";
+                    const descParts = temp.split('---');
+                    if (descParts.length > 1) {
+                        pDesc = descParts.slice(1).join('---').trim();
+                        temp = descParts[0];
+                    }
+                    
+                    let pSimp = "";
+                    const simpParts = temp.split('+++');
+                    if (simpParts.length > 1) {
+                        pSimp = simpParts.slice(1).join('+++').trim();
+                        temp = simpParts[0];
+                    }
+                    
+                    const idx = temp.indexOf('|'); 
+                    if (idx !== -1) {
+                        return { 
+                            title: temp.substring(0, idx).trim(), 
+                            content: temp.substring(idx + 1).trim(),
+                            simplified: pSimp,
+                            desc: pDesc
+                        };
+                    }
+                    return null; 
+                }).filter(p => p); 
+            } else { 
+                historyDetail = rawContent.trim(); 
+            }
             
-            const newData = { id: editingId || Date.now(), year, era, type, name, tags, relations, desc, img, isShow, cardColor, poems, historyDetail, lat, lng, geoName };
-            if (editingId) { const idx = db.findIndex(d => d.id == editingId); if (idx !== -1) db[idx] = newData; } else { db.push(newData); }
+            // [v12.6] deathYear, hanja 추가 저장
+            const newData = { id: editingId || Date.now(), year, deathYear, era, type, name, hanja, tags, desc, img, isShow, cardColor, poems, historyDetail };
+            
+            if (editingId) { 
+                const idx = db.findIndex(d => d.id === editingId); 
+                if (idx !== -1) db[idx] = newData; 
+            } else { 
+                db.push(newData); 
+            }
+            
             saveToLocal(); render(); populateEraFilter(); clearForm();
         }
-
         function clearForm() {
-            document.getElementById('inYear').value = ''; document.getElementById('inName').value = '';
-            document.getElementById('inTags').value = ''; document.getElementById('inRelations').value = '';
-            document.getElementById('inDesc').value = ''; document.getElementById('inImg').value = ''; document.getElementById('inContent').value = ''; 
-            document.getElementById('inLat').value = ''; document.getElementById('inLng').value = ''; document.getElementById('inGeoName').value = '';
+            document.getElementById('inYear').value = ''; document.getElementById('inDeathYear').value = '';
+            document.getElementById('inName').value = ''; document.getElementById('inHanja').value = '';
+            document.getElementById('inTags').value = ''; document.getElementById('inDesc').value = '';
+            document.getElementById('inImg').value = ''; document.getElementById('inContent').value = '';
             document.getElementById('inShow').checked = true; document.getElementById('inCardColor').value = "#ffffff";
             editingId = null; document.getElementById('btnSave').innerText = "저장";
         }
-        
+        function deleteItem(id) { if(confirm('삭제?')) { db = db.filter(i => i.id !== id); saveToLocal(); render(); populateEraFilter(); } }
         function resetAllData() { if(confirm('전체 삭제?')) { localStorage.removeItem('tangTimelineDB'); location.reload(); } }
 
         function openModal(id, keepHistory = false) {
-            try {
-                const item = db.find(d => d.id == id); if (!item) return;
-                if (!keepHistory) { modalHistory = []; document.getElementById('backBtn').style.display = 'none'; }
-                currentOpenId = id;
+            const item = db.find(d => d.id === id); if (!item) return;
+            if (!keepHistory) { modalHistory = []; document.getElementById('backBtn').style.display = 'none'; }
+            currentOpenId = id;
+            
+            // [v12.3] 모달 열 때 플로팅 닫기 버튼 보이기
+            document.getElementById('floatingCloseBtn').style.display = 'block';
+            
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
 
-                let nameHtml = `${cleanTitle(item.name)} <span style='font-size:0.7em; color:#888;'>(${item.year})</span>`;
-                document.getElementById('mName').innerHTML = nameHtml;
-                
-                const editBtn = isAdmin ? `<div style="text-align:right; margin-bottom:10px;">
+            // [v12.5] 모달 내 삭제 버튼 추가
+            const editBtnHtml = isAdmin ? `
+                <div style="text-align:right; margin-bottom:10px;">
                     <span class="btn-text btn-edit" onclick="editItem(${item.id}); closeModal('detailModal');">[수정]</span>
                     <span class="btn-text btn-del" onclick="deleteItem(${item.id}); closeModal('detailModal');">[삭제]</span>
                 </div>` : '';
-                document.getElementById('mDesc').innerHTML = editBtn + parseText(item.desc, false);
-                document.getElementById('mTags').innerHTML = item.tags ? item.tags.map(t => `<span class="tag-badge">#${t}</span>`).join('') : "";
                 
-                const mImg = document.getElementById('mImg'); 
-                if(item.img) { mImg.src = item.img; mImg.style.display = 'block'; } else { mImg.style.display = 'none'; }
+            // [v12.6] 모달 제목 형식 변경: 한글 (한자 출생~사망)
+            let nameHtml = `${cleanTitle(item.name)}`;
+            if (item.type === 'poet') {
+                let subInfo = [];
+                if (item.hanja) subInfo.push(item.hanja);
+                if (item.deathYear) { subInfo.push(`${item.year}~${item.deathYear}`); }
+                else { subInfo.push(item.year); }
                 
-                // [v13.1] 미니맵 및 관계 배지 표시
-                const miniMapWrapper = document.getElementById('miniMapWrapper');
-                const relContainer = document.getElementById('relContainer');
-                relContainer.innerHTML = '';
-                
-                if (item.lat && item.lng) {
-                    miniMapWrapper.style.display = 'block';
-                    document.getElementById('miniMapCaption').innerText = item.geoName || "지도 위치";
-                    setTimeout(() => {
-                        if (miniMap) miniMap.remove();
-                        miniMap = L.map('miniMap').setView([item.lat, item.lng], 6);
-                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(miniMap);
-                        L.marker([item.lat, item.lng]).addTo(miniMap);
-                    }, 200);
-                } else { miniMapWrapper.style.display = 'none'; }
-
-                if (item.relations) {
-                    item.relations.split(',').forEach(r => {
-                        const p = r.split(':');
-                        const badge = document.createElement('span'); badge.className = 'rel-badge';
-                        badge.innerHTML = `${p[0]} <small>${p[1]||''}</small>`;
-                        badge.onclick = () => openModalByName(p[0]);
-                        relContainer.appendChild(badge);
-                    });
+                if (subInfo.length > 0) {
+                    nameHtml += ` <span style='font-size:0.7em; color:#888;'>(${subInfo.join(' ')})</span>`;
                 }
-
-                const area = document.getElementById('mContentArea'); area.innerHTML = '';
-                if (item.type === 'poet' && item.poems) {
-                    item.poems.forEach((p) => {
-                        let body = `<div class="hanja-text">${parseText(p.content, true)}</div>`; 
-                        if (p.simplified) body += `<div style="margin-top:5px; padding:10px; background:#f9f9f9; border-left:4px solid #d63384;">${parseText(p.simplified, true)}</div>`;
-                        if(p.desc) body += `<details class="inner-details"><summary class="inner-summary">[해설 보기]</summary><div class="explain-text">${parseText(p.desc, false)}</div></details>`; 
-                        const details = document.createElement('details'); details.className = 'outer-details';
-                        details.innerHTML = `<summary class="outer-summary">${cleanTitle(p.title)}</summary><div class="poem-body">${body}</div>`;
-                        area.appendChild(details);
-                    });
-                } else { area.innerHTML = `<div class="poem-body">${parseText(item.historyDetail||"", false)}</div>`; }
-                
-                document.getElementById('detailModal').style.display = "block";
-                document.getElementById('floatingCloseBtn').style.display = 'block';
-            } catch (e) { console.error(e); }
-        }
-
-        // [v13.1] 검색 초기화 (X버튼)
-        function clearSearch() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('clearSearchBtn').style.display = 'none';
-            filterData();
-        }
-
-        // [기능] 지도 모달 열기
-        function openMapModal() {
-            document.getElementById('mapModal').style.display = 'block';
-            setTimeout(() => {
-                if (!map) {
-                    map = L.map('map').setView([34.26, 108.94], 5); // 장안(시안) 중심
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(map);
-                    markersLayer = L.layerGroup().addTo(map);
-                } else { map.invalidateSize(); }
-                markersLayer.clearLayers();
-                db.forEach(item => {
-                    if(item.lat && item.lng) {
-                        const marker = L.marker([item.lat, item.lng]);
-                        marker.bindPopup(`<b>${item.geoName||item.name}</b><br><button onclick="closeModal('mapModal');openModal(${item.id})">이동</button>`);
-                        markersLayer.addLayer(marker);
+            } else {
+                nameHtml += ` <span style='font-size:0.7em; color:#888;'>(${item.year})</span>`;
+            }
+            
+            document.getElementById('mName').innerHTML = nameHtml;
+            document.getElementById('mDesc').innerHTML = editBtnHtml + parseText(item.desc, false);
+            const tagsHtml = item.tags ? item.tags.map(t => `<span class="tag-badge">#${t}</span>`).join('') : "";
+            document.getElementById('mTags').innerHTML = tagsHtml;
+            const mImg = document.getElementById('mImg');
+            if(item.img) { mImg.src = item.img; mImg.style.display = 'block'; } else { mImg.style.display = 'none'; }
+            
+            const area = document.getElementById('mContentArea'); area.innerHTML = '';
+            
+            if (item.type === 'poet' && item.poems) {
+                item.poems.forEach((p, index) => {
+                    let isMatch = true;
+                    if (query) {
+                        const matchTitle = p.title && p.title.toLowerCase().includes(query);
+                        const matchContent = p.content && p.content.toLowerCase().includes(query);
+                        if (!matchTitle && !matchContent) {
+                            isMatch = false; 
+                        }
                     }
+
+                    const details = document.createElement('details'); 
+                    details.className = 'outer-details';
+                    
+                    if (!isMatch) {
+                        details.style.display = 'none';
+                    } else {
+                        if (query) details.open = true;
+                    }
+
+                    // 본문 렌더링 (병음 또는 평측이 루비로 포함된 텍스트)
+                    let body = `<div class="hanja-text">${parseText(p.content, true)}</div>`; 
+                    
+                    if (p.simplified) {
+                        const simpId = `simp_${item.id}_${index}`;
+                        // 버튼 누르기 전엔 절대 안 보임 (display:none)
+                        body += `<span class="simp-btn" onclick="toggleSimplified('${simpId}')">🇨🇳 간체자 보기</span>`;
+                        body += `<div id="${simpId}" class="simplified-box"><div style="margin-top:5px;">${parseText(p.simplified, true)}</div></div>`;
+                    }
+
+                    if(p.desc) { 
+                        body += `<details class="inner-details"><summary class="inner-summary">[해설 보기]</summary><div class="explain-text">${parseText(p.desc, false)}</div></details>`; 
+                    }
+                    
+                    // [v12.2] 시 제목(아코디언 헤더)에도 cleanTitle 적용
+                    details.innerHTML = `<summary class="outer-summary">${cleanTitle(p.title)}</summary><div class="poem-body">${body}</div>`;
+                    area.appendChild(details);
                 });
-            }, 200);
+            } else if (item.historyDetail) { area.innerHTML = `<div class="poem-body">${parseText(item.historyDetail, false)}</div>`; }
+            
+            document.getElementById('detailModal').style.display = "block";
         }
 
-        // [기능] 관계도 모달 열기
-        function openRelModal() {
-            document.getElementById('relModal').style.display = 'block';
-            const nodes = []; const edges = []; const ids = new Set();
-            db.forEach(item => {
-                if(!item.isShow || !item.relations) return;
-                const name = cleanTitle(item.name);
-                if(!ids.has(name)) { nodes.push({id:name, label:name, size:25, shape:'dot', color:'#ffcc00'}); ids.add(name); }
-                item.relations.split(',').forEach(r => {
-                    const p = r.split(':');
-                    const target = p[0].trim();
-                    if(!ids.has(target)) { nodes.push({id:target, label:target, size:20, shape:'dot', color:'#eee'}); ids.add(target); }
-                    edges.push({from:name, to:target, label:p[1]||'', arrows:'to'});
-                });
-            });
-            const container = document.getElementById('network');
-            new vis.Network(container, { nodes, edges }, { nodes:{font:{size:16, face:'KoPub Batang'}}, physics:{stabilization:false} });
-        }
-
-        // [v12.4] 통계 모달
+        // [v12.4] 통계 모달 개편 (인물별 작품 수 랭킹)
         function openStatModal() {
             const totalCards = db.length; 
-            const stats = {}; let totalPoems = 0;
+            const leftCount = db.filter(d=>d.type==='poet').length; 
+            const rightCount = db.filter(d=>d.type==='history').length;
+            
+            // 작품 수 집계
+            const stats = {};
+            let totalPoems = 0;
+
             db.forEach(item => {
                 if (item.type === 'poet' && item.poems) {
-                    const key = cleanTitle(item.name);
+                    const key = cleanTitle(item.name); // 태그 제거한 이름 사용 (이백 [성당] -> 이백)
                     const count = item.poems.length;
                     stats[key] = (stats[key] || 0) + count;
                     totalPoems += count;
+                } else if (item.type === 'history') {
+                    // 역사는 그냥 1개로 칠지 말지 선택. 여기선 인물 랭킹이므로 제외하거나 따로 표시
                 }
             });
+
+            // 정렬 (내림차순)
             const sortedStats = Object.entries(stats).sort((a, b) => b[1] - a[1]);
-            let html = `<table class="stat-table"><tr><th>총 카드</th><td>${totalCards}개</td></tr><tr><th>총 작품</th><td>${totalPoems}수</td></tr><tr><th colspan="2" style="background:#eee;">🏆 작가별 순위</th></tr>`;
-            sortedStats.forEach((e, i) => html += `<tr><td>${i+1}. ${e[0]}</td><td style="text-align:right;">${e[1]}</td></tr>`);
-            html += `</table>`;
-            document.getElementById('statContent').innerHTML = html; document.getElementById('statModal').style.display = 'block';
+
+            let html = `
+                <table class="stat-table">
+                    <tr><th>총 데이터(카드)</th><td>${totalCards}개</td></tr>
+                    <tr><th>수록된 작품 수</th><td>${totalPoems}수</td></tr>
+                    <tr><th colspan="2" style="text-align:center; background:#eee;">🏆 인물별 작품 수 랭킹</th></tr>
+                </table>
+                <div class="stat-scroll-box">
+                    <table class="stat-rank-table">
+            `;
+            
+            sortedStats.forEach((entry, index) => {
+                html += `<tr><td class="rank-num">${index + 1}</td><td>${entry[0]}</td><td style="text-align:right; font-weight:bold;">${entry[1]}수</td></tr>`;
+            });
+
+            if (sortedStats.length === 0) {
+                html += `<tr><td colspan="3" style="text-align:center; padding:20px;">집계된 작품이 없습니다.</td></tr>`;
+            }
+
+            html += `</table></div>`;
+            
+            document.getElementById('statContent').innerHTML = html; 
+            document.getElementById('statModal').style.display = 'block';
         }
 
-        function openContextModal(id) { document.getElementById('contextModal').style.display="block"; }
+        function openContextModal(targetId) {
+            const targetItem = db.find(d => d.id === targetId); if (!targetItem) return;
+            const idx = db.findIndex(d => d.id === targetId);
+            document.getElementById('ctxTargetYear').innerText = targetItem.year;
+            const siblings = db.slice(Math.max(0, idx - 5), Math.min(db.length, idx + 6));
+            const list = document.getElementById('ctxList'); list.innerHTML = '';
+            siblings.forEach(item => {
+                const li = document.createElement('li'); const isMinor = !item.isShow;
+                li.className = `ctx-item ${item.id === targetId ? 'current' : ''} ${isMinor ? 'minor' : ''}`;
+                li.onclick = () => { closeModal('contextModal'); openModal(item.id); };
+                li.innerHTML = `<div class="ctx-year">${item.year}</div><div class="ctx-info"><div class="ctx-name">${item.name}</div><span class="ctx-desc">${item.desc.substring(0, 40)}...</span></div>`;
+                list.appendChild(li);
+            });
+            document.getElementById('contextModal').style.display = "block";
+        }
         
-        function render(q="", f="all") {
-            const root = document.getElementById('timeline-root'); root.innerHTML = '';
-            const safeQ = q.trim().toLowerCase();
-            document.getElementById('clearSearchBtn').style.display = safeQ ? 'block' : 'none';
-            const filtered = db.filter(i => {
-                const eraMatch = f === 'all' || i.era === f;
-                if (!safeQ) return eraMatch;
-                let tm = (i.name && i.name.toLowerCase().includes(safeQ)) || (i.tags && i.tags.join(" ").toLowerCase().includes(safeQ));
-                return eraMatch && tm;
-            });
-            filtered.forEach(item => {
-                if (item.isShow) {
-                    const div = document.createElement('div'); div.className = item.type === 'poet' ? 'container left' : 'container right';
-                    const imgTag = item.img ? `<img src="${item.img}" class="thumb-img">` : '';
-                    let cardBg = item.cardColor || "#ffffff";
-                    let tagHtml = item.tags ? '<div class="tag-container">' + item.tags.map(t => `<span class="tag-badge" onclick="searchTag('${t}')">#${t}</span>`).join('') + '</div>' : "";
-                    const btns = isAdmin ? `<div class="action-btns" style="display:block;"><span class="btn-text btn-edit" onclick="editItem(${item.id})">[수정]</span><span class="btn-text btn-del" onclick="deleteItem(${item.id})">[삭제]</span></div>` : '';
-                    div.innerHTML = `<div class="year-bubble">${item.year}</div><div class="content clearfix" style="background-color:${cardBg};" onclick="openModal('${item.id}')">${imgTag}<div class="title-text">${cleanTitle(item.name)}</div>${tagHtml}<small>${cleanTextForCard(item.desc)}</small>${btns}</div>`;
-                    root.appendChild(div);
-                } else {
-                    const div = document.createElement('div'); div.className = 'minor-row';
-                    div.innerHTML = `<div class="minor-dot" data-tooltip="${item.year} : ${item.name}" onclick="openModal('${item.id}')"></div>`;
-                    root.appendChild(div);
-                }
-            });
-            setTimeout(adjustPadding, 100);
+        function closeModal(id) { 
+            document.getElementById(id).style.display = "none"; 
+            // [v12.3] 닫을 때 플로팅 버튼도 숨기기
+            document.getElementById('floatingCloseBtn').style.display = 'none';
         }
-        function populateEraFilter() { const s = document.getElementById('eraFilter'); const e = [...new Set(db.map(i=>i.era))].sort(); s.innerHTML='<option value="all">모든 시대</option>'; e.forEach(x=>{s.innerHTML+=`<option value="${x}">${x}</option>`}); }
-        function filterData() { render(document.getElementById('searchInput').value.toLowerCase(), document.getElementById('eraFilter').value); }
-        function saveConfig() { localStorage.setItem('tangTimelineConfig', JSON.stringify(config)); applyConfigUI(); alert('저장됨'); }
-        function applyConfigUI() { 
-            document.getElementById('pageTitle').innerText = config.title; 
-            document.body.style.backgroundColor = config.bgColor || "#fdfbf7"; 
-            if(config.bgImage) document.body.style.backgroundImage = `url('${config.bgImage}')`;
+        
+        window.onclick = function(e) { 
+            if(e.target.classList.contains('modal')) {
+                e.target.style.display="none"; 
+                document.getElementById('floatingCloseBtn').style.display = 'none';
+            }
         }
-        function deleteItem(id) { if(confirm('삭제?')) { db = db.filter(i => i.id != id); saveToLocal(); render(); } }
-        function closeModal(id) { document.getElementById(id).style.display = "none"; document.getElementById('floatingCloseBtn').style.display='none'; }
-        function toggleAdmin() { document.getElementById('adminPanel').style.display = document.getElementById('adminPanel').style.display==='block'?'none':'block'; }
-        window.onclick = function(e) { if(e.target.classList.contains('modal')) closeModal(e.target.id); }
+        
         init();
     </script>
 </body>
