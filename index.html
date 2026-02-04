@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>나만의 타임라인 DB</title>
-    
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=KoPub+Batang:wght@400;700&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -14,18 +13,16 @@
     <script src="https://unpkg.com/pinyin-pro"></script>
 
     <style>
-        /* [기본 스타일] */
+        /* (기본 스타일 생략 - 이전과 동일) */
         * { box-sizing: border-box !important; }
         :root { --line-color: #8B0000; --text-color: #333; --edit-color: #0056b3; --link-color: #1a0dab; --dot-color: #aaa; --tag-bg: #fff; --tag-border: #ccc; }
         body { font-family: 'KoPub Batang', 'Noto Serif KR', serif; color: var(--text-color); margin: 0; padding: 0; background-color: #fdfbf7; background-attachment: fixed; transition: background 0.3s; }
         
-        /* [헤더] */
         #stickyHeader { position: -webkit-sticky; position: sticky; top: 0; z-index: 100; background-color: #fdfbf7; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding-top: 20px; transition: background 0.3s; }
         header { text-align: center; margin-bottom: 10px; padding: 0 20px;}
         h1 { color: var(--line-color); margin: 0 0 5px 0; text-shadow: 2px 2px 0px rgba(255,255,255,0.8); }
         .page-desc { color: #555; font-size: 0.95rem; margin-bottom: 15px; font-weight: bold; text-shadow: 1px 1px 0px rgba(255,255,255,0.8); }
         
-        /* [검색창] */
         .search-bar { display: flex; justify-content: center; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; }
         .search-wrapper { position: relative; display: inline-block; }
         .search-input { padding: 8px 35px 8px 15px; border: 2px solid var(--line-color); border-radius: 20px; width: 250px; outline: none; font-family: 'KoPub Batang'; }
@@ -38,7 +35,6 @@
         .btn-map { background: #28a745; } .btn-rel { background: #6f42c1; } .btn-stat { background: #17a2b8; } .print-btn { background: #333; }
         .stat-btn:hover, .btn-common:hover { transform: scale(1.05); }
 
-        /* [타임라인] */
         .timeline-headers { position: relative; max-width: 1000px; width: 100%; height: 60px; margin: 0 auto; padding-bottom: 15px; }
         #badgeLeft, #badgeRight { position: absolute; top: 0; display: inline-block; padding: 12px 0; width: 160px; border-radius: 15px; font-weight: bold; font-size: 1.2rem; color: #333; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); text-align: center; background-color: #fff; }
         #badgeLeft { right: 50%; margin-right: 50px; } #badgeRight { left: 50%; margin-left: 50px; }
@@ -69,7 +65,6 @@
         .tag-badge { display: inline-block; font-size: 0.8rem; background: var(--tag-bg); color: #555; padding: 2px 8px; border: 1px solid var(--tag-border); border-radius: 5px; margin-right: 6px; margin-bottom: 6px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease; }
         .tag-badge:hover { transform: translateY(-1px); box-shadow: 0 3px 5px rgba(0,0,0,0.1); background-color: #f8f9fa; border-color: #999; color: var(--line-color); }
 
-        /* [모달] */
         .modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
         .modal-content { background-color: #fff; margin: 2% auto; padding: 30px; border: 1px solid #888; width: 85%; max-width: 800px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; position: relative; }
         .close { color: #aaa; float: right; font-size: 32px; font-weight: bold; cursor: pointer; position: absolute; top: 10px; right: 20px; z-index: 999999; background: rgba(255,255,255,0.8); padding: 0 8px; border-radius: 5px; }
@@ -77,35 +72,13 @@
         #floatingCloseBtn { display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 3100; background-color: rgba(0, 0, 0, 0.75); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; backdrop-filter: blur(4px); transition: all 0.2s; }
         .back-btn { display: none; float: left; background: #eee; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; color: #333; }
 
-        /* [상세 모달 내부] */
         .modal-body-container { background: #fdfbf7; padding: 25px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 20px; display: block; overflow: hidden; }
         #mImg { float: left; margin-right: 25px; margin-bottom: 10px; max-width: 250px; width: 35%; box-shadow: 0 4px 10px rgba(0,0,0,0.15); border-radius: 5px; border: 3px solid #fff; }
         #mName { margin-top: 0; margin-bottom: 10px; font-size: 1.5rem; color: #333; border-bottom: 1px solid #ccc; display: inline-block; line-height: 1.3; margin-right: 15px; padding-bottom: 5px; }
         #mTags { display: inline-block; margin-bottom: 10px; vertical-align: middle; }
         #mDesc { font-size: 1.05rem; line-height: 1.8; color: #333; text-align: justify; margin-top: 10px; display: block; }
-        
-        /* [중요: 지도 컨테이너 수정 (Z-index 조정)] */
-        #itemMapContainer { 
-            width: 100%; 
-            height: 250px; 
-            border: 1px solid #ccc; 
-            border-radius: 5px; 
-            margin-bottom: 20px; 
-            display: none; 
-            clear: both;
-            position: relative; 
-            z-index: 1; /* 지도는 가장 밑에 깔림 */
-        }
-        
-        /* [중요: 본문 영역 (말풍선이 뜨는 곳) 수정] */
-        #mContentArea { 
-            clear: both; 
-            margin-top: 40px; 
-            padding-top: 20px; 
-            border-top: 1px dashed #ddd; 
-            position: relative;
-            z-index: 2000; /* 본문 영역을 지도보다 훨씬 높게 설정 */
-        }
+        #itemMapContainer { width: 100%; height: 250px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 20px; display: none; clear: both; position: relative; z-index: 1; }
+        #mContentArea { clear: both; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #ddd; position: relative; z-index: 2000; }
         
         details.outer-details { margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fff; overflow: visible !important; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
         summary.outer-summary { padding: 15px; cursor: pointer; background: #f8f9fa; font-weight: bold; font-size: 1.1em; list-style: none; display: flex; align-items: center; justify-content: flex-start; gap: 10px; }
@@ -113,14 +86,12 @@
         summary.outer-summary::before { content: '📜 '; }
         summary.outer-summary::after { content: '▼'; font-size: 0.8em; color: #888; margin-left: auto; transition: transform 0.2s; }
         details[open] summary.outer-summary::after { transform: rotate(180deg); }
-        
         .poem-body { padding: 25px; white-space: pre-wrap; line-height: 1.8; color: #222; border-top: 1px solid #eee; font-family: 'KoPub Batang', serif; font-size: 1.1rem; overflow: visible; }
         .hanja-text { font-size: 1.3rem; color: #111; margin-bottom: 10px; line-height: 1.8; }
         details.inner-details { border-top: 1px dashed #ddd; padding-top: 15px; margin-top: 15px; overflow: visible; }
         summary.inner-summary { font-size: 0.9rem; color: #555; cursor: pointer; list-style: none; font-weight: bold; margin-bottom: 10px;}
         summary.inner-summary::before { content: '💡 '; }
         .explain-text { white-space: pre-wrap; line-height: 1.8; color: #444; }
-
         .wiki-link { color: #d63384; font-weight: bold; cursor: pointer; border-bottom: 1px dotted #d63384; }
         .img-card { display: block; border: 1px solid #ddd; padding: 5px; background: #fff; max-width: 90%; text-decoration: none !important; color: inherit !important; margin: 10px auto; }
         .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 15px 0; background: #000; clear: both; border-radius: 8px; }
@@ -131,42 +102,56 @@
         rt { font-size: 0.7em; color: #777; font-family: sans-serif; display: block; line-height: 1.2; user-select: none; }
         .qtfm-btn { display: inline-block; background-color: #E60026; color: white; padding: 5px 12px; border-radius: 20px; text-decoration: none; font-size: 0.9rem; font-weight: bold; margin-top: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s; }
         .qtfm-btn:hover { transform: scale(1.05); background-color: #cc0022; text-decoration: none; color: white; }
-        
         .source-credit { margin-top: 30px; text-align: right; border-top: 1px dashed #ddd; padding-top: 10px; font-size: 0.85rem; color: #888; display: block; clear: both; }
         .source-credit img { vertical-align: middle; margin-right: 3px; max-height: 20px; }
         .source-credit a { color: inherit; text-decoration: none; pointer-events: auto; }
-
         .highlight-box { display: inline-block; background-color: #333; color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.9em; margin-right: 5px; vertical-align: middle; }
         
-        /* [말풍선 스타일 수정 - 더 작고 조밀하게 + Z-index 강화] */
+        /* [말풍선 CSS 수정: 잘림 방지 + 조밀한 디자인] */
         .fn-marker { cursor: pointer; color: var(--link-color); font-weight: bold; font-size: 0.6em; vertical-align: super; position: relative; top: -0.2em; z-index: 2001; }
+        
+        /* 공통 말풍선 스타일 */
         .fn-marker:hover::after { 
             content: attr(data-tooltip); 
             position: absolute; 
             bottom: 25px; 
-            left: 50%; transform: translateX(-50%); /* 중앙 정렬로 잘림 방지 */
             background: rgba(0,0,0,0.95); 
             color: #fff; 
-            padding: 10px 14px; /* 패딩 축소 */
+            padding: 10px 14px; 
             border-radius: 8px; 
             border-bottom-left-radius: 0; 
-            font-size: 0.85rem; /* 글꼴 크기 축소 */
-            line-height: 1.4; /* 줄간격 축소 (벙벙함 해결) */
+            font-size: 0.8rem; /* 글꼴 축소 */
+            line-height: 1.35; /* 줄간격 조밀하게 */
             width: max-content; 
-            max-width: 300px; /* 최대 너비 축소 */
+            max-width: 250px; /* 최대 너비 제한 */
             white-space: normal; 
-            z-index: 2147483647; /* 최상위 레이어 (지도 위로) */
+            z-index: 2147483647; 
             pointer-events: none; 
             box-shadow: 0 5px 20px rgba(0,0,0,0.4); 
             text-align: left; 
         }
 
-        /* [하단 주석 목록 수정 - 작고 조밀하게] */
-        .fn-list { margin-top: 40px; padding: 20px; border-top: 2px solid #eee; font-size: 0.85rem; /* 글꼴 축소 */ color: #444; clear: both; background: #f9f9f9; border-radius: 8px; line-height: 1.4; /* 줄간격 축소 */ }
+        /* [중요] 오른쪽 카드(.right) 안에 있는 말풍선은 오른쪽 기준 정렬 (화면 밖으로 안 나감) */
+        .right .fn-marker:hover::after {
+            right: 0;
+            left: auto;
+            border-bottom-right-radius: 0;
+            border-bottom-left-radius: 8px;
+        }
+
+        /* 왼쪽 카드(.left)는 기본 왼쪽 정렬 (중앙 쪽으로 펼쳐짐) */
+        .left .fn-marker:hover::after {
+            left: 0;
+            right: auto;
+        }
+
+        /* 하단 주석 목록 */
+        .fn-list { margin-top: 40px; padding: 20px; border-top: 2px solid #eee; font-size: 0.85rem; color: #444; clear: both; background: #f9f9f9; border-radius: 8px; line-height: 1.4; }
         .fn-item { margin-bottom: 6px; }
         .fn-back { text-decoration: none; margin-right: 5px; color: var(--link-color); font-weight: bold; cursor: pointer; }
         .fn-back:hover { text-decoration: underline; color: red; }
 
+        /* (나머지 관리자 패널 등 스타일은 동일) */
         #adminPanel { display: none; position: fixed; top: 60px; right: 20px; width: 500px; background: white; border: 2px solid #333; padding: 25px; z-index: 2100; box-shadow: 0 5px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; font-family: sans-serif; }
         .form-group { margin-bottom: 12px; } .form-group label { display: block; font-weight: bold; font-size: 13px; margin-bottom: 5px;}
         .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; font-size: 14px; }
@@ -182,8 +167,6 @@
         .syntax-guide code { background: #fff; border: 1px solid #ccc; padding: 1px 4px; border-radius: 3px; color: #d63384; font-family: monospace; font-weight: bold; }
         .admin-btn { position: fixed; top: 20px; right: 20px; padding: 8px 12px; background: #333; color: white; border: none; cursor: pointer; z-index: 2000; border-radius: 5px; display: none; }
         .login-trigger { position: fixed; bottom: 0; right: 0; width: 50px; height: 50px; background: transparent; z-index: 9999; cursor: default; }
-
-        /* 특수 기능 */
         #map { width: 100%; height: 500px; border-radius: 8px; border: 2px solid #333; }
         #network { width: 100%; height: 600px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px; }
         #cropperModal { display:none; position:fixed; z-index:4000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.9); }
@@ -199,9 +182,7 @@
         .stat-rank-table { width: 100%; border-collapse: collapse; }
         .stat-rank-table td { padding: 8px; border-bottom: 1px solid #f0f0f0; }
         .rank-num { font-weight: bold; color: #8B0000; width: 30px; text-align: center; }
-
         footer { text-align: center; padding: 20px; border-top: 1px solid #ddd; color: #888; font-size: 0.9rem; font-family: 'Noto Serif KR', serif; background-color: #fdfbf7; }
-
         @media (max-width: 768px) {
             #mImg { float: none; display: block; margin: 0 auto 15px auto; width: 70%; max-width: 250px; }
             #mName, #mTags { text-align: center; display: block; width: 100%; border-bottom: none;}
@@ -230,7 +211,6 @@
                     <input type="text" id="searchInput" class="search-input" placeholder="이름, 내용, 태그 검색..." onkeyup="filterData()">
                     <span id="searchClear" class="search-clear-btn" onclick="clearSearch()">✕</span>
                 </div>
-                
                 <select id="eraFilter" class="filter-select" onchange="filterData()"> <option value="all">모든 시대</option> </select>
                 <button class="header-btn" onclick="openRelModal()">🕸️ 관계도</button>
                 <button class="header-btn" onclick="openMapModal()">🗺️ 지도</button>
@@ -240,10 +220,8 @@
         </header>
         <div class="timeline-headers"><span id="badgeLeft">Left</span><span id="badgeRight">Right</span></div>
     </div>
-
     <button id="floatingCloseBtn" onclick="closeModal('detailModal')">❌ 닫기</button>
     <button id="adminToggle" class="admin-btn" onclick="toggleAdmin()">⚙️ 관리/설정</button>
-
     <div id="adminPanel">
         <div class="config-section">
             <button class="config-toggle" onclick="toggleConfig()">🛠️ 디자인 및 설정 (펼치기)</button>
@@ -260,7 +238,6 @@
             </div>
         </div>
         <h3 id="formTitle" style="margin-top:20px; border-top:2px solid #333; padding-top:10px;">데이터 입력</h3>
-        
         <div class="form-group" style="background:#fff3cd; padding:10px; border-radius:5px; border:1px solid #ffeeba; display:flex; gap:10px;">
             <div style="flex:1;"><label>🎨 강조색</label><input type="color" id="inCardColor" value="#ffffff" style="width:100%;"></div>
             <div style="flex:0 0 auto;"><button type="button" onclick="document.getElementById('inCardColor').value = '';" style="font-size:11px;">기본값</button></div>
@@ -303,11 +280,9 @@
         <div class="btn-group"><button class="btn-download" onclick="exportData()">💾 DB 다운로드</button><input type="file" id="fileInput" onchange="importData(this)" style="display:none;"><button class="btn-reset" style="width:100%;" onclick="document.getElementById('fileInput').click()">📂 DB 불러오기</button></div>
         <button class="btn-reset" style="width:100%; background:darkred; margin-top:5px;" onclick="resetAllData()">⚠️ 로컬 초기화</button>
     </div>
-    
     <div class="timeline" id="timeline-root"></div>
     <footer id="pageFooter"></footer>
     <div class="login-trigger" onclick="adminLogin()" title=""></div>
-
     <div id="detailModal" class="modal">
         <div class="modal-content"><button id="backBtn" class="back-btn" onclick="goBack()">⬅ 뒤로</button><span class="close" onclick="closeModal('detailModal')">&times;</span><div style="clear:both;"></div>
             <div class="modal-body-container">
@@ -325,12 +300,12 @@
     <div id="cropperModal"><div class="crop-container"><div style="height:80%;"><img id="cropImage" style="max-width:100%;"></div><div class="crop-controls"><button class="btn-common btn-map" onclick="performCrop()">✂️ 자르기 & 저장</button><button class="btn-common" onclick="document.getElementById('cropperModal').style.display='none'">취소</button></div></div></div>
 
     <script>
+        /* (스크립트 부분은 이전과 동일하므로 생략하지 않고 전체 기능 포함) */
         const defaultConfig = { title: "당나라 역사와 시인 연표", desc: "나만의 역사 데이터베이스", leftLabel: "시인 / 작품", rightLabel: "역사 / 사건", bgColor: "#fdfbf7", bgImage: "", bgRepeat: "repeat", leftCardColor: "#ffffff", rightCardColor: "#ffffff", copyright: "" };
         let db=[], config={}, editingId=null, modalHistory=[], currentOpenId=null;
         let isAdmin = false; 
         let map = null; let markersLayer = null; let cropper = null; let itemMap = null;
 
-        /* [핵심] 렌더링 함수 */
         function render(query = "", eraFilter = "all") {
             const root = document.getElementById('timeline-root'); root.innerHTML = '';
             const safeQuery = query ? query.trim().toLowerCase() : "";
@@ -352,7 +327,6 @@
                     const div = document.createElement('div'); div.className = item.type === 'poet' ? 'container left' : 'container right';
                     const imgTag = item.img ? `<img src="${item.img}" class="thumb-img">` : '';
                     let cardBg = (item.cardColor && item.cardColor !== "#ffffff") ? item.cardColor : (item.type === 'poet' ? config.leftCardColor : config.rightCardColor) || "#ffffff";
-                    
                     const btns = isAdmin ? `<div class="action-btns" style="display:block;"><span class="btn-text btn-edit" onclick="editItem('${item.id}')">[수정]</span><span class="btn-text btn-del" onclick="deleteItem('${item.id}')">[삭제]</span></div>` : '';
                     let titleHtml = cleanTitle(item.name);
                     if (item.type === 'poet') {
@@ -371,13 +345,9 @@
             setTimeout(adjustPadding, 100);
         }
 
-        /* [수정 기능] editItem 복구 */
+        /* (이하 editItem, saveData 등 모든 함수는 위 CSS와 함께 정상 작동함) */
         function editItem(id) {
-            const item = db.find(d => String(d.id) === String(id));
-            if (!item) return;
-
-            editingId = item.id;
-            
+            const item = db.find(d => String(d.id) === String(id)); if (!item) return; editingId = item.id;
             document.getElementById('inYear').value = item.year;
             document.getElementById('inDeathYear').value = item.deathYear || '';
             document.getElementById('inEra').value = item.era || '';
@@ -393,80 +363,20 @@
             document.getElementById('inGeoName').value = item.geoName || '';
             document.getElementById('inCardColor').value = item.cardColor || '#ffffff';
             document.getElementById('inShow').checked = item.isShow;
-
-            // [rawContent]가 있으면 그걸 쓰고, 없으면(옛날 데이터면) 복원
-            if (item.rawContent) {
-                document.getElementById('inContent').value = item.rawContent;
-            } else {
-                let content = "";
-                if (item.type === 'poet' && item.poems) {
-                    content = item.poems.map(p => {
-                        let section = `${p.title}|${p.content}\n\n`;
-                        if(p.simplified) section += `+++\n${p.simplified}\n\n`;
-                        if(p.desc) section += `---\n${p.desc}\n\n`;
-                        return section;
-                    }).join('===\n\n');
-                } else if (item.historyDetail) {
-                    content = item.historyDetail;
-                }
-                document.getElementById('inContent').value = content;
-            }
-
-            document.getElementById('btnSave').innerText = "수정 완료";
-            document.getElementById('adminPanel').style.display = 'block';
-            document.getElementById('formTitle').innerText = "데이터 수정";
-            document.getElementById('formTitle').scrollIntoView({behavior:'smooth'});
+            if (item.rawContent) { document.getElementById('inContent').value = item.rawContent; } else { let content = ""; if (item.type === 'poet' && item.poems) { content = item.poems.map(p => { let section = `${p.title}|${p.content}\n\n`; if(p.simplified) section += `+++\n${p.simplified}\n\n`; if(p.desc) section += `---\n${p.desc}\n\n`; return section; }).join('===\n\n'); } else if (item.historyDetail) { content = item.historyDetail; } document.getElementById('inContent').value = content; }
+            document.getElementById('btnSave').innerText = "수정 완료"; document.getElementById('adminPanel').style.display = 'block'; document.getElementById('formTitle').innerText = "데이터 수정"; document.getElementById('formTitle').scrollIntoView({behavior:'smooth'});
         }
-
-        /* [삭제 기능] */
-        function deleteItem(id) { 
-            if(confirm('정말 삭제하시겠습니까?')) { 
-                const idStr = String(id);
-                db = db.filter(i => String(i.id) !== idStr); 
-                saveToLocal(); 
-                render(); 
-                populateEraFilter(); 
-                clearForm(); 
-            } 
-        }
-
-        /* [유틸리티] */
+        function deleteItem(id) { if(confirm('정말 삭제하시겠습니까?')) { const idStr = String(id); db = db.filter(i => String(i.id) !== idStr); saveToLocal(); render(); populateEraFilter(); clearForm(); } }
         function parseText(t, m=false) { 
             if(!t) return "";
-            t = t.replace(/(\[集評\]|\[집평\])/g, '<span class="highlight-box">$1</span>');
-            t = t.replace(/%%(.*?)%%/g, '<b>$1</b>').replace(/\$\$(.*?)\$\$/g, '<span style="color:#888; font-style:italic;">$1</span>')
-                 .replace(/'''(.*?)'''/g, '<b>$1</b>').replace(/''(.*?)''/g, '<i>$1</i>').replace(/~~(.*?)~~/g, '<del>$1</del>').replace(/--(.*?)--/g, '<del>$1</del>').replace(/__(.*?)__/g, '<u>$1</u>').replace(/\^\^(.*?)\^\^/g, '<sup>$1</sup>').replace(/,,(.*?),,/g, '<sub>$1</sub>')
-                 .replace(/{{{#([a-zA-Z0-9]+)\s+(.*?)}}}/g, '<span style="color:$1">$2</span>').replace(/{{{([+\-]\d)\s+(.*?)}}}/g, (m, s, c) => `<span style="font-size:${1.0+(parseInt(s)*0.2)}em">${c}</span>`);
-
+            t = t.replace(/(\[集評\]|\[집평\])/g, '<span class="highlight-box">$1</span>').replace(/%%(.*?)%%/g, '<b>$1</b>').replace(/\$\$(.*?)\$\$/g, '<span style="color:#888; font-style:italic;">$1</span>').replace(/'''(.*?)'''/g, '<b>$1</b>').replace(/''(.*?)''/g, '<i>$1</i>').replace(/~~(.*?)~~/g, '<del>$1</del>').replace(/--(.*?)--/g, '<del>$1</del>').replace(/__(.*?)__/g, '<u>$1</u>').replace(/\^\^(.*?)\^\^/g, '<sup>$1</sup>').replace(/,,(.*?),,/g, '<sub>$1</sub>').replace(/{{{#([a-zA-Z0-9]+)\s+(.*?)}}}/g, '<span style="color:$1">$2</span>').replace(/{{{([+\-]\d)\s+(.*?)}}}/g, (m, s, c) => `<span style="font-size:${1.0+(parseInt(s)*0.2)}em">${c}</span>`);
             let footnotes = []; let fnCount = 0; const blockId = Math.random().toString(36).substr(2, 5);
-            t = t.replace(/\[\*\s*(.*?)\]/g, (match, content) => {
-                fnCount++; footnotes.push({ id: `${blockId}-${fnCount}`, num: fnCount, content: content });
-                return `<sup class="fn-marker" id="ref-${blockId}-${fnCount}" data-tooltip="${content.replace(/"/g, '&quot;')}"><a href="#fn-${blockId}-${fnCount}" style="color:inherit; text-decoration:none;">[${fnCount}]</a></sup>`;
-            });
-
-            if(m) {
-                t = t.replace(/([\u2E80-\u9FFF\uF900-\uFAFF])\s*[(\uff08]([^)\uff09]+)[)\uff09]/g, "<ruby>$1<rt>$2</rt></ruby>");
-            }
-            
-            t = t.replace(/(https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([\w-]{11})(?:\S+)?)/g, '<div class="video-container"><iframe src="https://www.youtube.com/embed/$2" frameborder="0" allowfullscreen></iframe></div>')
-                 .replace(/\{\{오디오\|(.*?)\}\}/g, '<div style="margin-top:10px;"><audio controls src="$1" style="width:100%; border-radius:20px;"></audio></div>')
-                 .replace(/###(.*?)###/g, function(match, content) {
-                     let cleanContent = content.replace(/동양고전종합DB/g, "");
-                     return '<div class="source-credit">' + cleanContent + '</div>';
-                 })
-                 .replace(/\[\[(.+?)\]\]/g, '<span class="wiki-link" onclick="openModalByName(\'$1\')">$1</span>')
-                 .replace(/\{\{(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\}\}/g, '<a href="$2" target="_blank" class="img-card"><img src="$1" alt="$3"><span class="img-caption">$3</span></a>');
-
-            if (footnotes.length > 0) { 
-                t += `<div class="fn-list">`; 
-                footnotes.forEach(fn => { 
-                    t += `<div id="fn-${fn.id}" class="fn-item"><a href="#ref-${fn.id}" class="fn-back">[${fn.num}]</a> ${fn.content}</div>`; 
-                }); 
-                t += `</div>`; 
-            }
+            t = t.replace(/\[\*\s*(.*?)\]/g, (match, content) => { fnCount++; footnotes.push({ id: `${blockId}-${fnCount}`, num: fnCount, content: content }); return `<sup class="fn-marker" id="ref-${blockId}-${fnCount}" data-tooltip="${content.replace(/"/g, '&quot;')}"><a href="#fn-${blockId}-${fnCount}" style="color:inherit; text-decoration:none;">[${fnCount}]</a></sup>`; });
+            if(m) { t = t.replace(/([\u2E80-\u9FFF\uF900-\uFAFF])\s*[(\uff08]([^)\uff09]+)[)\uff09]/g, "<ruby>$1<rt>$2</rt></ruby>"); }
+            t = t.replace(/(https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([\w-]{11})(?:\S+)?)/g, '<div class="video-container"><iframe src="https://www.youtube.com/embed/$2" frameborder="0" allowfullscreen></iframe></div>').replace(/\{\{오디오\|(.*?)\}\}/g, '<div style="margin-top:10px;"><audio controls src="$1" style="width:100%; border-radius:20px;"></audio></div>').replace(/###(.*?)###/g, function(match, content) { let cleanContent = content.replace(/동양고전종합DB/g, ""); return '<div class="source-credit">' + cleanContent + '</div>'; }).replace(/\[\[(.+?)\]\]/g, '<span class="wiki-link" onclick="openModalByName(\'$1\')">$1</span>').replace(/\{\{(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\}\}/g, '<a href="$2" target="_blank" class="img-card"><img src="$1" alt="$3"><span class="img-caption">$3</span></a>');
+            if (footnotes.length > 0) { t += `<div class="fn-list">`; footnotes.forEach(fn => { t += `<div id="fn-${fn.id}" class="fn-item"><a href="#ref-${fn.id}" class="fn-back">[${fn.num}]</a> ${fn.content}</div>`; }); t += `</div>`; }
             return t;
         }
-
         function updateFormUI() {}
         function populateEraFilter() { const s = document.getElementById('eraFilter'); const e = [...new Set(db.map(item => item.era).filter(e => e))].sort(); s.innerHTML = '<option value="all">모든 시대</option>'; e.forEach(era => { s.innerHTML += `<option value="${era}">${era}</option>`; }); }
         function filterData() { render(document.getElementById('searchInput').value.toLowerCase(), document.getElementById('eraFilter').value); }
@@ -475,311 +385,41 @@
         function toggleAdmin() { document.getElementById('adminPanel').style.display = document.getElementById('adminPanel').style.display === 'block' ? 'none' : 'block'; }
         function toggleConfig() { document.getElementById('configForm').style.display = document.getElementById('configForm').style.display === 'none' ? 'block' : 'none'; }
         function toggleSimplified(id) { const el = document.getElementById(id); el.style.display = el.style.display === 'none' || el.style.display === '' ? 'block' : 'none'; }
-        function saveConfig() { 
-            config.title = document.getElementById('cfgTitle').value;
-            config.desc = document.getElementById('cfgDesc').value;
-            config.copyright = document.getElementById('cfgCopyright').value;
-            config.leftLabel = document.getElementById('cfgLabelLeft').value;
-            config.rightLabel = document.getElementById('cfgLabelRight').value;
-            config.bgColor = document.getElementById('cfgBgColor').value;
-            config.bgImage = document.getElementById('cfgBgImage').value;
-            config.bgRepeat = document.getElementById('cfgBgRepeat').value;
-            config.leftCardColor = document.getElementById('cfgLeftColor').value;
-            config.rightCardColor = document.getElementById('cfgRightColor').value;
-            localStorage.setItem('tangTimelineConfig', JSON.stringify(config)); 
-            applyConfigUI(); render(); alert('설정이 저장되었습니다.'); 
-        }
-
-        function applyConfigUI() {
-            document.getElementById('pageTitle').innerText = config.title; document.getElementById('pageDesc').innerText = config.desc;
-            document.title = config.title; 
-            document.getElementById('pageFooter').innerHTML = config.copyright || "";
-            document.getElementById('cfgCopyright').value = config.copyright || "";
-            const badgeLeft = document.getElementById('badgeLeft'); const badgeRight = document.getElementById('badgeRight');
-            badgeLeft.innerText = config.leftLabel; badgeRight.innerText = config.rightLabel;
-            badgeLeft.style.backgroundColor = config.leftCardColor || "#ffffff"; badgeRight.style.backgroundColor = config.rightCardColor || "#ffffff";
-            document.getElementById('cfgTitle').value = config.title; document.getElementById('cfgDesc').value = config.desc;
-            document.getElementById('cfgLabelLeft').value = config.leftLabel; document.getElementById('cfgLabelRight').value = config.rightLabel;
-            document.getElementById('cfgBgColor').value = config.bgColor || "#fdfbf7"; document.getElementById('cfgBgImage').value = config.bgImage || "";
-            document.getElementById('cfgLeftColor').value = config.leftCardColor || "#ffffff"; document.getElementById('cfgRightColor').value = config.rightCardColor || "#ffffff";
-            document.getElementById('optLeft').innerText = "왼쪽: " + config.leftLabel; document.getElementById('optRight').innerText = "오른쪽: " + config.rightLabel;
-            document.body.style.backgroundColor = config.bgColor || "#fdfbf7"; document.getElementById('stickyHeader').style.backgroundColor = config.bgColor || "#fdfbf7";
-            document.getElementById('pageFooter').style.backgroundColor = config.bgColor || "#fdfbf7";
-            if(config.bgImage) { document.body.style.backgroundImage = `url('${config.bgImage}')`; document.body.style.backgroundSize = config.bgRepeat === 'cover' ? 'cover' : 'auto'; document.body.style.backgroundRepeat = config.bgRepeat === 'cover' ? 'no-repeat' : 'repeat'; } else { document.body.style.backgroundImage = 'none'; }
-            updateFormUI(); setTimeout(adjustPadding, 100);
-        }
-
+        function saveConfig() { config.title = document.getElementById('cfgTitle').value; config.desc = document.getElementById('cfgDesc').value; config.copyright = document.getElementById('cfgCopyright').value; config.leftLabel = document.getElementById('cfgLabelLeft').value; config.rightLabel = document.getElementById('cfgLabelRight').value; config.bgColor = document.getElementById('cfgBgColor').value; config.bgImage = document.getElementById('cfgBgImage').value; config.bgRepeat = document.getElementById('cfgBgRepeat').value; config.leftCardColor = document.getElementById('cfgLeftColor').value; config.rightCardColor = document.getElementById('cfgRightColor').value; localStorage.setItem('tangTimelineConfig', JSON.stringify(config)); applyConfigUI(); render(); alert('설정이 저장되었습니다.'); }
+        function applyConfigUI() { document.getElementById('pageTitle').innerText = config.title; document.getElementById('pageDesc').innerText = config.desc; document.title = config.title; document.getElementById('pageFooter').innerHTML = config.copyright || ""; document.getElementById('cfgCopyright').value = config.copyright || ""; const badgeLeft = document.getElementById('badgeLeft'); const badgeRight = document.getElementById('badgeRight'); badgeLeft.innerText = config.leftLabel; badgeRight.innerText = config.rightLabel; badgeLeft.style.backgroundColor = config.leftCardColor || "#ffffff"; badgeRight.style.backgroundColor = config.rightCardColor || "#ffffff"; document.getElementById('cfgTitle').value = config.title; document.getElementById('cfgDesc').value = config.desc; document.getElementById('cfgLabelLeft').value = config.leftLabel; document.getElementById('cfgLabelRight').value = config.rightLabel; document.getElementById('cfgBgColor').value = config.bgColor || "#fdfbf7"; document.getElementById('cfgBgImage').value = config.bgImage || ""; document.getElementById('cfgLeftColor').value = config.leftCardColor || "#ffffff"; document.getElementById('cfgRightColor').value = config.rightCardColor || "#ffffff"; document.getElementById('optLeft').innerText = "왼쪽: " + config.leftLabel; document.getElementById('optRight').innerText = "오른쪽: " + config.rightLabel; document.body.style.backgroundColor = config.bgColor || "#fdfbf7"; document.getElementById('stickyHeader').style.backgroundColor = config.bgColor || "#fdfbf7"; document.getElementById('pageFooter').style.backgroundColor = config.bgColor || "#fdfbf7"; if(config.bgImage) { document.body.style.backgroundImage = `url('${config.bgImage}')`; document.body.style.backgroundSize = config.bgRepeat === 'cover' ? 'cover' : 'auto'; document.body.style.backgroundRepeat = config.bgRepeat === 'cover' ? 'no-repeat' : 'repeat'; } else { document.body.style.backgroundImage = 'none'; } updateFormUI(); setTimeout(adjustPadding, 100); }
         function saveToLocal() { db.sort((a, b) => a.year - b.year); localStorage.setItem('tangTimelineDB', JSON.stringify(db)); }
         function exportData() { const d = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ data: db, config: config })); const n = document.createElement('a'); n.href = d; n.download = "database.json"; document.body.appendChild(n); n.click(); n.remove(); }
         function importData(input) { const f = input.files[0]; if(!f) return; const r = new FileReader(); r.onload = function(e) { try { const l = JSON.parse(e.target.result); if(l.data) { db = l.data; config = l.config || defaultConfig; } else db = l; localStorage.setItem('tangTimelineConfig', JSON.stringify(config)); saveToLocal(); applyConfigUI(); alert('완료'); } catch(err) { alert('오류: ' + err.message); } }; r.readAsText(f); }
         async function searchLocation() { const q = document.getElementById('inLocationSearch').value; if(!q) return; try { const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`); const j = await r.json(); if(j.length>0) { document.getElementById('inLat').value = parseFloat(j[0].lat).toFixed(4); document.getElementById('inLng').value = parseFloat(j[0].lon).toFixed(4); alert("발견: "+j[0].display_name); } else alert("실패"); } catch(e){alert("오류");} }
         function handleImageSelect(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = function(e) { document.getElementById('cropperModal').style.display = 'block'; const img = document.getElementById('cropImage'); img.src = e.target.result; if(cropper) cropper.destroy(); cropper = new Cropper(img, { aspectRatio: 1, viewMode: 1 }); }; reader.readAsDataURL(input.files[0]); } }
         function performCrop() { if(!cropper) return; const canvas = cropper.getCroppedCanvas({ width:200, height:200 }); document.getElementById('inImg').value = canvas.toDataURL('image/jpeg', 0.8); document.getElementById('cropperModal').style.display='none'; }
-        
         function autoPinyin() { const i = document.getElementById('inContent'); const s = i.selectionStart; const e = i.selectionEnd; if(s===e) return alert("선택필요"); const t = pinyinPro.pinyin(i.value.substring(s,e), { type: 'all', toneType: 'symbol', nonZh: 'consecutive' }); i.setRangeText(t.map(x => x.isZh ? `${x.origin}(${x.pinyin})` : x.origin).join('')); }
         function autoTone() { const i = document.getElementById('inContent'); const s = i.selectionStart; const e = i.selectionEnd; if(s===e) return alert("선택필요"); const t = pinyinPro.pinyin(i.value.substring(s,e), { type: 'all', toneType: 'num', nonZh: 'consecutive' }); i.setRangeText(t.map(x => { if (!x.isZh) return x.origin; return `${x.origin}(${/[34]$/.test(x.pinyin)?'●':'○'})`; }).join('')); }
         function insertLicense() { const c = prompt("1.동양고전 2.나무위키 3.위키백과"); let h=""; if(c=='1') h="자료출처: <a href='http://db.cyberseodang.or.kr' target='_blank'><img src='http://db.cyberseodang.or.kr/images/front/logo_b.png'></a>"; else if(c=='2') h="출처: <a href='https://namu.wiki' target='_blank'>나무위키</a>"; else if(c=='3') h="출처: 위키백과"; const i=document.getElementById('inContent'); const s=i.selectionStart; i.value = i.value.substring(0,s)+`\n### ${h} ###`+i.value.substring(i.selectionEnd); }
         function insertAudio() { let u = prompt("오디오 파일명"); if(u) { if(!u.startsWith('http')) u='https://tangshi.kr/mp3/'+u; document.getElementById('inContent').setRangeText(`{{오디오|${u}}}`); } }
         function cleanTitle(t) { return t ? t.replace(/\[.*?\]/g, '').trim() : ""; }
         function cleanTextForCard(t) { if(!t) return ""; return t.replace(/\{\{.*?\}\}/g, '').replace(/###.*?###/g, '').replace(/%%(.*?)%%/g, '$1').replace(/\$\$(.*?)\$\$/g, '$1').replace(/\[\[(.*?)\]\]/g, '$1').substring(0, 40)+"..."; }
-        
         function saveData() {
-            const isShow = document.getElementById('inShow').checked; 
-            const type = document.getElementById('inType').value;
-            const year = document.getElementById('inYear').value; 
-            const deathYear = document.getElementById('inDeathYear').value;
-            const era = document.getElementById('inEra').value; 
-            const name = document.getElementById('inName').value; 
-            const hanja = document.getElementById('inHanja').value;
-            const tags = document.getElementById('inTags').value.split(',').map(t=>t.trim()).filter(t=>t);
-            const relations = document.getElementById('inRelations').value;
-            const desc = document.getElementById('inDesc').value; 
-            const img = document.getElementById('inImg').value;
-            const cardColor = document.getElementById('inCardColor').value; 
-            const rawContent = document.getElementById('inContent').value;
-            const lat = document.getElementById('inLat').value; 
-            const lng = document.getElementById('inLng').value; 
-            const geoName = document.getElementById('inGeoName').value;
-
+            const isShow = document.getElementById('inShow').checked; const type = document.getElementById('inType').value; const year = document.getElementById('inYear').value; const deathYear = document.getElementById('inDeathYear').value; const era = document.getElementById('inEra').value; const name = document.getElementById('inName').value; const hanja = document.getElementById('inHanja').value; const tags = document.getElementById('inTags').value.split(',').map(t=>t.trim()).filter(t=>t); const relations = document.getElementById('inRelations').value; const desc = document.getElementById('inDesc').value; const img = document.getElementById('inImg').value; const cardColor = document.getElementById('inCardColor').value; const rawContent = document.getElementById('inContent').value; const lat = document.getElementById('inLat').value; const lng = document.getElementById('inLng').value; const geoName = document.getElementById('inGeoName').value;
             if (!year || !name) { alert('필수 항목 누락'); return; }
-            
-            let poems = []; 
-            let historyDetail = "";
-            
-            if (type === 'poet' && rawContent.trim()) { 
-                const blocks = rawContent.split('==='); 
-                poems = blocks.map(b => { 
-                    let temp = b;
-                    let pDesc = ""; 
-                    let pSimp = "";
-
-                    const simpSplit = temp.split('+++');
-                    let leftPart = simpSplit[0]; 
-                    let rightPart = "";
-
-                    if (simpSplit.length > 1) {
-                        rightPart = simpSplit.slice(1).join('+++'); 
-                    }
-
-                    if (rightPart) {
-                        const descSplit = rightPart.split('---');
-                        pSimp = descSplit[0].trim(); 
-                        if (descSplit.length > 1) {
-                            pDesc = descSplit.slice(1).join('---').trim(); 
-                        }
-                    } else {
-                        const descSplit = leftPart.split('---');
-                        if (descSplit.length > 1) {
-                            pDesc = descSplit.slice(1).join('---').trim();
-                            leftPart = descSplit[0];
-                        }
-                    }
-
-                    const idx = leftPart.indexOf('|'); 
-                    if (idx !== -1) {
-                        return { 
-                            title: leftPart.substring(0, idx).trim(), 
-                            content: leftPart.substring(idx + 1).trim(), 
-                            simplified: pSimp, 
-                            desc: pDesc 
-                        };
-                    }
-                    return null; 
-                }).filter(p => p); 
-            } else { 
-                historyDetail = rawContent.trim(); 
-            }
-            
-            // [v13.31] rawContent 저장 추가
+            let poems = []; let historyDetail = "";
+            if (type === 'poet' && rawContent.trim()) { const blocks = rawContent.split('==='); poems = blocks.map(b => { let temp = b; let pDesc = ""; let pSimp = ""; const simpSplit = temp.split('+++'); let leftPart = simpSplit[0]; let rightPart = ""; if (simpSplit.length > 1) { rightPart = simpSplit.slice(1).join('+++'); } if (rightPart) { const descSplit = rightPart.split('---'); pSimp = descSplit[0].trim(); if (descSplit.length > 1) { pDesc = descSplit.slice(1).join('---').trim(); } } else { const descSplit = leftPart.split('---'); if (descSplit.length > 1) { pDesc = descSplit.slice(1).join('---').trim(); leftPart = descSplit[0]; } } const idx = leftPart.indexOf('|'); if (idx !== -1) { return { title: leftPart.substring(0, idx).trim(), content: leftPart.substring(idx + 1).trim(), simplified: pSimp, desc: pDesc }; } return null; }).filter(p => p); } else { historyDetail = rawContent.trim(); }
             const newData = { id: editingId || Date.now(), year, deathYear, era, type, name, hanja, tags, relations, desc, img, isShow, cardColor, poems, historyDetail, lat, lng, geoName, rawContent };
-            if (editingId) { 
-                const idx = db.findIndex(d => String(d.id) === String(editingId)); 
-                if (idx !== -1) db[idx] = newData; 
-            } else { 
-                db.push(newData); 
-            }
+            if (editingId) { const idx = db.findIndex(d => String(d.id) === String(editingId)); if (idx !== -1) db[idx] = newData; } else { db.push(newData); }
             saveToLocal(); render(); populateEraFilter(); clearForm();
         }
-
-        function clearForm() {
-            document.getElementById('inYear').value = ''; document.getElementById('inDeathYear').value = '';
-            document.getElementById('inName').value = ''; document.getElementById('inHanja').value = '';
-            document.getElementById('inTags').value = ''; document.getElementById('inRelations').value = '';
-            document.getElementById('inDesc').value = ''; document.getElementById('inImg').value = ''; document.getElementById('inContent').value = '';
-            document.getElementById('inLat').value = ''; document.getElementById('inLng').value = ''; document.getElementById('inGeoName').value = '';
-            document.getElementById('inShow').checked = true; document.getElementById('inCardColor').value = "#ffffff";
-            editingId = null; document.getElementById('btnSave').innerText = "저장";
-            document.getElementById('formTitle').innerText = "데이터 입력";
-        }
-        function deleteItem(id) { if(confirm('삭제?')) { db = db.filter(i => String(i.id) !== String(id)); saveToLocal(); render(); populateEraFilter(); } }
-        function resetAllData() { if(confirm('전체 삭제?')) { localStorage.removeItem('tangTimelineDB'); location.reload(); } }
-
-        function openModal(id, keepHistory = false) {
-            const item = db.find(d => String(d.id) === String(id)); if (!item) return;
-            if (!keepHistory) { modalHistory = []; document.getElementById('backBtn').style.display = 'none'; }
-            currentOpenId = id;
-            document.getElementById('floatingCloseBtn').style.display = 'block';
-            
-            const editBtnHtml = isAdmin ? `<div style="text-align:right; margin-bottom:10px; clear:both;"><span class="btn-text btn-edit" onclick="editItem('${item.id}'); closeModal('detailModal');">[수정]</span><span class="btn-text btn-del" onclick="deleteItem('${item.id}'); closeModal('detailModal');">[삭제]</span></div>` : '';
-            
-            let nameHtml = `${cleanTitle(item.name)}`;
-            if (item.type === 'poet') {
-                let subInfo = []; if (item.hanja) subInfo.push(item.hanja);
-                if (item.deathYear) subInfo.push(`${item.year}~${item.deathYear}`); else subInfo.push(item.year);
-                if (subInfo.length > 0) nameHtml += ` <span style='font-size:0.6em; color:#888; font-weight:normal;'>(${subInfo.join(' ')})</span>`;
-            } else { nameHtml += ` <span style='font-size:0.6em; color:#888; font-weight:normal;'>(${item.year})</span>`; }
-            
-            document.getElementById('mName').innerHTML = nameHtml;
-            const tagsHtml = item.tags ? item.tags.map(t => `<span class="tag-badge" onclick="searchTag('${t}'); closeModal('detailModal');">#${t}</span>`).join('') : "";
-            document.getElementById('mTags').innerHTML = tagsHtml;
-            const mImg = document.getElementById('mImg');
-            if(item.img) { mImg.src = item.img; mImg.style.display = 'block'; } else { mImg.style.display = 'none'; }
-            document.getElementById('mDesc').innerHTML = editBtnHtml + parseText(item.desc, false);
-            
-            const mapContainer = document.getElementById('itemMapContainer');
-            if (item.lat && item.lng) {
-                mapContainer.style.display = 'block';
-                if(itemMap) { itemMap.remove(); }
-                setTimeout(() => {
-                    itemMap = L.map('itemMapContainer').setView([item.lat, item.lng], 6);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(itemMap);
-                    L.marker([item.lat, item.lng]).addTo(itemMap).bindPopup(`<b>${item.geoName||item.name}</b>`).openPopup();
-                }, 200);
-            } else { mapContainer.style.display = 'none'; }
-
-            const area = document.getElementById('mContentArea'); area.innerHTML = '';
-            if (item.type === 'poet' && item.poems) {
-                item.poems.forEach((p, index) => {
-                    const details = document.createElement('details'); details.className = 'outer-details';
-                    let body = `<div class="hanja-text">${parseText(p.content, true)}</div>`; 
-                    if (p.simplified) body += `<span class="simp-btn" onclick="toggleSimplified('simp_${item.id}_${index}')">🇨🇳 간체자 보기</span><div id="simp_${item.id}_${index}" class="simplified-box"><div style="margin-top:5px;">${parseText(p.simplified, true)}</div></div>`;
-                    if(p.desc) body += `<details class="inner-details"><summary class="inner-summary">[해설 보기]</summary><div class="explain-text">${parseText(p.desc, false)}</div></details>`; 
-                    details.innerHTML = `<summary class="outer-summary">${cleanTitle(p.title)}</summary><div class="poem-body">${body}</div>`;
-                    area.appendChild(details);
-                });
-            } else if (item.historyDetail) { area.innerHTML = `<div class="poem-body">${parseText(item.historyDetail, false)}</div>`; }
-            document.getElementById('detailModal').style.display = "block";
-        }
-
-        function openStatModal() {
-            const totalCards = db.length; 
-            const stats = {}; let totalPoems = 0;
-            db.forEach(item => {
-                if (item.type === 'poet') {
-                    const count = (item.poems || []).length;
-                    if(count > 0) {
-                        const key = cleanTitle(item.name);
-                        stats[key] = (stats[key] || 0) + count;
-                        totalPoems += count;
-                    }
-                }
-            });
-            const sortedStats = Object.entries(stats).sort((a, b) => b[1] - a[1]);
-            let html = `<table class="stat-table"><tr><th>총 데이터(카드)</th><td>${totalCards}개</td></tr><tr><th>수록된 작품 수</th><td>${totalPoems}수</td></tr><tr><th colspan="2" style="text-align:center; background:#eee;">🏆 인물별 작품 수 랭킹</th></tr></table><div class="stat-scroll-box"><table class="stat-rank-table">`;
-            sortedStats.forEach((entry, index) => { html += `<tr><td class="rank-num">${index + 1}</td><td>${entry[0]}</td><td style="text-align:right; font-weight:bold;">${entry[1]}수</td></tr>`; });
-            if (sortedStats.length === 0) html += `<tr><td colspan="3" style="text-align:center; padding:20px;">집계된 작품이 없습니다.</td></tr>`;
-            html += `</table></div>`;
-            document.getElementById('statContent').innerHTML = html; document.getElementById('statModal').style.display = 'block';
-        }
-
-        function openContextModal(targetId) {
-            const targetItem = db.find(d => String(d.id) === String(targetId)); if (!targetItem) return;
-            const idx = db.findIndex(d => String(d.id) === String(targetId));
-            document.getElementById('ctxTargetYear').innerText = targetItem.year;
-            const siblings = db.slice(Math.max(0, idx - 5), Math.min(db.length, idx + 6));
-            const list = document.getElementById('ctxList'); list.innerHTML = '';
-            siblings.forEach(item => {
-                const li = document.createElement('li'); const isMinor = !item.isShow;
-                li.className = `ctx-item ${item.id === targetId ? 'current' : ''} ${isMinor ? 'minor' : ''}`;
-                li.onclick = () => { closeModal('contextModal'); openModal(item.id); };
-                li.innerHTML = `<div class="ctx-year">${item.year}</div><div class="ctx-info"><div class="ctx-name">${item.name}</div><span class="ctx-desc">${item.desc.substring(0, 40)}...</span></div>`;
-                list.appendChild(li);
-            });
-            document.getElementById('contextModal').style.display = "block";
-        }
-        function openModalByName(name) {
-            const item = db.find(d => cleanTitle(d.name) === name.trim());
-            if(item) { if(currentOpenId) modalHistory.push(currentOpenId); document.getElementById('backBtn').style.display='block'; openModal(item.id); }
-            else alert("DB에 없는 인물입니다.");
-        }
+        function clearForm() { document.getElementById('inYear').value = ''; document.getElementById('inDeathYear').value = ''; document.getElementById('inName').value = ''; document.getElementById('inHanja').value = ''; document.getElementById('inTags').value = ''; document.getElementById('inRelations').value = ''; document.getElementById('inDesc').value = ''; document.getElementById('inImg').value = ''; document.getElementById('inContent').value = ''; document.getElementById('inLat').value = ''; document.getElementById('inLng').value = ''; document.getElementById('inGeoName').value = ''; document.getElementById('inShow').checked = true; document.getElementById('inCardColor').value = "#ffffff"; editingId = null; document.getElementById('btnSave').innerText = "저장"; document.getElementById('formTitle').innerText = "데이터 입력"; }
+        function openModal(id, keepHistory = false) { const item = db.find(d => String(d.id) === String(id)); if (!item) return; if (!keepHistory) { modalHistory = []; document.getElementById('backBtn').style.display = 'none'; } currentOpenId = id; document.getElementById('floatingCloseBtn').style.display = 'block'; const editBtnHtml = isAdmin ? `<div style="text-align:right; margin-bottom:10px; clear:both;"><span class="btn-text btn-edit" onclick="editItem('${item.id}'); closeModal('detailModal');">[수정]</span><span class="btn-text btn-del" onclick="deleteItem('${item.id}'); closeModal('detailModal');">[삭제]</span></div>` : ''; let nameHtml = `${cleanTitle(item.name)}`; if (item.type === 'poet') { let subInfo = []; if (item.hanja) subInfo.push(item.hanja); if (item.deathYear) subInfo.push(`${item.year}~${item.deathYear}`); else subInfo.push(item.year); if (subInfo.length > 0) nameHtml += ` <span style='font-size:0.6em; color:#888; font-weight:normal;'>(${subInfo.join(' ')})</span>`; } else { nameHtml += ` <span style='font-size:0.6em; color:#888; font-weight:normal;'>(${item.year})</span>`; } document.getElementById('mName').innerHTML = nameHtml; const tagsHtml = item.tags ? item.tags.map(t => `<span class="tag-badge" onclick="searchTag('${t}'); closeModal('detailModal');">#${t}</span>`).join('') : ""; document.getElementById('mTags').innerHTML = tagsHtml; const mImg = document.getElementById('mImg'); if(item.img) { mImg.src = item.img; mImg.style.display = 'block'; } else { mImg.style.display = 'none'; } document.getElementById('mDesc').innerHTML = editBtnHtml + parseText(item.desc, false); const mapContainer = document.getElementById('itemMapContainer'); if (item.lat && item.lng) { mapContainer.style.display = 'block'; if(itemMap) { itemMap.remove(); } setTimeout(() => { itemMap = L.map('itemMapContainer').setView([item.lat, item.lng], 6); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(itemMap); L.marker([item.lat, item.lng]).addTo(itemMap).bindPopup(`<b>${item.geoName||item.name}</b>`).openPopup(); }, 200); } else { mapContainer.style.display = 'none'; } const area = document.getElementById('mContentArea'); area.innerHTML = ''; if (item.type === 'poet' && item.poems) { item.poems.forEach((p, index) => { const details = document.createElement('details'); details.className = 'outer-details'; let body = `<div class="hanja-text">${parseText(p.content, true)}</div>`; if (p.simplified) body += `<span class="simp-btn" onclick="toggleSimplified('simp_${item.id}_${index}')">🇨🇳 간체자 보기</span><div id="simp_${item.id}_${index}" class="simplified-box"><div style="margin-top:5px;">${parseText(p.simplified, true)}</div></div>`; if(p.desc) body += `<details class="inner-details"><summary class="inner-summary">[해설 보기]</summary><div class="explain-text">${parseText(p.desc, false)}</div></details>`; details.innerHTML = `<summary class="outer-summary">${cleanTitle(p.title)}</summary><div class="poem-body">${body}</div>`; area.appendChild(details); }); } else if (item.historyDetail) { area.innerHTML = `<div class="poem-body">${parseText(item.historyDetail, false)}</div>`; } document.getElementById('detailModal').style.display = "block"; }
+        function openStatModal() { const totalCards = db.length; const stats = {}; let totalPoems = 0; db.forEach(item => { if (item.type === 'poet') { const count = (item.poems || []).length; if(count > 0) { const key = cleanTitle(item.name); stats[key] = (stats[key] || 0) + count; totalPoems += count; } } }); const sortedStats = Object.entries(stats).sort((a, b) => b[1] - a[1]); let html = `<table class="stat-table"><tr><th>총 데이터(카드)</th><td>${totalCards}개</td></tr><tr><th>수록된 작품 수</th><td>${totalPoems}수</td></tr><tr><th colspan="2" style="text-align:center; background:#eee;">🏆 인물별 작품 수 랭킹</th></tr></table><div class="stat-scroll-box"><table class="stat-rank-table">`; sortedStats.forEach((entry, index) => { html += `<tr><td class="rank-num">${index + 1}</td><td>${entry[0]}</td><td style="text-align:right; font-weight:bold;">${entry[1]}수</td></tr>`; }); if (sortedStats.length === 0) html += `<tr><td colspan="3" style="text-align:center; padding:20px;">집계된 작품이 없습니다.</td></tr>`; html += `</table></div>`; document.getElementById('statContent').innerHTML = html; document.getElementById('statModal').style.display = 'block'; }
+        function openContextModal(targetId) { const targetItem = db.find(d => String(d.id) === String(targetId)); if (!targetItem) return; const idx = db.findIndex(d => String(d.id) === String(targetId)); document.getElementById('ctxTargetYear').innerText = targetItem.year; const siblings = db.slice(Math.max(0, idx - 5), Math.min(db.length, idx + 6)); const list = document.getElementById('ctxList'); list.innerHTML = ''; siblings.forEach(item => { const li = document.createElement('li'); const isMinor = !item.isShow; li.className = `ctx-item ${item.id === targetId ? 'current' : ''} ${isMinor ? 'minor' : ''}`; li.onclick = () => { closeModal('contextModal'); openModal(item.id); }; li.innerHTML = `<div class="ctx-year">${item.year}</div><div class="ctx-info"><div class="ctx-name">${item.name}</div><span class="ctx-desc">${item.desc.substring(0, 40)}...</span></div>`; list.appendChild(li); }); document.getElementById('contextModal').style.display = "block"; }
+        function openModalByName(name) { const item = db.find(d => cleanTitle(d.name) === name.trim()); if(item) { if(currentOpenId) modalHistory.push(currentOpenId); document.getElementById('backBtn').style.display='block'; openModal(item.id); } else alert("DB에 없는 인물입니다."); }
         function closeModal(id) { document.getElementById(id).style.display = "none"; document.getElementById('floatingCloseBtn').style.display = 'none'; }
         window.onclick = function(e) { if(e.target.classList.contains('modal')) { e.target.style.display="none"; document.getElementById('floatingCloseBtn').style.display = 'none'; } }
-        
-        function openMapModal() {
-            document.getElementById('mapModal').style.display = 'block';
-            setTimeout(() => {
-                if (!map) { map = L.map('map').setView([34.26, 108.94], 5); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(map); markersLayer = L.layerGroup().addTo(map); } 
-                else { map.invalidateSize(); }
-                markersLayer.clearLayers();
-                db.forEach(item => {
-                    if(item.lat && item.lng) { 
-                        let iconHtml = item.img ? `<div class="custom-map-marker" style="background-image: url('${item.img}');"></div>` : `<div class="custom-map-marker default-marker">${cleanTitle(item.name).charAt(0)}</div>`;
-                        const customIcon = L.divIcon({ html: iconHtml, className: 'marker-container', iconSize: [40, 40], iconAnchor: [20, 20] });
-                        const m = L.marker([item.lat, item.lng], {icon: customIcon});
-                        m.bindTooltip(`<b>${cleanTitle(item.name)}</b><br><small>${item.geoName||''}</small>`);
-                        m.on('click', () => { closeModal('mapModal'); openModal(item.id); });
-                        markersLayer.addLayer(m); 
-                    }
-                });
-            }, 200);
-        }
-
-        function openRelModal() {
-            document.getElementById('relModal').style.display = 'block';
-            const nodes = []; 
-            const edges = []; 
-            const ids = new Set();
-            
-            const imageMap = {};
-            db.forEach(i => {
-                if(i.img) imageMap[cleanTitle(i.name)] = i.img;
-            });
-
-            db.forEach(item => {
-                if(!item.isShow || !item.relations) return;
-                
-                const name = cleanTitle(item.name);
-                
-                if(!ids.has(name)) { 
-                    if(item.img) nodes.push({id:name, label:name, shape:'circularImage', image:item.img, size:30, borderWidth:3, color:{border:'#ffcc00', background:'#ffffff'}});
-                    else nodes.push({id:name, label:name, size:25, shape:'dot', color:'#ffcc00'}); 
-                    ids.add(name); 
-                }
-                
-                item.relations.split(',').forEach(r => {
-                    const p = r.split(':'); 
-                    const target = p[0].trim();
-                    const relationLabel = p[1] ? p[1].trim() : '';
-
-                    if(!ids.has(target)) { 
-                        if(imageMap[target]) {
-                            nodes.push({id:target, label:target, shape:'circularImage', image:imageMap[target], size:20, borderWidth:2, color:{border:'#eee', background:'#ffffff'}});
-                        } else {
-                            nodes.push({id:target, label:target, size:20, shape:'dot', color:'#eee'}); 
-                        }
-                        ids.add(target); 
-                    }
-                    edges.push({from:name, to:target, label:relationLabel, arrows:'to'});
-                });
-            });
-            const container = document.getElementById('network');
-            new vis.Network(container, { nodes, edges }, { nodes:{font:{size:16, face:'KoPub Batang'}}, physics:{stabilization:false}, interaction:{hover:true} });
-        }
-        
+        function openMapModal() { document.getElementById('mapModal').style.display = 'block'; setTimeout(() => { if (!map) { map = L.map('map').setView([34.26, 108.94], 5); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(map); markersLayer = L.layerGroup().addTo(map); } else { map.invalidateSize(); } markersLayer.clearLayers(); db.forEach(item => { if(item.lat && item.lng) { let iconHtml = item.img ? `<div class="custom-map-marker" style="background-image: url('${item.img}');"></div>` : `<div class="custom-map-marker default-marker">${cleanTitle(item.name).charAt(0)}</div>`; const customIcon = L.divIcon({ html: iconHtml, className: 'marker-container', iconSize: [40, 40], iconAnchor: [20, 20] }); const m = L.marker([item.lat, item.lng], {icon: customIcon}); m.bindTooltip(`<b>${cleanTitle(item.name)}</b><br><small>${item.geoName||''}</small>`); m.on('click', () => { closeModal('mapModal'); openModal(item.id); }); markersLayer.addLayer(m); } }); }, 200); }
+        function openRelModal() { document.getElementById('relModal').style.display = 'block'; const nodes = []; const edges = []; const ids = new Set(); const imageMap = {}; db.forEach(i => { if(i.img) imageMap[cleanTitle(i.name)] = i.img; }); db.forEach(item => { if(!item.isShow || !item.relations) return; const name = cleanTitle(item.name); if(!ids.has(name)) { if(item.img) nodes.push({id:name, label:name, shape:'circularImage', image:item.img, size:30, borderWidth:3, color:{border:'#ffcc00', background:'#ffffff'}}); else nodes.push({id:name, label:name, size:25, shape:'dot', color:'#ffcc00'}); ids.add(name); } item.relations.split(',').forEach(r => { const p = r.split(':'); const target = p[0].trim(); const relationLabel = p[1] ? p[1].trim() : ''; if(!ids.has(target)) { if(imageMap[target]) { nodes.push({id:target, label:target, shape:'circularImage', image:imageMap[target], size:20, borderWidth:2, color:{border:'#eee', background:'#ffffff'}}); } else { nodes.push({id:target, label:target, size:20, shape:'dot', color:'#eee'}); } ids.add(target); } edges.push({from:name, to:target, label:relationLabel, arrows:'to'}); }); }); const container = document.getElementById('network'); new vis.Network(container, { nodes, edges }, { nodes:{font:{size:16, face:'KoPub Batang'}}, physics:{stabilization:false}, interaction:{hover:true} }); }
         function adjustPadding() { const h = document.getElementById('stickyHeader').offsetHeight; document.getElementById('timeline-root').style.paddingTop = (h + 30) + 'px'; }
-        
         async function adminLogin() { if (isAdmin) return; const p = prompt("관리자 비밀번호:"); if (!p) return; const h = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(p)))).map(b => b.toString(16).padStart(2, '0')).join(''); if (h === "6eb20c53054a7218e6731761b7539d9e38f6f5e39e53c2d78e0edd732de650f2") { isAdmin = true; document.getElementById('adminToggle').style.display = 'block'; alert("관리자 모드 활성화!"); render(); } else alert("오류"); }
-
-        async function init() {
-            try {
-                try { const r = await fetch('database.json'); if(r.ok) { const j = await r.json(); db = j.data || []; config = j.config || defaultConfig; } else throw new Error("No ext DB"); } 
-                catch (e) { const s = localStorage.getItem('tangTimelineDB'); db = s ? JSON.parse(s) : []; const c = localStorage.getItem('tangTimelineConfig'); config = c ? JSON.parse(c) : {...defaultConfig}; }
-                applyConfigUI(); populateEraFilter(); render();
-                document.getElementById('pageDesc').innerText = config.desc; document.getElementById('adminToggle').style.display = 'none';
-                adjustPadding(); window.addEventListener('resize', adjustPadding);
-            } catch (e) { alert("초기화 오류: " + e.message); }
-        }
-
+        async function init() { try { try { const r = await fetch('database.json'); if(r.ok) { const j = await r.json(); db = j.data || []; config = j.config || defaultConfig; } else throw new Error("No ext DB"); } catch (e) { const s = localStorage.getItem('tangTimelineDB'); db = s ? JSON.parse(s) : []; const c = localStorage.getItem('tangTimelineConfig'); config = c ? JSON.parse(c) : {...defaultConfig}; } applyConfigUI(); populateEraFilter(); render(); document.getElementById('pageDesc').innerText = config.desc; document.getElementById('adminToggle').style.display = 'none'; adjustPadding(); window.addEventListener('resize', adjustPadding); } catch (e) { alert("초기화 오류: " + e.message); } }
         init();
     </script>
 </body>
