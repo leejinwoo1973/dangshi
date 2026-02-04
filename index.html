@@ -6,7 +6,6 @@
     <title>나만의 타임라인 DB</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=KoPub+Batang:wght@400;700&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
-    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
@@ -26,9 +25,15 @@
         h1 { color: var(--line-color); margin: 0 0 5px 0; text-shadow: 2px 2px 0px rgba(255,255,255,0.8); }
         .page-desc { color: #555; font-size: 0.95rem; margin-bottom: 15px; font-weight: bold; text-shadow: 1px 1px 0px rgba(255,255,255,0.8); }
         
-        .search-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
-        .search-input { padding: 8px; border: 2px solid var(--line-color); border-radius: 20px; width: 250px; outline: none; }
-        .filter-select { padding: 8px; border: 1px solid #ccc; border-radius: 5px; }
+        /* [검색창] */
+        .search-bar { display: flex; justify-content: center; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; }
+        .search-wrapper { position: relative; display: inline-block; }
+        .search-input { padding: 8px 35px 8px 15px; border: 2px solid var(--line-color); border-radius: 20px; width: 250px; outline: none; font-family: 'KoPub Batang'; }
+        .search-clear-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: #ccc; color: #fff; border-radius: 50%; width: 18px; height: 18px; line-height: 16px; text-align: center; font-size: 12px; cursor: pointer; display: none; font-weight: bold; }
+        .search-clear-btn:hover { background: #999; }
+        .filter-select { padding: 8px; border: 1px solid #ccc; border-radius: 5px; background: #fff; }
+        .header-btn { background-color: #fff; color: #444; border: 1px solid #ccc; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: inline-flex; align-items: center; gap: 5px; }
+        .header-btn:hover { transform: scale(1.05); background-color: #f8f9fa; border-color: var(--line-color); color: var(--line-color); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .stat-btn, .print-btn, .btn-common { background: #555; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight:bold; transition: transform 0.2s; }
         .btn-map { background: #28a745; } .btn-rel { background: #6f42c1; } .btn-stat { background: #17a2b8; } .print-btn { background: #333; }
         .stat-btn:hover, .btn-common:hover { transform: scale(1.05); }
@@ -37,26 +42,21 @@
         .timeline-headers { position: relative; max-width: 1000px; width: 100%; height: 60px; margin: 0 auto; padding-bottom: 15px; }
         #badgeLeft, #badgeRight { position: absolute; top: 0; display: inline-block; padding: 12px 0; width: 160px; border-radius: 15px; font-weight: bold; font-size: 1.2rem; color: #333; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); text-align: center; background-color: #fff; }
         #badgeLeft { right: 50%; margin-right: 50px; } #badgeRight { left: 50%; margin-left: 50px; }
-
         .timeline { position: relative; max-width: 1000px; margin: 0 auto; padding-bottom: 80px; padding-top: 20px; }
         .timeline::after { content: ''; position: absolute; width: 4px; background-color: var(--line-color); top: 0; bottom: 0; left: 50%; margin-left: -2px; z-index: 0; }
         .container { padding: 10px 50px; position: relative; width: 50%; }
         .left { left: 0; text-align: right; } .right { left: 50%; text-align: left; }
-        
         .content { padding: 15px; position: relative; transition: transform 0.2s; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 2px 2px 5px rgba(0,0,0,0.05); background: white; text-align: left; }
         .left .content { text-align: right; }
         .content:hover { transform: scale(1.02); box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 10; }
-        
         .year-bubble { position: absolute; width: 50px; height: 50px; background-color: white; border: 3px solid var(--line-color); border-radius: 50%; z-index: 10; text-align: center; line-height: 50px; font-weight: bold; font-size: 14px; color: var(--line-color); top: 15px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .year-bubble:hover { background-color: var(--line-color); color: white; transform: scale(1.1); }
         .left .year-bubble { right: -25px; } .right .year-bubble { left: -25px; }
-        
         .minor-row { width: 100%; height: 20px; position: relative; margin: 5px 0; }
         .minor-dot { position: absolute; left: 50%; margin-left: -6px; width: 12px; height: 12px; background-color: white; border: 2px solid var(--dot-color); border-radius: 50%; cursor: pointer; z-index: 5; transition: all 0.2s; }
         .minor-dot:hover { background-color: var(--edit-color); border-color: var(--edit-color); transform: scale(1.5); }
         .minor-dot::before { content: attr(data-tooltip); position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .minor-dot:hover::before { opacity: 1; }
-
         .thumb-img { max-width: 80px; max-height: 80px; display: block; margin: 5px; border: 1px solid #ddd; padding: 2px; background: #fff; }
         .left .thumb-img { float: left; margin-right: 15px; } .right .thumb-img { float: right; margin-left: 15px; }
         .era-tag { font-size: 0.8em; color: #666; display: block; margin-bottom: 2px;}
@@ -69,30 +69,53 @@
         .tag-badge { display: inline-block; font-size: 0.8rem; background: var(--tag-bg); color: #555; padding: 2px 8px; border: 1px solid var(--tag-border); border-radius: 5px; margin-right: 6px; margin-bottom: 6px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease; }
         .tag-badge:hover { transform: translateY(-1px); box-shadow: 0 3px 5px rgba(0,0,0,0.1); background-color: #f8f9fa; border-color: #999; color: var(--line-color); }
 
-        /* [모달 공통] */
+        /* [모달] */
         .modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
         .modal-content { background-color: #fff; margin: 2% auto; padding: 30px; border: 1px solid #888; width: 85%; max-width: 800px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; position: relative; }
-        .close { color: #aaa; float: right; font-size: 32px; font-weight: bold; cursor: pointer; position: sticky; top: 0; right: 0; z-index: 10; background: rgba(255,255,255,0.9); padding: 0 10px; border-radius: 5px;}
-        .close:hover { color: #000; }
+        .close { color: #aaa; float: right; font-size: 32px; font-weight: bold; cursor: pointer; position: absolute; top: 10px; right: 20px; z-index: 999999; background: rgba(255,255,255,0.8); padding: 0 8px; border-radius: 5px; }
+        .close:hover { color: #000; background: #fff; }
         #floatingCloseBtn { display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 3100; background-color: rgba(0, 0, 0, 0.75); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; backdrop-filter: blur(4px); transition: all 0.2s; }
         .back-btn { display: none; float: left; background: #eee; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; color: #333; }
 
         /* [상세 모달 내부] */
         .modal-body-container { background: #fdfbf7; padding: 25px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 20px; display: block; overflow: hidden; }
         #mImg { float: left; margin-right: 25px; margin-bottom: 10px; max-width: 250px; width: 35%; box-shadow: 0 4px 10px rgba(0,0,0,0.15); border-radius: 5px; border: 3px solid #fff; }
-        #mName { margin-top: 0; margin-bottom: 10px; font-size: 2em; color: #333; border-bottom: 2px solid var(--line-color); display: inline-block; line-height: 1.2; margin-right: 15px; }
+        #mName { margin-top: 0; margin-bottom: 10px; font-size: 1.5rem; color: #333; border-bottom: 1px solid #ccc; display: inline-block; line-height: 1.3; margin-right: 15px; padding-bottom: 5px; }
         #mTags { display: inline-block; margin-bottom: 10px; vertical-align: middle; }
-        #mDesc { font-size: 1.05rem; line-height: 2.2; color: #333; text-align: justify; margin-top: 10px; display: block; }
-        #itemMapContainer { width: 100%; height: 250px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 20px; display: none; clear: both; }
-        #mContentArea { clear: both; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #ddd; }
+        #mDesc { font-size: 1.05rem; line-height: 1.8; color: #333; text-align: justify; margin-top: 10px; display: block; }
+        
+        /* [중요: 지도 컨테이너 수정] */
+        #itemMapContainer { 
+            width: 100%; 
+            height: 250px; 
+            border: 1px solid #ccc; 
+            border-radius: 5px; 
+            margin-bottom: 20px; 
+            display: none; 
+            clear: both;
+            position: relative; 
+            z-index: 1; /* 지도를 하위 레이어로 설정 */
+        }
+        
+        /* [중요: 본문 영역 수정] */
+        #mContentArea { 
+            clear: both; 
+            margin-top: 40px; 
+            padding-top: 20px; 
+            border-top: 1px dashed #ddd; 
+            position: relative;
+            z-index: 10; /* 본문을 지도보다 높은 레이어로 설정 */
+        }
         
         details.outer-details { margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fff; overflow: visible !important; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
-        summary.outer-summary { padding: 15px; cursor: pointer; background: #f8f9fa; font-weight: bold; font-size: 1.1em; list-style: none; display: flex; align-items: center; justify-content: space-between; }
+        summary.outer-summary { padding: 15px; cursor: pointer; background: #f8f9fa; font-weight: bold; font-size: 1.1em; list-style: none; display: flex; align-items: center; justify-content: flex-start; gap: 10px; }
         summary.outer-summary:hover { background: #e9ecef; }
-        summary.outer-summary::before { content: '📜 '; margin-right: 8px; }
+        summary.outer-summary::before { content: '📜 '; }
+        summary.outer-summary::after { content: '▼'; font-size: 0.8em; color: #888; margin-left: auto; transition: transform 0.2s; }
+        details[open] summary.outer-summary::after { transform: rotate(180deg); }
         
-        .poem-body { padding: 25px; white-space: pre-wrap; line-height: 2.2; color: #222; border-top: 1px solid #eee; font-family: 'KoPub Batang', serif; font-size: 1.1rem; overflow: visible; }
-        .hanja-text { font-size: 1.3rem; color: #111; margin-bottom: 10px; line-height: 2.5; }
+        .poem-body { padding: 25px; white-space: pre-wrap; line-height: 1.8; color: #222; border-top: 1px solid #eee; font-family: 'KoPub Batang', serif; font-size: 1.1rem; overflow: visible; }
+        .hanja-text { font-size: 1.3rem; color: #111; margin-bottom: 10px; line-height: 1.8; }
         details.inner-details { border-top: 1px dashed #ddd; padding-top: 15px; margin-top: 15px; overflow: visible; }
         summary.inner-summary { font-size: 0.9rem; color: #555; cursor: pointer; list-style: none; font-weight: bold; margin-bottom: 10px;}
         summary.inner-summary::before { content: '💡 '; }
@@ -103,19 +126,24 @@
         .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 15px 0; background: #000; clear: both; border-radius: 8px; }
         .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
         .simp-btn { font-size: 0.8rem; background: #fff0f5; color: #d63384; border: 1px solid #d63384; border-radius: 3px; cursor: pointer; padding: 2px 5px; margin-top: 5px; display: inline-block; margin-right: 5px;}
-        .simplified-box { display: none; font-family: 'Noto Serif SC', serif; color: #555; background: #f9f9f9; padding: 15px; border-radius: 5px; margin-top: 10px; border-left: 4px solid #d63384; line-height: 1.8; white-space: pre-wrap; }
-        ruby { display: inline-block; text-align: center; margin: 0 2px; ruby-position: under; }
-        rt { font-size: 0.6em; color: #777; font-family: sans-serif; display: block; line-height: 1.2; user-select: none; }
+        .simplified-box { display: none; font-family: 'Noto Serif SC', serif; color: #555; background: #f9f9f9; padding: 20px; border-radius: 8px; margin-top: 10px; border-left: 4px solid #d63384; line-height: 2.3; font-size: 1.1rem; white-space: pre-wrap; }
+        ruby { display: inline-block; text-align: center; margin: 0 4px; ruby-position: over; }
+        rt { font-size: 0.7em; color: #777; font-family: sans-serif; display: block; line-height: 1.2; user-select: none; }
         .qtfm-btn { display: inline-block; background-color: #E60026; color: white; padding: 5px 12px; border-radius: 20px; text-decoration: none; font-size: 0.9rem; font-weight: bold; margin-top: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s; }
+        .qtfm-btn:hover { transform: scale(1.05); background-color: #cc0022; text-decoration: none; color: white; }
+        
         .source-credit { margin-top: 30px; text-align: right; border-top: 1px dashed #ddd; padding-top: 10px; font-size: 0.85rem; color: #888; display: block; clear: both; }
         .source-credit img { vertical-align: middle; margin-right: 3px; max-height: 20px; }
-        .fn-marker { cursor: pointer; color: var(--link-color); font-weight: bold; font-size: 0.6em; vertical-align: super; position: relative; top: -0.2em; }
-        .fn-marker:hover::after { content: attr(data-tooltip); position: absolute; bottom: 150%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 0.95rem; width: max-content; max-width: 300px; white-space: normal; line-height: 1.5; z-index: 9999; pointer-events: none; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: left; }
-        .fn-list { margin-top: 30px; padding-top: 10px; border-top: 1px solid #ccc; font-size: 0.9rem; color: #555; clear: both; background: #f9f9f9; padding: 15px; border-radius: 5px; }
-        .fn-item { margin-bottom: 5px; }
-        .fn-back { text-decoration: none; margin-right: 5px; color: #999; font-weight: bold; }
+        .source-credit a { color: inherit; text-decoration: none; pointer-events: auto; }
 
-        /* [관리자 패널 및 시크릿 버튼] */
+        .highlight-box { display: inline-block; background-color: #333; color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.9em; margin-right: 5px; vertical-align: middle; }
+        .fn-marker { cursor: pointer; color: var(--link-color); font-weight: bold; font-size: 0.6em; vertical-align: super; position: relative; top: -0.2em; z-index: 100; }
+        .fn-marker:hover::after { content: attr(data-tooltip); position: absolute; bottom: 25px; left: 0; transform: translateX(0); background: rgba(0,0,0,0.95); color: #fff; padding: 12px 16px; border-radius: 8px; border-bottom-left-radius: 0; font-size: 1rem; width: max-content; max-width: 350px; white-space: normal; line-height: 1.6; z-index: 999999; pointer-events: none; box-shadow: 0 5px 20px rgba(0,0,0,0.4); text-align: left; }
+        .fn-list { margin-top: 40px; padding: 20px; border-top: 2px solid #eee; font-size: 0.95rem; color: #444; clear: both; background: #f9f9f9; border-radius: 8px; }
+        .fn-item { margin-bottom: 8px; }
+        .fn-back { text-decoration: none; margin-right: 5px; color: var(--link-color); font-weight: bold; cursor: pointer; }
+        .fn-back:hover { text-decoration: underline; color: red; }
+
         #adminPanel { display: none; position: fixed; top: 60px; right: 20px; width: 500px; background: white; border: 2px solid #333; padding: 25px; z-index: 2100; box-shadow: 0 5px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; font-family: sans-serif; }
         .form-group { margin-bottom: 12px; } .form-group label { display: block; font-weight: bold; font-size: 13px; margin-bottom: 5px;}
         .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; font-size: 14px; }
@@ -129,13 +157,10 @@
         .btn-green { background-color: #28a745; } .btn-blue { background-color: #007bff; } .btn-purple { background-color: #6f42c1; } .btn-orange { background-color: #fd7e14; }
         .syntax-guide { font-size: 11px; color: #555; background: #f8f9fa; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 5px; line-height: 1.5; letter-spacing: -0.5px; }
         .syntax-guide code { background: #fff; border: 1px solid #ccc; padding: 1px 4px; border-radius: 3px; color: #d63384; font-family: monospace; font-weight: bold; }
-        
         .admin-btn { position: fixed; top: 20px; right: 20px; padding: 8px 12px; background: #333; color: white; border: none; cursor: pointer; z-index: 2000; border-radius: 5px; display: none; }
-        
-        /* [v13.10] 시크릿 로그인 버튼 (투명) */
         .login-trigger { position: fixed; bottom: 0; right: 0; width: 50px; height: 50px; background: transparent; z-index: 9999; cursor: default; }
 
-        /* [특수 기능] */
+        /* 특수 기능 */
         #map { width: 100%; height: 500px; border-radius: 8px; border: 2px solid #333; }
         #network { width: 100%; height: 600px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px; }
         #cropperModal { display:none; position:fixed; z-index:4000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.9); }
@@ -170,14 +195,6 @@
             .left .content { align-items: flex-end; text-align: right; }
             .right .content { align-items: flex-start; text-align: left; }
         }
-        @media print {
-            .admin-btn, .search-bar, .action-btns, .config-section, .btn-group, .help-trigger, .modal, .simp-btn, .pinyin-btn, .tts-btn, .login-trigger, #floatingCloseBtn { display: none !important; }
-            #stickyHeader { position: static; box-shadow: none; }
-            body { background: white !important; color: black; padding-top: 0 !important; }
-            .content { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
-            .timeline::after { background-color: #ccc; }
-            .year-bubble { border-color: #333; color: #333; }
-        }
     </style>
 </head>
 <body>
@@ -186,12 +203,16 @@
             <h1 id="pageTitle">나만의 역사 연표</h1>
             <p id="pageDesc" class="page-desc">로딩 중...</p>
             <div class="search-bar">
-                <input type="text" id="searchInput" class="search-input" placeholder="이름, 내용, 태그 검색..." onkeyup="filterData()">
+                <div class="search-wrapper">
+                    <input type="text" id="searchInput" class="search-input" placeholder="이름, 내용, 태그 검색..." onkeyup="filterData()">
+                    <span id="searchClear" class="search-clear-btn" onclick="clearSearch()">✕</span>
+                </div>
+                
                 <select id="eraFilter" class="filter-select" onchange="filterData()"> <option value="all">모든 시대</option> </select>
-                <button class="btn-common btn-rel" onclick="openRelModal()">🕸️ 관계도</button>
-                <button class="btn-common btn-map" onclick="openMapModal()">🗺️ 지도</button>
-                <button class="stat-btn" onclick="openStatModal()">📊 통계</button>
-                <button class="print-btn" onclick="window.print()">🖨️ 인쇄</button>
+                <button class="header-btn" onclick="openRelModal()">🕸️ 관계도</button>
+                <button class="header-btn" onclick="openMapModal()">🗺️ 지도</button>
+                <button class="header-btn" onclick="openStatModal()">📊 통계</button>
+                <button class="header-btn" onclick="window.print()">🖨️ 인쇄</button>
             </div>
         </header>
         <div class="timeline-headers"><span id="badgeLeft">Left</span><span id="badgeRight">Right</span></div>
@@ -224,28 +245,26 @@
         <div class="form-group" style="background:#f0f8ff; padding:10px; border-radius:5px; border:1px solid #cceeff;">
             <label style="margin-bottom:0;"><input type="checkbox" id="inShow" checked> <strong>크게 보이기</strong></label>
         </div>
-        
         <div class="form-group" style="background:#e8f5e9; padding:10px; border-radius:5px; margin-bottom:10px;">
-             <label>📍 지도 위치 (영어 검색 권장)</label>
+             <label>📍 지도 위치</label>
              <div style="display:flex; gap:5px; margin-bottom:5px;"><input type="text" id="inLocationSearch" placeholder="예: Chang'an" style="flex:1;"><button type="button" onclick="searchLocation()" class="tool-btn btn-green" style="padding:5px 10px;">🔍</button></div>
              <div style="display:flex; gap:5px;"><input type="number" id="inLat" placeholder="위도" style="flex:1;"><input type="number" id="inLng" placeholder="경도" style="flex:1;"></div>
-             <input type="text" id="inGeoName" placeholder="장소명 (예: 장안)" style="margin-top:5px; width:100%;">
+             <input type="text" id="inGeoName" placeholder="장소명" style="margin-top:5px; width:100%;">
         </div>
-
         <div class="form-group"><label>위치</label> <select id="inType" onchange="updateFormUI()"><option value="poet" id="optLeft">왼쪽</option><option value="history" id="optRight">오른쪽</option></select></div>
         <div class="form-group"><label>연도 (시작 ~ 종료)</label>
-            <div style="display:flex; gap:5px;"><input type="number" id="inYear" placeholder="시작(출생)" style="flex:1;"><span style="padding-top:10px;">~</span><input type="number" id="inDeathYear" placeholder="종료(사망)" style="flex:1;"><input type="text" id="inEra" placeholder="시대" style="flex:1;"></div>
+            <div style="display:flex; gap:5px;"><input type="number" id="inYear" placeholder="시작" style="flex:1;"><span style="padding-top:10px;">~</span><input type="number" id="inDeathYear" placeholder="종료" style="flex:1;"><input type="text" id="inEra" placeholder="시대" style="flex:1;"></div>
         </div>
         <div class="form-group"><label>제목/이름</label>
-            <div style="display:flex; gap:5px;"><input type="text" id="inName" placeholder="한글 이름" style="flex:1;"><input type="text" id="inHanja" placeholder="한자 (선택)" style="flex:1;"></div>
+            <div style="display:flex; gap:5px;"><input type="text" id="inName" placeholder="이름" style="flex:1;"><input type="text" id="inHanja" placeholder="한자" style="flex:1;"></div>
         </div>
-        <div class="form-group"><label>🕸️ 인물 관계 (이름:관계)</label><input type="text" id="inRelations" placeholder="예: 두보:친구, 맹호연:존경"></div>
-        <div class="form-group"><label>태그 (쉼표 구분)</label> <input type="text" id="inTags" placeholder="예: 전쟁, 이별, 유배"></div>
+        <div class="form-group"><label>🕸️ 인물 관계 (이름:관계)</label><input type="text" id="inRelations" placeholder="예: 두보:친구"></div>
+        <div class="form-group"><label>태그 (쉼표 구분)</label> <input type="text" id="inTags"></div>
         <div class="form-group"><label>요약 (4줄)</label> <textarea id="inDesc" rows="4"></textarea></div>
         <div class="form-group"><label>이미지</label>
             <input type="text" id="inImg" placeholder="이미지 URL">
             <div style="margin-top:5px;">
-                <button type="button" onclick="document.getElementById('imgInput').click()" style="background:#666; color:white; border:none; padding:5px 10px; border-radius:3px;">📷 PC 사진 업로드 (자동 크롭)</button>
+                <button type="button" onclick="document.getElementById('imgInput').click()" style="background:#666; color:white; border:none; padding:5px 10px; border-radius:3px;">📷 PC 사진 업로드</button>
                 <input type="file" id="imgInput" accept="image/*" style="display:none;" onchange="handleImageSelect(this)">
             </div>
         </div>
@@ -253,11 +272,6 @@
             <label id="detailLabel" style="display:inline-block; margin-bottom:5px;">상세 내용</label>
             <div style="margin-bottom:5px;">
                 <button type="button" class="tool-btn btn-green" onclick="autoPinyin()">🔠 병음</button> <button type="button" class="tool-btn btn-blue" onclick="autoTone()">🔲 평측</button> <button type="button" class="tool-btn btn-orange" onclick="insertAudio()">🎵 오디오</button> <button type="button" class="tool-btn btn-purple" onclick="insertLicense()">📜 출처</button>
-            </div>
-            <div class="syntax-guide">
-                <code>%%굵게%%</code> &nbsp; <code>$$기울임$$</code> &nbsp; <code>[* 주석내용]</code><br>
-                <code>[링크](주소)</code> &nbsp; <code>{{이미지|주소|설명}}</code> &nbsp; <code>{{오디오|주소}}</code><br>
-                <code>===</code> (구분) &nbsp; <code>+++</code> (간체) &nbsp; <code>---</code> (해설)
             </div>
             <textarea id="inContent" rows="15"></textarea>
         </div>
@@ -293,6 +307,166 @@
         let isAdmin = false; 
         let map = null; let markersLayer = null; let cropper = null; let itemMap = null;
 
+        /* [핵심] 렌더링 함수 */
+        function render(query = "", eraFilter = "all") {
+            const root = document.getElementById('timeline-root'); root.innerHTML = '';
+            const safeQuery = query ? query.trim().toLowerCase() : "";
+            
+            const clearBtn = document.getElementById('searchClear');
+            if(clearBtn) clearBtn.style.display = safeQuery.length > 0 ? 'block' : 'none';
+
+            const filtered = db.filter(item => {
+                const eraMatch = eraFilter === 'all' || item.era === eraFilter;
+                if (!safeQuery) return eraMatch;
+                let textMatch = (item.name.toLowerCase().includes(safeQuery) || item.desc.toLowerCase().includes(safeQuery) || (item.tags && item.tags.join(" ").toLowerCase().includes(safeQuery)));
+                if (!textMatch && item.historyDetail && item.historyDetail.toLowerCase().includes(safeQuery)) textMatch = true;
+                if (!textMatch && item.poems) if (item.poems.some(p => p.title && p.title.toLowerCase().includes(safeQuery) || p.content && p.content.toLowerCase().includes(safeQuery))) textMatch = true;
+                return eraMatch && textMatch;
+            });
+
+            filtered.forEach(item => {
+                if (item.isShow) {
+                    const div = document.createElement('div'); div.className = item.type === 'poet' ? 'container left' : 'container right';
+                    const imgTag = item.img ? `<img src="${item.img}" class="thumb-img">` : '';
+                    let cardBg = (item.cardColor && item.cardColor !== "#ffffff") ? item.cardColor : (item.type === 'poet' ? config.leftCardColor : config.rightCardColor) || "#ffffff";
+                    
+                    const btns = isAdmin ? `<div class="action-btns" style="display:block;"><span class="btn-text btn-edit" onclick="editItem('${item.id}')">[수정]</span><span class="btn-text btn-del" onclick="deleteItem('${item.id}')">[삭제]</span></div>` : '';
+                    let titleHtml = cleanTitle(item.name);
+                    if (item.type === 'poet') {
+                        let subInfo = []; if (item.hanja) subInfo.push(item.hanja);
+                        if (item.deathYear) subInfo.push(`${item.year}~${item.deathYear}`); else subInfo.push(item.year);
+                        if (subInfo.length > 0) titleHtml += ` <span style='font-size:0.7em; font-weight:normal;'>(${subInfo.join(' ')})</span>`;
+                    }
+                    div.innerHTML = `<div class="year-bubble" onclick="openContextModal('${item.id}')">${item.year}</div><div class="content clearfix" style="background-color:${cardBg};">${imgTag} <span class="era-tag">${item.era}</span><div class="title-text" onclick="openModal('${item.id}')">${titleHtml}</div><small>${cleanTextForCard(item.desc)}</small>${btns}</div>`;
+                    root.appendChild(div);
+                } else {
+                    const div = document.createElement('div'); div.className = 'minor-row';
+                    div.innerHTML = `<div class="minor-dot" data-tooltip="${item.year} : ${item.name}" onclick="openModal('${item.id}')"></div>`;
+                    root.appendChild(div);
+                }
+            });
+            setTimeout(adjustPadding, 100);
+        }
+
+        /* [수정 기능] editItem 복구 */
+        function editItem(id) {
+            const item = db.find(d => String(d.id) === String(id));
+            if (!item) return;
+
+            editingId = item.id;
+            
+            document.getElementById('inYear').value = item.year;
+            document.getElementById('inDeathYear').value = item.deathYear || '';
+            document.getElementById('inEra').value = item.era || '';
+            document.getElementById('inName').value = item.name;
+            document.getElementById('inHanja').value = item.hanja || '';
+            document.getElementById('inTags').value = item.tags ? item.tags.join(', ') : '';
+            document.getElementById('inRelations').value = item.relations || '';
+            document.getElementById('inDesc').value = item.desc;
+            document.getElementById('inImg').value = item.img || '';
+            document.getElementById('inType').value = item.type;
+            document.getElementById('inLat').value = item.lat || '';
+            document.getElementById('inLng').value = item.lng || '';
+            document.getElementById('inGeoName').value = item.geoName || '';
+            document.getElementById('inCardColor').value = item.cardColor || '#ffffff';
+            document.getElementById('inShow').checked = item.isShow;
+
+            // [rawContent]가 있으면 그걸 쓰고, 없으면(옛날 데이터면) 복원
+            if (item.rawContent) {
+                document.getElementById('inContent').value = item.rawContent;
+            } else {
+                let content = "";
+                if (item.type === 'poet' && item.poems) {
+                    content = item.poems.map(p => {
+                        let section = `${p.title}|${p.content}\n\n`;
+                        if(p.simplified) section += `+++\n${p.simplified}\n\n`;
+                        if(p.desc) section += `---\n${p.desc}\n\n`;
+                        return section;
+                    }).join('===\n\n');
+                } else if (item.historyDetail) {
+                    content = item.historyDetail;
+                }
+                document.getElementById('inContent').value = content;
+            }
+
+            document.getElementById('btnSave').innerText = "수정 완료";
+            document.getElementById('adminPanel').style.display = 'block';
+            document.getElementById('formTitle').innerText = "데이터 수정";
+            document.getElementById('formTitle').scrollIntoView({behavior:'smooth'});
+        }
+
+        /* [삭제 기능] */
+        function deleteItem(id) { 
+            if(confirm('정말 삭제하시겠습니까?')) { 
+                const idStr = String(id);
+                db = db.filter(i => String(i.id) !== idStr); 
+                saveToLocal(); 
+                render(); 
+                populateEraFilter(); 
+                clearForm(); 
+            } 
+        }
+
+        /* [유틸리티] */
+        function parseText(t, m=false) { 
+            if(!t) return "";
+            t = t.replace(/(\[集評\]|\[집평\])/g, '<span class="highlight-box">$1</span>');
+            t = t.replace(/%%(.*?)%%/g, '<b>$1</b>').replace(/\$\$(.*?)\$\$/g, '<span style="color:#888; font-style:italic;">$1</span>')
+                 .replace(/'''(.*?)'''/g, '<b>$1</b>').replace(/''(.*?)''/g, '<i>$1</i>').replace(/~~(.*?)~~/g, '<del>$1</del>').replace(/--(.*?)--/g, '<del>$1</del>').replace(/__(.*?)__/g, '<u>$1</u>').replace(/\^\^(.*?)\^\^/g, '<sup>$1</sup>').replace(/,,(.*?),,/g, '<sub>$1</sub>')
+                 .replace(/{{{#([a-zA-Z0-9]+)\s+(.*?)}}}/g, '<span style="color:$1">$2</span>').replace(/{{{([+\-]\d)\s+(.*?)}}}/g, (m, s, c) => `<span style="font-size:${1.0+(parseInt(s)*0.2)}em">${c}</span>`);
+
+            let footnotes = []; let fnCount = 0; const blockId = Math.random().toString(36).substr(2, 5);
+            t = t.replace(/\[\*\s*(.*?)\]/g, (match, content) => {
+                fnCount++; footnotes.push({ id: `${blockId}-${fnCount}`, num: fnCount, content: content });
+                return `<sup class="fn-marker" id="ref-${blockId}-${fnCount}" data-tooltip="${content.replace(/"/g, '&quot;')}"><a href="#fn-${blockId}-${fnCount}" style="color:inherit; text-decoration:none;">[${fnCount}]</a></sup>`;
+            });
+
+            if(m) {
+                t = t.replace(/([\u2E80-\u9FFF\uF900-\uFAFF])\s*[(\uff08]([^)\uff09]+)[)\uff09]/g, "<ruby>$1<rt>$2</rt></ruby>");
+            }
+            
+            t = t.replace(/(https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([\w-]{11})(?:\S+)?)/g, '<div class="video-container"><iframe src="https://www.youtube.com/embed/$2" frameborder="0" allowfullscreen></iframe></div>')
+                 .replace(/\{\{오디오\|(.*?)\}\}/g, '<div style="margin-top:10px;"><audio controls src="$1" style="width:100%; border-radius:20px;"></audio></div>')
+                 .replace(/###(.*?)###/g, function(match, content) {
+                     let cleanContent = content.replace(/동양고전종합DB/g, "");
+                     return '<div class="source-credit">' + cleanContent + '</div>';
+                 })
+                 .replace(/\[\[(.+?)\]\]/g, '<span class="wiki-link" onclick="openModalByName(\'$1\')">$1</span>')
+                 .replace(/\{\{(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\}\}/g, '<a href="$2" target="_blank" class="img-card"><img src="$1" alt="$3"><span class="img-caption">$3</span></a>');
+
+            if (footnotes.length > 0) { 
+                t += `<div class="fn-list">`; 
+                footnotes.forEach(fn => { 
+                    t += `<div id="fn-${fn.id}" class="fn-item"><a href="#ref-${fn.id}" class="fn-back">[${fn.num}]</a> ${fn.content}</div>`; 
+                }); 
+                t += `</div>`; 
+            }
+            return t;
+        }
+
+        function updateFormUI() {}
+        function populateEraFilter() { const s = document.getElementById('eraFilter'); const e = [...new Set(db.map(item => item.era).filter(e => e))].sort(); s.innerHTML = '<option value="all">모든 시대</option>'; e.forEach(era => { s.innerHTML += `<option value="${era}">${era}</option>`; }); }
+        function filterData() { render(document.getElementById('searchInput').value.toLowerCase(), document.getElementById('eraFilter').value); }
+        function clearSearch() { document.getElementById('searchInput').value = ''; filterData(); }
+        function searchTag(tag) { document.getElementById('searchInput').value = tag; filterData(); }
+        function toggleAdmin() { document.getElementById('adminPanel').style.display = document.getElementById('adminPanel').style.display === 'block' ? 'none' : 'block'; }
+        function toggleConfig() { document.getElementById('configForm').style.display = document.getElementById('configForm').style.display === 'none' ? 'block' : 'none'; }
+        function toggleSimplified(id) { const el = document.getElementById(id); el.style.display = el.style.display === 'none' || el.style.display === '' ? 'block' : 'none'; }
+        function saveConfig() { 
+            config.title = document.getElementById('cfgTitle').value;
+            config.desc = document.getElementById('cfgDesc').value;
+            config.copyright = document.getElementById('cfgCopyright').value;
+            config.leftLabel = document.getElementById('cfgLabelLeft').value;
+            config.rightLabel = document.getElementById('cfgLabelRight').value;
+            config.bgColor = document.getElementById('cfgBgColor').value;
+            config.bgImage = document.getElementById('cfgBgImage').value;
+            config.bgRepeat = document.getElementById('cfgBgRepeat').value;
+            config.leftCardColor = document.getElementById('cfgLeftColor').value;
+            config.rightCardColor = document.getElementById('cfgRightColor').value;
+            localStorage.setItem('tangTimelineConfig', JSON.stringify(config)); 
+            applyConfigUI(); render(); alert('설정이 저장되었습니다.'); 
+        }
+
         function applyConfigUI() {
             document.getElementById('pageTitle').innerText = config.title; document.getElementById('pageDesc').innerText = config.desc;
             document.title = config.title; 
@@ -312,26 +486,13 @@
             updateFormUI(); setTimeout(adjustPadding, 100);
         }
 
-        async function init() {
-            try {
-                try { const r = await fetch('database.json'); if(r.ok) { const j = await r.json(); db = j.data || []; config = j.config || defaultConfig; } else throw new Error("No ext DB"); } 
-                catch (e) { const s = localStorage.getItem('tangTimelineDB'); db = s ? JSON.parse(s) : []; const c = localStorage.getItem('tangTimelineConfig'); config = c ? JSON.parse(c) : {...defaultConfig}; }
-                applyConfigUI(); populateEraFilter(); render();
-                document.getElementById('pageDesc').innerText = config.desc; document.getElementById('adminToggle').style.display = 'none';
-                adjustPadding(); window.addEventListener('resize', adjustPadding);
-            } catch (e) { alert("초기화 오류: " + e.message); }
-        }
-
-        function adjustPadding() { const h = document.getElementById('stickyHeader').offsetHeight; document.getElementById('timeline-root').style.paddingTop = (h + 30) + 'px'; }
-        async function adminLogin() { if (isAdmin) return; const p = prompt("관리자 비밀번호:"); if (!p) return; const h = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(p)))).map(b => b.toString(16).padStart(2, '0')).join(''); if (h === "6eb20c53054a7218e6731761b7539d9e38f6f5e39e53c2d78e0edd732de650f2") { isAdmin = true; document.getElementById('adminToggle').style.display = 'block'; alert("관리자 모드 활성화!"); render(); } else alert("오류"); }
         function saveToLocal() { db.sort((a, b) => a.year - b.year); localStorage.setItem('tangTimelineDB', JSON.stringify(db)); }
         function exportData() { const d = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ data: db, config: config })); const n = document.createElement('a'); n.href = d; n.download = "database.json"; document.body.appendChild(n); n.click(); n.remove(); }
         function importData(input) { const f = input.files[0]; if(!f) return; const r = new FileReader(); r.onload = function(e) { try { const l = JSON.parse(e.target.result); if(l.data) { db = l.data; config = l.config || defaultConfig; } else db = l; localStorage.setItem('tangTimelineConfig', JSON.stringify(config)); saveToLocal(); applyConfigUI(); alert('완료'); } catch(err) { alert('오류: ' + err.message); } }; r.readAsText(f); }
-
         async function searchLocation() { const q = document.getElementById('inLocationSearch').value; if(!q) return; try { const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`); const j = await r.json(); if(j.length>0) { document.getElementById('inLat').value = parseFloat(j[0].lat).toFixed(4); document.getElementById('inLng').value = parseFloat(j[0].lon).toFixed(4); alert("발견: "+j[0].display_name); } else alert("실패"); } catch(e){alert("오류");} }
         function handleImageSelect(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = function(e) { document.getElementById('cropperModal').style.display = 'block'; const img = document.getElementById('cropImage'); img.src = e.target.result; if(cropper) cropper.destroy(); cropper = new Cropper(img, { aspectRatio: 1, viewMode: 1 }); }; reader.readAsDataURL(input.files[0]); } }
         function performCrop() { if(!cropper) return; const canvas = cropper.getCroppedCanvas({ width:200, height:200 }); document.getElementById('inImg').value = canvas.toDataURL('image/jpeg', 0.8); document.getElementById('cropperModal').style.display='none'; }
-
+        
         function autoPinyin() { const i = document.getElementById('inContent'); const s = i.selectionStart; const e = i.selectionEnd; if(s===e) return alert("선택필요"); const t = pinyinPro.pinyin(i.value.substring(s,e), { type: 'all', toneType: 'symbol', nonZh: 'consecutive' }); i.setRangeText(t.map(x => x.isZh ? `${x.origin}(${x.pinyin})` : x.origin).join('')); }
         function autoTone() { const i = document.getElementById('inContent'); const s = i.selectionStart; const e = i.selectionEnd; if(s===e) return alert("선택필요"); const t = pinyinPro.pinyin(i.value.substring(s,e), { type: 'all', toneType: 'num', nonZh: 'consecutive' }); i.setRangeText(t.map(x => { if (!x.isZh) return x.origin; return `${x.origin}(${/[34]$/.test(x.pinyin)?'●':'○'})`; }).join('')); }
         function insertLicense() { const c = prompt("1.동양고전 2.나무위키 3.위키백과"); let h=""; if(c=='1') h="자료출처: <a href='http://db.cyberseodang.or.kr' target='_blank'><img src='http://db.cyberseodang.or.kr/images/front/logo_b.png'></a>"; else if(c=='2') h="출처: <a href='https://namu.wiki' target='_blank'>나무위키</a>"; else if(c=='3') h="출처: 위키백과"; const i=document.getElementById('inContent'); const s=i.selectionStart; i.value = i.value.substring(0,s)+`\n### ${h} ###`+i.value.substring(i.selectionEnd); }
@@ -339,165 +500,81 @@
         function cleanTitle(t) { return t ? t.replace(/\[.*?\]/g, '').trim() : ""; }
         function cleanTextForCard(t) { if(!t) return ""; return t.replace(/\{\{.*?\}\}/g, '').replace(/###.*?###/g, '').replace(/%%(.*?)%%/g, '$1').replace(/\$\$(.*?)\$\$/g, '$1').replace(/\[\[(.*?)\]\]/g, '$1').substring(0, 40)+"..."; }
         
-        function parseText(t, m=false) { 
-            if(!t) return "";
-            t = t.replace(/%%(.*?)%%/g, '<b>$1</b>').replace(/\$\$(.*?)\$\$/g, '<span style="color:#888; font-style:italic;">$1</span>')
-                 .replace(/'''(.*?)'''/g, '<b>$1</b>').replace(/''(.*?)''/g, '<i>$1</i>').replace(/~~(.*?)~~/g, '<del>$1</del>').replace(/--(.*?)--/g, '<del>$1</del>').replace(/__(.*?)__/g, '<u>$1</u>').replace(/\^\^(.*?)\^\^/g, '<sup>$1</sup>').replace(/,,(.*?),,/g, '<sub>$1</sub>')
-                 .replace(/{{{#([a-zA-Z0-9]+)\s+(.*?)}}}/g, '<span style="color:$1">$2</span>').replace(/{{{([+\-]\d)\s+(.*?)}}}/g, (m, s, c) => `<span style="font-size:${1.0+(parseInt(s)*0.2)}em">${c}</span>`);
-
-            let footnotes = []; let fnCount = 0; const blockId = Math.random().toString(36).substr(2, 5);
-            t = t.replace(/\[\*\s*(.*?)\]/g, (match, content) => {
-                fnCount++; footnotes.push({ id: `${blockId}-${fnCount}`, num: fnCount, content: content });
-                return `<sup class="fn-marker" data-tooltip="${content.replace(/"/g, '&quot;')}"><a href="#fn-${blockId}-${fnCount}" id="ref-${blockId}-${fnCount}">[${fnCount}]</a></sup>`;
-            });
-
-            if(m) t = t.replace(/([\u2E80-\u2EFF\u31C0-\u31EF\u3200-\u32FF\u3400-\u4DBF\u4E00-\u9FBF\uF900-\uFAFF])\(([^)]+)\)/g, "<ruby>$1<rt>$2</rt></ruby>"); 
-            t = t.replace(/(https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([\w-]{11})(?:\S+)?)/g, '<div class="video-container"><iframe src="https://www.youtube.com/embed/$2" frameborder="0" allowfullscreen></iframe></div>')
-                 .replace(/\{\{오디오\|(.*?)\}\}/g, '<div style="margin-top:10px;"><audio controls src="$1" style="width:100%; border-radius:20px;"></audio></div>')
-                 .replace(/###(.*?)###/g, '<div class="source-credit">$1</div>')
-                 .replace(/\[\[(.+?)\]\]/g, '<span class="wiki-link" onclick="openModalByName(\'$1\')">$1</span>')
-                 .replace(/\{\{(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\}\}/g, '<a href="$2" target="_blank" class="img-card"><img src="$1" alt="$3"><span class="img-caption">$3</span></a>');
-
-            if (footnotes.length > 0) { t += `<div class="fn-list"><hr>`; footnotes.forEach(fn => { t += `<div id="fn-${fn.id}" class="fn-item"><a href="#ref-${fn.id}" class="fn-back">^</a> <b>[${fn.num}]</b> ${fn.content}</div>`; }); t += `</div>`; }
-            return t;
-        }
-
-        function openMapModal() {
-            document.getElementById('mapModal').style.display = 'block';
-            setTimeout(() => {
-                if (!map) { map = L.map('map').setView([34.26, 108.94], 5); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(map); markersLayer = L.layerGroup().addTo(map); } 
-                else { map.invalidateSize(); }
-                markersLayer.clearLayers();
-                db.forEach(item => {
-                    if(item.lat && item.lng) { 
-                        let iconHtml = item.img ? `<div class="custom-map-marker" style="background-image: url('${item.img}');"></div>` : `<div class="custom-map-marker default-marker">${cleanTitle(item.name).charAt(0)}</div>`;
-                        const customIcon = L.divIcon({ html: iconHtml, className: 'marker-container', iconSize: [40, 40], iconAnchor: [20, 20] });
-                        const m = L.marker([item.lat, item.lng], {icon: customIcon});
-                        m.bindTooltip(`<b>${cleanTitle(item.name)}</b><br><small>${item.geoName||''}</small>`);
-                        m.on('click', () => { closeModal('mapModal'); openModal(item.id); });
-                        markersLayer.addLayer(m); 
-                    }
-                });
-            }, 200);
-        }
-        function openRelModal() {
-            document.getElementById('relModal').style.display = 'block';
-            const nodes = []; const edges = []; const ids = new Set();
-            db.forEach(item => {
-                if(!item.isShow || !item.relations) return;
-                const name = cleanTitle(item.name);
-                if(!ids.has(name)) { 
-                    if(item.img) nodes.push({id:name, label:name, shape:'circularImage', image:item.img, size:30, borderWidth:3, color:{border:'#ffcc00', background:'#ffffff'}});
-                    else nodes.push({id:name, label:name, size:25, shape:'dot', color:'#ffcc00'}); 
-                    ids.add(name); 
-                }
-                item.relations.split(',').forEach(r => {
-                    const p = r.split(':'); const target = p[0].trim();
-                    if(!ids.has(target)) { nodes.push({id:target, label:target, size:20, shape:'dot', color:'#eee'}); ids.add(target); }
-                    edges.push({from:name, to:target, label:p[1]||'', arrows:'to'});
-                });
-            });
-            const container = document.getElementById('network');
-            new vis.Network(container, { nodes, edges }, { nodes:{font:{size:16, face:'KoPub Batang'}}, physics:{stabilization:false}, interaction:{hover:true} });
-        }
-
-        function render(query = "", eraFilter = "all") {
-            const root = document.getElementById('timeline-root'); root.innerHTML = '';
-            const safeQuery = query ? query.trim().toLowerCase() : "";
-            const filtered = db.filter(item => {
-                const eraMatch = eraFilter === 'all' || item.era === eraFilter;
-                if (!safeQuery) return eraMatch;
-                let textMatch = (item.name.toLowerCase().includes(safeQuery) || item.desc.toLowerCase().includes(safeQuery) || (item.tags && item.tags.join(" ").toLowerCase().includes(safeQuery)));
-                if (!textMatch && item.historyDetail && item.historyDetail.toLowerCase().includes(safeQuery)) textMatch = true;
-                if (!textMatch && item.poems) if (item.poems.some(p => p.title && p.title.toLowerCase().includes(safeQuery) || p.content && p.content.toLowerCase().includes(safeQuery))) textMatch = true;
-                return eraMatch && textMatch;
-            });
-
-            filtered.forEach(item => {
-                if (item.isShow) {
-                    const div = document.createElement('div'); div.className = item.type === 'poet' ? 'container left' : 'container right';
-                    const imgTag = item.img ? `<img src="${item.img}" class="thumb-img">` : '';
-                    let cardBg = (item.cardColor && item.cardColor !== "#ffffff") ? item.cardColor : (item.type === 'poet' ? config.leftCardColor : config.rightCardColor) || "#ffffff";
-                    
-                    const btns = isAdmin ? `<div class="action-btns" style="display:block;"><span class="btn-text btn-edit" onclick="editItem(${item.id})">[수정]</span><span class="btn-text btn-del" onclick="deleteItem(${item.id})">[삭제]</span></div>` : '';
-                    let titleHtml = cleanTitle(item.name);
-                    if (item.type === 'poet') {
-                        let subInfo = []; if (item.hanja) subInfo.push(item.hanja);
-                        if (item.deathYear) subInfo.push(`${item.year}~${item.deathYear}`); else subInfo.push(item.year);
-                        if (subInfo.length > 0) titleHtml += ` <span style='font-size:0.7em; font-weight:normal;'>(${subInfo.join(' ')})</span>`;
-                    }
-                    div.innerHTML = `<div class="year-bubble" onclick="openContextModal(${item.id})">${item.year}</div><div class="content clearfix" style="background-color:${cardBg};">${imgTag} <span class="era-tag">${item.era}</span><div class="title-text" onclick="openModal(${item.id})">${titleHtml}</div><small>${cleanTextForCard(item.desc)}</small>${btns}</div>`;
-                    root.appendChild(div);
-                } else {
-                    const div = document.createElement('div'); div.className = 'minor-row';
-                    div.innerHTML = `<div class="minor-dot" data-tooltip="${item.year} : ${item.name}" onclick="openModal(${item.id})"></div>`;
-                    root.appendChild(div);
-                }
-            });
-            setTimeout(adjustPadding, 100);
-        }
-
-        function populateEraFilter() { const s = document.getElementById('eraFilter'); const e = [...new Set(db.map(item => item.era).filter(e => e))].sort(); s.innerHTML = '<option value="all">모든 시대</option>'; e.forEach(era => { s.innerHTML += `<option value="${era}">${era}</option>`; }); }
-        function filterData() { render(document.getElementById('searchInput').value.toLowerCase(), document.getElementById('eraFilter').value); }
-        function searchTag(tag) { document.getElementById('searchInput').value = tag; filterData(); }
-        function toggleAdmin() { document.getElementById('adminPanel').style.display = document.getElementById('adminPanel').style.display === 'block' ? 'none' : 'block'; }
-        function toggleConfig() { document.getElementById('configForm').style.display = document.getElementById('configForm').style.display === 'none' ? 'block' : 'none'; }
-        function toggleSimplified(id) { const el = document.getElementById(id); el.style.display = el.style.display === 'none' || el.style.display === '' ? 'block' : 'none'; }
-        function saveConfig() { localStorage.setItem('tangTimelineConfig', JSON.stringify(config)); applyConfigUI(); render(); alert('저장됨'); }
-        function updateFormUI() {}
-        
-        function editItem(id) {
-            const item = db.find(d => d.id === Number(id)); if (!item) return;
-            document.getElementById('adminPanel').style.display = 'block'; 
-            document.getElementById('inShow').checked = item.isShow;
-            document.getElementById('inType').value = item.type; 
-            document.getElementById('inYear').value = item.year; document.getElementById('inDeathYear').value = item.deathYear || ""; 
-            document.getElementById('inEra').value = item.era; document.getElementById('inName').value = item.name; 
-            document.getElementById('inHanja').value = item.hanja || ""; document.getElementById('inTags').value = item.tags ? item.tags.join(", ") : "";
-            document.getElementById('inRelations').value = item.relations || ""; 
-            document.getElementById('inDesc').value = item.desc; document.getElementById('inImg').value = item.img || "";
-            document.getElementById('inCardColor').value = item.cardColor || "#ffffff";
-            document.getElementById('inLat').value = item.lat || ""; document.getElementById('inLng').value = item.lng || ""; document.getElementById('inGeoName').value = item.geoName || "";
-
-            const contentBox = document.getElementById('inContent');
-            if (item.type === 'poet' && item.poems) {
-                contentBox.value = item.poems.map(p => {
-                    let text = `${p.title}|${p.content}`;
-                    if (p.simplified) text += `\n\n+++\n${p.simplified}`;
-                    if (p.desc) text += `\n\n---\n${p.desc}`;
-                    return text;
-                }).join('\n\n===\n\n');
-            } else { contentBox.value = item.historyDetail || ""; }
-            editingId = item.id; document.getElementById('btnSave').innerText = "수정 완료"; window.scrollTo(0, 0);
-        }
-
         function saveData() {
-            const isShow = document.getElementById('inShow').checked; const type = document.getElementById('inType').value;
-            const year = document.getElementById('inYear').value; const deathYear = document.getElementById('inDeathYear').value;
-            const era = document.getElementById('inEra').value; const name = document.getElementById('inName').value; const hanja = document.getElementById('inHanja').value;
+            const isShow = document.getElementById('inShow').checked; 
+            const type = document.getElementById('inType').value;
+            const year = document.getElementById('inYear').value; 
+            const deathYear = document.getElementById('inDeathYear').value;
+            const era = document.getElementById('inEra').value; 
+            const name = document.getElementById('inName').value; 
+            const hanja = document.getElementById('inHanja').value;
             const tags = document.getElementById('inTags').value.split(',').map(t=>t.trim()).filter(t=>t);
             const relations = document.getElementById('inRelations').value;
-            const desc = document.getElementById('inDesc').value; const img = document.getElementById('inImg').value;
-            const cardColor = document.getElementById('inCardColor').value; const rawContent = document.getElementById('inContent').value;
-            const lat = document.getElementById('inLat').value; const lng = document.getElementById('inLng').value; const geoName = document.getElementById('inGeoName').value;
+            const desc = document.getElementById('inDesc').value; 
+            const img = document.getElementById('inImg').value;
+            const cardColor = document.getElementById('inCardColor').value; 
+            const rawContent = document.getElementById('inContent').value;
+            const lat = document.getElementById('inLat').value; 
+            const lng = document.getElementById('inLng').value; 
+            const geoName = document.getElementById('inGeoName').value;
 
             if (!year || !name) { alert('필수 항목 누락'); return; }
-            let poems = []; let historyDetail = "";
+            
+            let poems = []; 
+            let historyDetail = "";
+            
             if (type === 'poet' && rawContent.trim()) { 
                 const blocks = rawContent.split('==='); 
                 poems = blocks.map(b => { 
-                    let temp = b; let pDesc = ""; const descParts = temp.split('---');
-                    if (descParts.length > 1) { pDesc = descParts.slice(1).join('---').trim(); temp = descParts[0]; }
-                    let pSimp = ""; const simpParts = temp.split('+++');
-                    if (simpParts.length > 1) { pSimp = simpParts.slice(1).join('+++').trim(); temp = simpParts[0]; }
-                    const idx = temp.indexOf('|'); 
-                    if (idx !== -1) return { title: temp.substring(0, idx).trim(), content: temp.substring(idx + 1).trim(), simplified: pSimp, desc: pDesc };
+                    let temp = b;
+                    let pDesc = ""; 
+                    let pSimp = "";
+
+                    const simpSplit = temp.split('+++');
+                    let leftPart = simpSplit[0]; 
+                    let rightPart = "";
+
+                    if (simpSplit.length > 1) {
+                        rightPart = simpSplit.slice(1).join('+++'); 
+                    }
+
+                    if (rightPart) {
+                        const descSplit = rightPart.split('---');
+                        pSimp = descSplit[0].trim(); 
+                        if (descSplit.length > 1) {
+                            pDesc = descSplit.slice(1).join('---').trim(); 
+                        }
+                    } else {
+                        const descSplit = leftPart.split('---');
+                        if (descSplit.length > 1) {
+                            pDesc = descSplit.slice(1).join('---').trim();
+                            leftPart = descSplit[0];
+                        }
+                    }
+
+                    const idx = leftPart.indexOf('|'); 
+                    if (idx !== -1) {
+                        return { 
+                            title: leftPart.substring(0, idx).trim(), 
+                            content: leftPart.substring(idx + 1).trim(), 
+                            simplified: pSimp, 
+                            desc: pDesc 
+                        };
+                    }
                     return null; 
                 }).filter(p => p); 
-            } else { historyDetail = rawContent.trim(); }
+            } else { 
+                historyDetail = rawContent.trim(); 
+            }
             
-            const newData = { id: editingId || Date.now(), year, deathYear, era, type, name, hanja, tags, relations, desc, img, isShow, cardColor, poems, historyDetail, lat, lng, geoName };
-            if (editingId) { const idx = db.findIndex(d => d.id === editingId); if (idx !== -1) db[idx] = newData; } else { db.push(newData); }
+            // [v13.31] rawContent 저장 추가
+            const newData = { id: editingId || Date.now(), year, deathYear, era, type, name, hanja, tags, relations, desc, img, isShow, cardColor, poems, historyDetail, lat, lng, geoName, rawContent };
+            if (editingId) { 
+                const idx = db.findIndex(d => String(d.id) === String(editingId)); 
+                if (idx !== -1) db[idx] = newData; 
+            } else { 
+                db.push(newData); 
+            }
             saveToLocal(); render(); populateEraFilter(); clearForm();
         }
 
@@ -509,17 +586,18 @@
             document.getElementById('inLat').value = ''; document.getElementById('inLng').value = ''; document.getElementById('inGeoName').value = '';
             document.getElementById('inShow').checked = true; document.getElementById('inCardColor').value = "#ffffff";
             editingId = null; document.getElementById('btnSave').innerText = "저장";
+            document.getElementById('formTitle').innerText = "데이터 입력";
         }
-        function deleteItem(id) { if(confirm('삭제?')) { db = db.filter(i => i.id !== id); saveToLocal(); render(); populateEraFilter(); } }
+        function deleteItem(id) { if(confirm('삭제?')) { db = db.filter(i => String(i.id) !== String(id)); saveToLocal(); render(); populateEraFilter(); } }
         function resetAllData() { if(confirm('전체 삭제?')) { localStorage.removeItem('tangTimelineDB'); location.reload(); } }
 
         function openModal(id, keepHistory = false) {
-            const item = db.find(d => d.id === id); if (!item) return;
+            const item = db.find(d => String(d.id) === String(id)); if (!item) return;
             if (!keepHistory) { modalHistory = []; document.getElementById('backBtn').style.display = 'none'; }
             currentOpenId = id;
             document.getElementById('floatingCloseBtn').style.display = 'block';
             
-            const editBtnHtml = isAdmin ? `<div style="text-align:right; margin-bottom:10px; clear:both;"><span class="btn-text btn-edit" onclick="editItem(${item.id}); closeModal('detailModal');">[수정]</span><span class="btn-text btn-del" onclick="deleteItem(${item.id}); closeModal('detailModal');">[삭제]</span></div>` : '';
+            const editBtnHtml = isAdmin ? `<div style="text-align:right; margin-bottom:10px; clear:both;"><span class="btn-text btn-edit" onclick="editItem('${item.id}'); closeModal('detailModal');">[수정]</span><span class="btn-text btn-del" onclick="deleteItem('${item.id}'); closeModal('detailModal');">[삭제]</span></div>` : '';
             
             let nameHtml = `${cleanTitle(item.name)}`;
             if (item.type === 'poet') {
@@ -564,11 +642,13 @@
             const totalCards = db.length; 
             const stats = {}; let totalPoems = 0;
             db.forEach(item => {
-                if (item.type === 'poet' && item.poems) {
-                    const key = cleanTitle(item.name);
-                    const count = item.poems.length;
-                    stats[key] = (stats[key] || 0) + count;
-                    totalPoems += count;
+                if (item.type === 'poet') {
+                    const count = (item.poems || []).length;
+                    if(count > 0) {
+                        const key = cleanTitle(item.name);
+                        stats[key] = (stats[key] || 0) + count;
+                        totalPoems += count;
+                    }
                 }
             });
             const sortedStats = Object.entries(stats).sort((a, b) => b[1] - a[1]);
@@ -580,8 +660,8 @@
         }
 
         function openContextModal(targetId) {
-            const targetItem = db.find(d => d.id === targetId); if (!targetItem) return;
-            const idx = db.findIndex(d => d.id === targetId);
+            const targetItem = db.find(d => String(d.id) === String(targetId)); if (!targetItem) return;
+            const idx = db.findIndex(d => String(d.id) === String(targetId));
             document.getElementById('ctxTargetYear').innerText = targetItem.year;
             const siblings = db.slice(Math.max(0, idx - 5), Math.min(db.length, idx + 6));
             const list = document.getElementById('ctxList'); list.innerHTML = '';
@@ -602,6 +682,81 @@
         function closeModal(id) { document.getElementById(id).style.display = "none"; document.getElementById('floatingCloseBtn').style.display = 'none'; }
         window.onclick = function(e) { if(e.target.classList.contains('modal')) { e.target.style.display="none"; document.getElementById('floatingCloseBtn').style.display = 'none'; } }
         
+        function openMapModal() {
+            document.getElementById('mapModal').style.display = 'block';
+            setTimeout(() => {
+                if (!map) { map = L.map('map').setView([34.26, 108.94], 5); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(map); markersLayer = L.layerGroup().addTo(map); } 
+                else { map.invalidateSize(); }
+                markersLayer.clearLayers();
+                db.forEach(item => {
+                    if(item.lat && item.lng) { 
+                        let iconHtml = item.img ? `<div class="custom-map-marker" style="background-image: url('${item.img}');"></div>` : `<div class="custom-map-marker default-marker">${cleanTitle(item.name).charAt(0)}</div>`;
+                        const customIcon = L.divIcon({ html: iconHtml, className: 'marker-container', iconSize: [40, 40], iconAnchor: [20, 20] });
+                        const m = L.marker([item.lat, item.lng], {icon: customIcon});
+                        m.bindTooltip(`<b>${cleanTitle(item.name)}</b><br><small>${item.geoName||''}</small>`);
+                        m.on('click', () => { closeModal('mapModal'); openModal(item.id); });
+                        markersLayer.addLayer(m); 
+                    }
+                });
+            }, 200);
+        }
+
+        function openRelModal() {
+            document.getElementById('relModal').style.display = 'block';
+            const nodes = []; 
+            const edges = []; 
+            const ids = new Set();
+            
+            const imageMap = {};
+            db.forEach(i => {
+                if(i.img) imageMap[cleanTitle(i.name)] = i.img;
+            });
+
+            db.forEach(item => {
+                if(!item.isShow || !item.relations) return;
+                
+                const name = cleanTitle(item.name);
+                
+                if(!ids.has(name)) { 
+                    if(item.img) nodes.push({id:name, label:name, shape:'circularImage', image:item.img, size:30, borderWidth:3, color:{border:'#ffcc00', background:'#ffffff'}});
+                    else nodes.push({id:name, label:name, size:25, shape:'dot', color:'#ffcc00'}); 
+                    ids.add(name); 
+                }
+                
+                item.relations.split(',').forEach(r => {
+                    const p = r.split(':'); 
+                    const target = p[0].trim();
+                    const relationLabel = p[1] ? p[1].trim() : '';
+
+                    if(!ids.has(target)) { 
+                        if(imageMap[target]) {
+                            nodes.push({id:target, label:target, shape:'circularImage', image:imageMap[target], size:20, borderWidth:2, color:{border:'#eee', background:'#ffffff'}});
+                        } else {
+                            nodes.push({id:target, label:target, size:20, shape:'dot', color:'#eee'}); 
+                        }
+                        ids.add(target); 
+                    }
+                    edges.push({from:name, to:target, label:relationLabel, arrows:'to'});
+                });
+            });
+            const container = document.getElementById('network');
+            new vis.Network(container, { nodes, edges }, { nodes:{font:{size:16, face:'KoPub Batang'}}, physics:{stabilization:false}, interaction:{hover:true} });
+        }
+        
+        function adjustPadding() { const h = document.getElementById('stickyHeader').offsetHeight; document.getElementById('timeline-root').style.paddingTop = (h + 30) + 'px'; }
+        
+        async function adminLogin() { if (isAdmin) return; const p = prompt("관리자 비밀번호:"); if (!p) return; const h = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(p)))).map(b => b.toString(16).padStart(2, '0')).join(''); if (h === "6eb20c53054a7218e6731761b7539d9e38f6f5e39e53c2d78e0edd732de650f2") { isAdmin = true; document.getElementById('adminToggle').style.display = 'block'; alert("관리자 모드 활성화!"); render(); } else alert("오류"); }
+
+        async function init() {
+            try {
+                try { const r = await fetch('database.json'); if(r.ok) { const j = await r.json(); db = j.data || []; config = j.config || defaultConfig; } else throw new Error("No ext DB"); } 
+                catch (e) { const s = localStorage.getItem('tangTimelineDB'); db = s ? JSON.parse(s) : []; const c = localStorage.getItem('tangTimelineConfig'); config = c ? JSON.parse(c) : {...defaultConfig}; }
+                applyConfigUI(); populateEraFilter(); render();
+                document.getElementById('pageDesc').innerText = config.desc; document.getElementById('adminToggle').style.display = 'none';
+                adjustPadding(); window.addEventListener('resize', adjustPadding);
+            } catch (e) { alert("초기화 오류: " + e.message); }
+        }
+
         init();
     </script>
 </body>
